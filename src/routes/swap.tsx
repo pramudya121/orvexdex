@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAccount, useBalance, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { TokenSelect } from "@/components/TokenSelect";
-import { NATIVE, WZKLTC, type Token } from "@/lib/tokens";
+import { NATIVE, TOKENS, WZKLTC, type Token } from "@/lib/tokens";
 import { ADDR } from "@/lib/chain";
 import { erc20Abi, wzkltcAbi } from "@/lib/abis/wzkltc";
 import { routerAbi } from "@/lib/abis/router";
@@ -10,22 +10,43 @@ import { useAllowance, useBestRoute, useGetPair, usePairReserves, useTokenBalanc
 import { deadline, fmt, safeParse, slippageMin } from "@/lib/format";
 import { useToast } from "@/components/ui/toaster";
 
+type SwapSearch = { from?: string; to?: string };
+
 export const Route = createFileRoute("/swap")({
   component: SwapPage,
   head: () => ({ meta: [{ title: "Swap — ORVEX" }] }),
+  validateSearch: (s: Record<string, unknown>): SwapSearch => ({
+    from: typeof s.from === "string" ? s.from : undefined,
+    to: typeof s.to === "string" ? s.to : undefined,
+  }),
 });
+
+function findTokenByAddr(addr?: string): Token | undefined {
+  if (!addr) return undefined;
+  const a = addr.toLowerCase();
+  return TOKENS.find((t) => t.address.toLowerCase() === a);
+}
 
 type Mode = "wrap" | "unwrap" | "swap";
 
 function SwapPage() {
   const { address } = useAccount();
   const toast = useToast();
-  const [tokenIn, setTokenIn] = useState<Token>(NATIVE);
-  const [tokenOut, setTokenOut] = useState<Token>(WZKLTC);
+  const sp = Route.useSearch();
+  const [tokenIn, setTokenIn] = useState<Token>(() => findTokenByAddr(sp.from) ?? NATIVE);
+  const [tokenOut, setTokenOut] = useState<Token>(() => findTokenByAddr(sp.to) ?? WZKLTC);
   const [amountIn, setAmountIn] = useState("");
   const [slippageBps, setSlippageBps] = useState(50); // 0.50% default
   const [deadlineMin, setDeadlineMin] = useState(20);
   const [showSettings, setShowSettings] = useState(false);
+
+  useEffect(() => {
+    const a = findTokenByAddr(sp.from);
+    const b = findTokenByAddr(sp.to);
+    if (a) setTokenIn(a);
+    if (b) setTokenOut(b);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sp.from, sp.to]);
 
   const mode: Mode = useMemo(() => {
     if (tokenIn.isNative && tokenOut.isWrapped) return "wrap";

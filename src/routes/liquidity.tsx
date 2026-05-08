@@ -11,13 +11,28 @@ import { useAllowance, useGetPair, usePairReserves, useTokenBalance, MAX_UINT256
 import { deadline, fmt, safeParse, slippageMin } from "@/lib/format";
 import { useToast } from "@/components/ui/toaster";
 
+type LiqSearch = { a?: string; b?: string; tab?: "add" | "remove" };
+
 export const Route = createFileRoute("/liquidity")({
   component: LiquidityPage,
   head: () => ({ meta: [{ title: "Liquidity — ORVEX" }] }),
+  validateSearch: (s: Record<string, unknown>): LiqSearch => ({
+    a: typeof s.a === "string" ? s.a : undefined,
+    b: typeof s.b === "string" ? s.b : undefined,
+    tab: s.tab === "remove" ? "remove" : s.tab === "add" ? "add" : undefined,
+  }),
 });
 
+function findTokenByAddr(addr?: string): Token | undefined {
+  if (!addr) return undefined;
+  const a = addr.toLowerCase();
+  return TOKENS.find((t) => t.address.toLowerCase() === a);
+}
+
 function LiquidityPage() {
-  const [tab, setTab] = useState<"add" | "remove">("add");
+  const sp = Route.useSearch();
+  const [tab, setTab] = useState<"add" | "remove">(sp.tab ?? "add");
+  useEffect(() => { if (sp.tab) setTab(sp.tab); }, [sp.tab]);
   return (
     <div className="max-w-md mx-auto px-4 py-12">
       <div className="glass-strong rounded-3xl p-6 shadow-neon">
@@ -34,19 +49,24 @@ function LiquidityPage() {
             >Remove</button>
           </div>
         </div>
-        {tab === "add" ? <AddLiquidity /> : <RemoveLiquidity />}
+        {tab === "add" ? <AddLiquidity prefillA={sp.a} prefillB={sp.b} /> : <RemoveLiquidity prefillA={sp.a} prefillB={sp.b} />}
       </div>
     </div>
   );
 }
 
-function AddLiquidity() {
+function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: string }) {
   const { address } = useAccount();
   const toast = useToast();
-  const [tokenA, setTokenA] = useState<Token>(NATIVE);
-  const [tokenB, setTokenB] = useState<Token>(TOKENS.find((t) => t.symbol === "ORVX")!);
+  const [tokenA, setTokenA] = useState<Token>(() => findTokenByAddr(prefillA) ?? NATIVE);
+  const [tokenB, setTokenB] = useState<Token>(() => findTokenByAddr(prefillB) ?? TOKENS.find((t) => t.symbol === "ORVX")!);
   const [amountA, setAmountA] = useState("");
   const [amountB, setAmountB] = useState("");
+  useEffect(() => {
+    const a = findTokenByAddr(prefillA); const b = findTokenByAddr(prefillB);
+    if (a) setTokenA(a); if (b) setTokenB(b);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillA, prefillB]);
 
   const amtAWei = safeParse(amountA, tokenA.decimals);
   const amtBWei = safeParse(amountB, tokenB.decimals);
@@ -151,12 +171,17 @@ function Field({ label, token, onChange, amount, setAmount, balance, exclude }: 
 }
 
 
-function RemoveLiquidity() {
+function RemoveLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: string }) {
   const { address } = useAccount();
   const toast = useToast();
-  const [tokenA, setTokenA] = useState<Token>(WZKLTC);
-  const [tokenB, setTokenB] = useState<Token>(TOKENS.find((t) => t.symbol === "ORVX")!);
+  const [tokenA, setTokenA] = useState<Token>(() => findTokenByAddr(prefillA) ?? WZKLTC);
+  const [tokenB, setTokenB] = useState<Token>(() => findTokenByAddr(prefillB) ?? TOKENS.find((t) => t.symbol === "ORVX")!);
   const [pct, setPct] = useState(50);
+  useEffect(() => {
+    const a = findTokenByAddr(prefillA); const b = findTokenByAddr(prefillB);
+    if (a) setTokenA(a); if (b) setTokenB(b);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillA, prefillB]);
 
   const a = (tokenA.isNative ? ADDR.wzkLTC : tokenA.address) as `0x${string}`;
   const b = (tokenB.isNative ? ADDR.wzkLTC : tokenB.address) as `0x${string}`;
