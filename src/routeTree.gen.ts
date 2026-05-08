@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SwapRouteImport } from './routes/swap'
+import { Route as LiquidityRouteImport } from './routes/liquidity'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SwapRoute = SwapRouteImport.update({
   id: '/swap',
   path: '/swap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiquidityRoute = LiquidityRouteImport.update({
+  id: '/liquidity',
+  path: '/liquidity',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -25,27 +31,31 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/liquidity': typeof LiquidityRoute
   '/swap': typeof SwapRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/liquidity': typeof LiquidityRoute
   '/swap': typeof SwapRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/liquidity': typeof LiquidityRoute
   '/swap': typeof SwapRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/swap'
+  fullPaths: '/' | '/liquidity' | '/swap'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/swap'
-  id: '__root__' | '/' | '/swap'
+  to: '/' | '/liquidity' | '/swap'
+  id: '__root__' | '/' | '/liquidity' | '/swap'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LiquidityRoute: typeof LiquidityRoute
   SwapRoute: typeof SwapRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/swap'
       fullPath: '/swap'
       preLoaderRoute: typeof SwapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/liquidity': {
+      id: '/liquidity'
+      path: '/liquidity'
+      fullPath: '/liquidity'
+      preLoaderRoute: typeof LiquidityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LiquidityRoute: LiquidityRoute,
   SwapRoute: SwapRoute,
 }
 export const routeTree = rootRouteImport
