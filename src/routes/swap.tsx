@@ -6,7 +6,7 @@ import { NATIVE, WZKLTC, type Token } from "@/lib/tokens";
 import { ADDR } from "@/lib/chain";
 import { erc20Abi, wzkltcAbi } from "@/lib/abis/wzkltc";
 import { routerAbi } from "@/lib/abis/router";
-import { useAllowance, useBestRoute, useTokenBalance, MAX_UINT256 } from "@/lib/hooks";
+import { useAllowance, useBestRoute, useGetPair, usePairReserves, useTokenBalance, MAX_UINT256 } from "@/lib/hooks";
 import { deadline, fmt, safeParse, slippageMin } from "@/lib/format";
 import { useToast } from "@/components/ui/toaster";
 
