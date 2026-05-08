@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useState } from "react";
 import { explorerTx } from "@/lib/chain";
+import { useAccount } from "wagmi";
+import { addTx } from "@/lib/txHistory";
 
 type Toast = {
   id: number;
@@ -15,11 +17,15 @@ const Ctx = createContext<{
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<Toast[]>([]);
+  const { address } = useAccount();
   const push = useCallback((t: Omit<Toast, "id">) => {
     const id = Date.now() + Math.random();
     setItems((s) => [...s, { ...t, id }]);
     setTimeout(() => setItems((s) => s.filter((x) => x.id !== id)), 7000);
-  }, []);
+    if (t.hash && address) {
+      addTx({ hash: t.hash, title: t.title, account: address });
+    }
+  }, [address]);
   return (
     <Ctx.Provider value={{ push }}>
       {children}
