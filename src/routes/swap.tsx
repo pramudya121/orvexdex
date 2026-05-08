@@ -6,7 +6,7 @@ import { NATIVE, WZKLTC, type Token } from "@/lib/tokens";
 import { ADDR } from "@/lib/chain";
 import { erc20Abi, wzkltcAbi } from "@/lib/abis/wzkltc";
 import { routerAbi } from "@/lib/abis/router";
-import { useAllowance, useBestRoute, useTokenBalance, MAX_UINT256 } from "@/lib/hooks";
+import { useAllowance, useBestRoute, useGetPair, usePairReserves, useTokenBalance, MAX_UINT256 } from "@/lib/hooks";
 import { deadline, fmt, safeParse, slippageMin } from "@/lib/format";
 import { useToast } from "@/components/ui/toaster";
 
@@ -54,6 +54,35 @@ function SwapPage() {
     if (mode === "wrap" || mode === "unwrap") return amountInWei;
     return route.amountOut;
   }, [mode, amountInWei, route.amountOut]);
+
+  // Price impact (direct path only). Returns percentage number (0–100).
+  const directPair = useGetPair(
+    mode === "swap" && route.hops === 1 ? tokenInAddr : undefined,
+    mode === "swap" && route.hops === 1 ? tokenOutAddr : undefined,
+  );
+  const pairAddr = directPair.data as `0x${string}` | undefined;
+  const reserves = usePairReserves(
+    pairAddr && pairAddr !== "0x0000000000000000000000000000000000000000" ? pairAddr : undefined,
+  );
+  const priceImpact = useMemo<number | null>(() => {
+    if (mode !== "swap" || route.hops !== 1 || amountInWei <= 0n || expectedOut <= 0n) return null;
+    const r = reserves.data;
+    const reserveTuple = r?.[0]?.result as readonly [bigint, bigint, number] | undefined;
+    const t0 = r?.[1]?.result as `0x${string}` | undefined;
+    if (!reserveTuple || !t0) return null;
+    const inputIsToken0 = t0.toLowerCase() === tokenInAddr.toLowerCase();
+    const reserveIn = inputIsToken0 ? reserveTuple[0] : reserveTuple[1];
+    const reserveOut = inputIsToken0 ? reserveTuple[1] : reserveTuple[0];
+    if (reserveIn === 0n || reserveOut === 0n) return null;
+    // mid price (out per in) vs execution price
+    const PREC = 10n ** 18n;
+    const mid = (reserveOut * PREC) / reserveIn;
+    const exec = (expectedOut * PREC) / amountInWei;
+    if (mid === 0n) return null;
+    const diff = mid > exec ? mid - exec : 0n;
+    return Number((diff * 10000n) / mid) / 100; // % with 2 decimals
+  }, [mode, route.hops, amountInWei, expectedOut, reserves.data, tokenInAddr]);
+
 
 
   // Allowance for ERC20 -> router
@@ -237,6 +266,14 @@ function SwapPage() {
             </div>
             <div className="flex justify-between"><span>Slippage</span><span>{(slippageBps / 100).toFixed(2)}%</span></div>
             <div className="flex justify-between gap-2"><span className="shrink-0">Min received</span><span className="text-right truncate">{fmt(slippageMin(expectedOut, slippageBps), tokenOut.decimals)} {tokenOut.symbol}</span></div>
+            {priceImpact !== null && (
+              <div className="flex justify-between">
+                <span>Price impact</span>
+                <span className={priceImpact >= 5 ? "text-destructive font-semibold" : priceImpact >= 1 ? "text-amber-400" : "text-accent"}>
+                  {priceImpact < 0.01 ? "< 0.01" : priceImpact.toFixed(2)}%
+                </span>
+              </div>
+            )}
             <div className="flex justify-between gap-2">
               <span className="shrink-0">Route</span>
               <span className="text-right truncate text-accent">
@@ -246,6 +283,13 @@ function SwapPage() {
             </div>
           </div>
         )}
+
+        {priceImpact !== null && priceImpact >= 5 && (
+          <div className="mt-3 p-3 rounded-xl bg-destructive/10 border border-destructive/40 text-xs text-destructive">
+            ⚠ High price impact ({priceImpact.toFixed(2)}%). You will lose a significant amount to slippage. Consider a smaller trade.
+          </div>
+        )}
+
 
 
         <button
