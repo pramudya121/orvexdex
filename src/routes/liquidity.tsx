@@ -171,12 +171,17 @@ function Field({ label, token, onChange, amount, setAmount, balance, exclude }: 
 }
 
 
-function RemoveLiquidity() {
+function RemoveLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: string }) {
   const { address } = useAccount();
   const toast = useToast();
-  const [tokenA, setTokenA] = useState<Token>(WZKLTC);
-  const [tokenB, setTokenB] = useState<Token>(TOKENS.find((t) => t.symbol === "ORVX")!);
+  const [tokenA, setTokenA] = useState<Token>(() => findTokenByAddr(prefillA) ?? WZKLTC);
+  const [tokenB, setTokenB] = useState<Token>(() => findTokenByAddr(prefillB) ?? TOKENS.find((t) => t.symbol === "ORVX")!);
   const [pct, setPct] = useState(50);
+  useEffect(() => {
+    const a = findTokenByAddr(prefillA); const b = findTokenByAddr(prefillB);
+    if (a) setTokenA(a); if (b) setTokenB(b);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillA, prefillB]);
 
   const a = (tokenA.isNative ? ADDR.wzkLTC : tokenA.address) as `0x${string}`;
   const b = (tokenB.isNative ? ADDR.wzkLTC : tokenB.address) as `0x${string}`;
