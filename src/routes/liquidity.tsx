@@ -131,10 +131,10 @@ function AddLiquidity() {
 
 function Field({ label, token, onChange, amount, setAmount, balance, exclude }: any) {
   return (
-    <div className="bg-surface-2/50 rounded-2xl p-4 border border-border">
-      <div className="flex justify-between text-xs text-muted-foreground mb-2">
-        <span>{label}</span>
-        <span>
+    <div className="bg-surface-2/50 rounded-2xl p-4 border border-border overflow-hidden">
+      <div className="flex justify-between text-xs text-muted-foreground mb-2 gap-2">
+        <span className="shrink-0">{label}</span>
+        <span className="truncate text-right">
           Balance: {fmt(balance, token.decimals)}{" "}
           {balance !== undefined && balance > 0n && (
             <button onClick={() => setAmount(fmt(balance, token.decimals, 18))} className="text-accent hover:underline ml-1">MAX</button>
@@ -143,12 +143,13 @@ function Field({ label, token, onChange, amount, setAmount, balance, exclude }: 
       </div>
       <div className="flex items-center gap-3">
         <input inputMode="decimal" placeholder="0.0" value={amount} onChange={(e) => setAmount(e.target.value)}
-          className="flex-1 bg-transparent text-2xl font-bold outline-none" />
+          className="flex-1 min-w-0 w-full bg-transparent text-2xl font-bold outline-none" />
         <TokenSelect value={token} onChange={onChange} exclude={exclude} />
       </div>
     </div>
   );
 }
+
 
 function RemoveLiquidity() {
   const { address } = useAccount();

@@ -6,7 +6,7 @@ import { NATIVE, WZKLTC, type Token } from "@/lib/tokens";
 import { ADDR } from "@/lib/chain";
 import { erc20Abi, wzkltcAbi } from "@/lib/abis/wzkltc";
 import { routerAbi } from "@/lib/abis/router";
-import { useAllowance, useAmountsOut, useTokenBalance, MAX_UINT256 } from "@/lib/hooks";
+import { useAllowance, useBestRoute, useTokenBalance, MAX_UINT256 } from "@/lib/hooks";
 import { deadline, fmt, safeParse, slippageMin } from "@/lib/format";
 import { useToast } from "@/components/ui/toaster";
 
@@ -41,21 +41,17 @@ function SwapPage() {
   const balanceIn = tokenIn.isNative ? nativeBal.data?.value : (inBal.data as bigint | undefined);
   const balanceOut = tokenOut.isNative ? nativeBal.data?.value : (outBal.data as bigint | undefined);
 
-  // Build path for swap mode (use wzkLTC as proxy for native)
-  const path = useMemo<`0x${string}`[] | undefined>(() => {
-    if (mode !== "swap") return undefined;
-    const a = (tokenIn.isNative ? ADDR.wzkLTC : tokenIn.address) as `0x${string}`;
-    const b = (tokenOut.isNative ? ADDR.wzkLTC : tokenOut.address) as `0x${string}`;
-    if (a.toLowerCase() === b.toLowerCase()) return undefined;
-    return [a, b];
-  }, [mode, tokenIn, tokenOut]);
+  // Smart routing: best of direct vs multi-hop via WzkLTC
+  const tokenInAddr = (tokenIn.isNative ? ADDR.wzkLTC : tokenIn.address) as `0x${string}`;
+  const tokenOutAddr = (tokenOut.isNative ? ADDR.wzkLTC : tokenOut.address) as `0x${string}`;
+  const route = useBestRoute(mode === "swap" ? amountInWei : 0n, tokenInAddr, tokenOutAddr);
+  const path = mode === "swap" ? route.path : undefined;
 
-  const amountsOut = useAmountsOut(amountInWei, path);
   const expectedOut = useMemo<bigint>(() => {
     if (mode === "wrap" || mode === "unwrap") return amountInWei;
-    const arr = amountsOut.data as bigint[] | undefined;
-    return arr && arr.length > 0 ? arr[arr.length - 1] : 0n;
-  }, [mode, amountInWei, amountsOut.data]);
+    return route.amountOut;
+  }, [mode, amountInWei, route.amountOut]);
+
 
   // Allowance for ERC20 -> router
   const allowance = useAllowance(
@@ -189,15 +185,21 @@ function SwapPage() {
 
         {mode === "swap" && expectedOut > 0n && amountInWei > 0n && (
           <div className="mt-4 p-3 rounded-xl bg-surface-2 text-xs text-muted-foreground space-y-1">
-            <div className="flex justify-between">
-              <span>Rate</span>
-              <span>1 {tokenIn.symbol} ≈ {fmt((expectedOut * 10n ** BigInt(tokenIn.decimals)) / (amountInWei || 1n), tokenOut.decimals, 6)} {tokenOut.symbol}</span>
+            <div className="flex justify-between gap-2">
+              <span className="shrink-0">Rate</span>
+              <span className="text-right truncate">1 {tokenIn.symbol} ≈ {fmt((expectedOut * 10n ** BigInt(tokenIn.decimals)) / (amountInWei || 1n), tokenOut.decimals, 6)} {tokenOut.symbol}</span>
             </div>
-            <div className="flex justify-between">
-              <span>Slippage</span><span>1.00%</span>
+            <div className="flex justify-between"><span>Slippage</span><span>1.00%</span></div>
+            <div className="flex justify-between gap-2">
+              <span className="shrink-0">Route</span>
+              <span className="text-right truncate text-accent">
+                {route.hops === 2 ? `${tokenIn.symbol} → wzkLTC → ${tokenOut.symbol}` : `${tokenIn.symbol} → ${tokenOut.symbol}`}
+                {route.hops === 2 && <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-accent/20">SMART</span>}
+              </span>
             </div>
           </div>
         )}
+
 
         <button
           onClick={handleAction}
@@ -224,10 +226,10 @@ function TokenPanel({
   readOnly?: boolean;
 }) {
   return (
-    <div className="bg-surface-2/50 rounded-2xl p-4 border border-border">
-      <div className="flex justify-between text-xs text-muted-foreground mb-2">
-        <span>{label}</span>
-        <span>
+    <div className="bg-surface-2/50 rounded-2xl p-4 border border-border overflow-hidden">
+      <div className="flex justify-between text-xs text-muted-foreground mb-2 gap-2">
+        <span className="shrink-0">{label}</span>
+        <span className="truncate text-right">
           Balance: {fmt(balance, token.decimals)}{" "}
           {!readOnly && balance !== undefined && balance > 0n && (
             <button
@@ -244,10 +246,11 @@ function TokenPanel({
           readOnly={readOnly}
           value={amount}
           onChange={(e) => onAmountChange?.(e.target.value)}
-          className="flex-1 bg-transparent text-3xl font-bold outline-none placeholder:text-muted-foreground/40"
+          className="flex-1 min-w-0 w-full bg-transparent text-3xl font-bold outline-none placeholder:text-muted-foreground/40"
         />
         <TokenSelect value={token} onChange={onTokenChange} exclude={excludeFor} />
       </div>
     </div>
   );
 }
+
