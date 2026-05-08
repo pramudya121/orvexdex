@@ -60,6 +60,55 @@ export function useAmountsOut(amountIn: bigint, path?: `0x${string}`[]) {
   });
 }
 
+/**
+ * Smart router: tries direct path A→B and multi-hop A→WzkLTC→B,
+ * returns the path with the best output (AMM optimal route).
+ */
+export function useBestRoute(amountIn: bigint, tokenIn?: `0x${string}`, tokenOut?: `0x${string}`) {
+  const sameAsHop = (t?: `0x${string}`) => t && t.toLowerCase() === ADDR.wzkLTC.toLowerCase();
+  const directPath = tokenIn && tokenOut && tokenIn.toLowerCase() !== tokenOut.toLowerCase() ? [tokenIn, tokenOut] : undefined;
+  const hopPath = tokenIn && tokenOut && !sameAsHop(tokenIn) && !sameAsHop(tokenOut) && tokenIn.toLowerCase() !== tokenOut.toLowerCase()
+    ? [tokenIn, ADDR.wzkLTC, tokenOut] as `0x${string}`[]
+    : undefined;
+
+  const results = useReadContracts({
+    contracts: [
+      directPath && amountIn > 0n
+        ? { address: ADDR.router, abi: routerAbi, functionName: "getAmountsOut", args: [amountIn, directPath] as const }
+        : { address: ADDR.router, abi: routerAbi, functionName: "getAmountsOut", args: [0n, ["0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000"]] as const },
+      hopPath && amountIn > 0n
+        ? { address: ADDR.router, abi: routerAbi, functionName: "getAmountsOut", args: [amountIn, hopPath] as const }
+        : { address: ADDR.router, abi: routerAbi, functionName: "getAmountsOut", args: [0n, ["0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000"]] as const },
+    ],
+    allowFailure: true,
+    query: { enabled: amountIn > 0n && !!tokenIn && !!tokenOut, refetchInterval: 8000 },
+  });
+
+  const direct = results.data?.[0];
+  const hop = results.data?.[1];
+  const directOut = direct?.status === "success" ? (direct.result as bigint[]) : undefined;
+  const hopOut = hop?.status === "success" ? (hop.result as bigint[]) : undefined;
+
+  const directAmt = directOut && directPath ? directOut[directOut.length - 1] : 0n;
+  const hopAmt = hopOut && hopPath ? hopOut[hopOut.length - 1] : 0n;
+
+  let bestPath: `0x${string}`[] | undefined;
+  let bestOut = 0n;
+  let hops = 0;
+  if (directAmt > 0n && directAmt >= hopAmt) {
+    bestPath = directPath;
+    bestOut = directAmt;
+    hops = 1;
+  } else if (hopAmt > 0n) {
+    bestPath = hopPath;
+    bestOut = hopAmt;
+    hops = 2;
+  }
+
+  return { path: bestPath, amountOut: bestOut, hops, isLoading: results.isLoading, refetch: results.refetch };
+}
+
+
 export function useQuote(amountA: bigint, reserveA?: bigint, reserveB?: bigint) {
   return useReadContract({
     address: ADDR.router,
