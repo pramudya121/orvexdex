@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
+import { TxIndicator } from "@/components/wallet/TxIndicator";
 import logo from "@/assets/orvex-logo.png";
 
 const NAV = [
@@ -41,7 +42,10 @@ export function Header() {
             );
           })}
         </nav>
-        <ConnectButton />
+        <div className="flex items-center gap-2">
+          <TxIndicator />
+          <ConnectButton />
+        </div>
       </div>
       <div className="md:hidden border-t border-border overflow-x-auto">
         <div className="flex gap-1 px-4 py-2 min-w-max">
