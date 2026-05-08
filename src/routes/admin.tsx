@@ -135,7 +135,7 @@ function TokenAmountForm({ onSubmit, disabled, placeholder = "100", amountLabel 
   );
 }
 
-function SetTokenForm({ onSubmit, disabled }: any) {
+function SetTokenForm({ onSubmit, disabled }: { onSubmit: (idx: number, addr: string) => void; disabled?: boolean }) {
   const [idx, setIdx] = useState(0);
   const [addr, setAddr] = useState("");
   return (
