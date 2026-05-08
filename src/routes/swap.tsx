@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAccount, useBalance, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { TokenSelect } from "@/components/TokenSelect";
-import { NATIVE, WZKLTC, type Token } from "@/lib/tokens";
+import { NATIVE, TOKENS, WZKLTC, type Token } from "@/lib/tokens";
 import { ADDR } from "@/lib/chain";
 import { erc20Abi, wzkltcAbi } from "@/lib/abis/wzkltc";
 import { routerAbi } from "@/lib/abis/router";
