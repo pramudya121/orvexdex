@@ -103,7 +103,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
-function SingleInput({ placeholder, onSubmit, disabled }: any) {
+function SingleInput({ placeholder, onSubmit, disabled }: { placeholder?: string; onSubmit: (v: string) => void; disabled?: boolean }) {
   const [v, setV] = useState("");
   return (
     <div className="flex gap-2">
