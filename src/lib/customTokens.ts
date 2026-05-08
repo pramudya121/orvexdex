@@ -75,14 +75,14 @@ export function useImportToken(addr?: string) {
     query: { enabled: !!a },
   });
 
-  const rows = r.data;
+  const rows = r.data as Array<{ status: string; result?: unknown }> | undefined;
   const ok = !!rows && rows.every((x) => x.status === "success");
   const token: Token | undefined = ok && a && rows
     ? {
         address: a,
-        name: rows[0]!.result as string,
-        symbol: rows[1]!.result as string,
-        decimals: Number(rows[2]!.result as number),
+        name: rows[0]?.result as string,
+        symbol: rows[1]?.result as string,
+        decimals: Number(rows[2]?.result as number),
         logo: FALLBACK_LOGO,
       }
     : undefined;
