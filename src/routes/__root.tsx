@@ -80,10 +80,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "ORVEX — Decentralized Exchange on LitVM LiteForge" },
       { name: "description", content: "ORVEX is a premium AMM DEX on LitVM LiteForge Testnet. Swap, provide liquidity, and earn — fully on-chain." },
       { name: "author", content: "ORVEX" },
-      { property: "og:title", content: "ORVEX — DEX on LitVM LiteForge" },
-      { property: "og:description", content: "Trade, wrap, and provide liquidity on LitVM LiteForge with ORVEX." },
+      { property: "og:title", content: "ORVEX — Decentralized Exchange on LitVM LiteForge" },
+      { property: "og:description", content: "ORVEX is a premium AMM DEX on LitVM LiteForge Testnet. Swap, provide liquidity, and earn — fully on-chain." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "ORVEX — Decentralized Exchange on LitVM LiteForge" },
+      { name: "twitter:description", content: "ORVEX is a premium AMM DEX on LitVM LiteForge Testnet. Swap, provide liquidity, and earn — fully on-chain." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/085fc2b9-9903-4fbc-bef4-e361ecdf97ee/id-preview-1b761e6e--cc567977-7c47-45a1-b4a8-9e856ac9cde0.lovable.app-1778241217647.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/085fc2b9-9903-4fbc-bef4-e361ecdf97ee/id-preview-1b761e6e--cc567977-7c47-45a1-b4a8-9e856ac9cde0.lovable.app-1778241217647.png" },
     ],
     links: [
       {
