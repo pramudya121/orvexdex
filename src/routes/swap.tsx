@@ -23,6 +23,9 @@ function SwapPage() {
   const [tokenIn, setTokenIn] = useState<Token>(NATIVE);
   const [tokenOut, setTokenOut] = useState<Token>(WZKLTC);
   const [amountIn, setAmountIn] = useState("");
+  const [slippageBps, setSlippageBps] = useState(50); // 0.50% default
+  const [deadlineMin, setDeadlineMin] = useState(20);
+  const [showSettings, setShowSettings] = useState(false);
 
   const mode: Mode = useMemo(() => {
     if (tokenIn.isNative && tokenOut.isWrapped) return "wrap";
@@ -116,8 +119,8 @@ function SwapPage() {
         return;
       }
       if (!path) return;
-      const minOut = slippageMin(expectedOut, 100); // 1% slippage
-      const dl = deadline(20);
+      const minOut = slippageMin(expectedOut, slippageBps);
+      const dl = deadline(deadlineMin);
       let hash: `0x${string}`;
       if (tokenIn.isNative) {
         hash = await writeContractAsync({
@@ -149,10 +152,53 @@ function SwapPage() {
       <div className="glass-strong rounded-3xl p-6 shadow-neon">
         <div className="flex items-center justify-between mb-5">
           <h1 className="text-2xl font-bold">Swap</h1>
-          <span className="text-xs px-2 py-1 rounded-full bg-surface-2 text-muted-foreground">
-            {mode === "wrap" ? "Wrap mode" : mode === "unwrap" ? "Unwrap mode" : "Swap mode"}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs px-2 py-1 rounded-full bg-surface-2 text-muted-foreground">
+              {mode === "wrap" ? "Wrap" : mode === "unwrap" ? "Unwrap" : "AMM"}
+            </span>
+            <button
+              onClick={() => setShowSettings((v) => !v)}
+              className="h-8 w-8 rounded-lg bg-surface-2 border border-border hover:border-primary/60 transition flex items-center justify-center text-sm"
+              aria-label="Settings"
+            >⚙</button>
+          </div>
         </div>
+
+        {showSettings && (
+          <div className="mb-4 p-4 rounded-2xl bg-surface-2/70 border border-border space-y-3">
+            <div>
+              <div className="flex justify-between text-xs text-muted-foreground mb-2">
+                <span>Slippage tolerance</span>
+                <span className="text-accent">{(slippageBps / 100).toFixed(2)}%</span>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {[10, 50, 100, 300].map((bps) => (
+                  <button key={bps} onClick={() => setSlippageBps(bps)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${slippageBps === bps ? "bg-gradient-brand text-primary-foreground border-transparent" : "bg-surface border-border hover:border-primary/60"}`}
+                  >{(bps / 100).toFixed(bps < 100 ? 2 : 1)}%</button>
+                ))}
+                <input
+                  type="number" min={0.01} max={50} step={0.01}
+                  value={(slippageBps / 100).toString()}
+                  onChange={(e) => setSlippageBps(Math.max(1, Math.min(5000, Math.round(+e.target.value * 100))))}
+                  className="w-20 px-2 py-1.5 rounded-lg bg-surface border border-border text-xs outline-none focus:border-primary"
+                  placeholder="custom"
+                />
+              </div>
+              {slippageBps > 300 && <div className="text-[11px] text-amber-400 mt-1.5">High slippage — your trade may be front-run.</div>}
+            </div>
+            <div>
+              <div className="flex justify-between text-xs text-muted-foreground mb-2">
+                <span>Transaction deadline</span>
+                <span className="text-accent">{deadlineMin} min</span>
+              </div>
+              <input type="number" min={1} max={120} value={deadlineMin}
+                onChange={(e) => setDeadlineMin(Math.max(1, Math.min(120, +e.target.value || 20)))}
+                className="w-full px-3 py-1.5 rounded-lg bg-surface border border-border text-xs outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+        )}
 
         <TokenPanel
           label="From"
@@ -189,7 +235,8 @@ function SwapPage() {
               <span className="shrink-0">Rate</span>
               <span className="text-right truncate">1 {tokenIn.symbol} ≈ {fmt((expectedOut * 10n ** BigInt(tokenIn.decimals)) / (amountInWei || 1n), tokenOut.decimals, 6)} {tokenOut.symbol}</span>
             </div>
-            <div className="flex justify-between"><span>Slippage</span><span>1.00%</span></div>
+            <div className="flex justify-between"><span>Slippage</span><span>{(slippageBps / 100).toFixed(2)}%</span></div>
+            <div className="flex justify-between gap-2"><span className="shrink-0">Min received</span><span className="text-right truncate">{fmt(slippageMin(expectedOut, slippageBps), tokenOut.decimals)} {tokenOut.symbol}</span></div>
             <div className="flex justify-between gap-2">
               <span className="shrink-0">Route</span>
               <span className="text-right truncate text-accent">

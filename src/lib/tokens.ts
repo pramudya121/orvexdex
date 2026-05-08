@@ -1,4 +1,5 @@
 import { ADDR } from "./chain";
+import orvxLogo from "@/assets/orvx-token.png";
 
 export type Token = {
   address: `0x${string}`;
@@ -42,7 +43,7 @@ export const TOKENS: Token[] = [
   { address: ADDR.ADA, symbol: "ADA", name: "Cardano", decimals: 18, logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/2010.png", faucetIndex: 3 },
   { address: ADDR.ZEC, symbol: "ZEC", name: "Zcash", decimals: 18, logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/1437.png", faucetIndex: 4 },
   { address: ADDR.XMR, symbol: "XMR", name: "Monero", decimals: 18, logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/328.png", faucetIndex: 5 },
-  { address: ADDR.ORVX, symbol: "ORVX", name: "Orvex", decimals: 18, logo: LTC_LOGO, faucetIndex: 6 },
+  { address: ADDR.ORVX, symbol: "ORVX", name: "Orvex", decimals: 18, logo: orvxLogo, faucetIndex: 6 },
 ];
 
 // Faucet token list (matches contract index ordering)
