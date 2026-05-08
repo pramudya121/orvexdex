@@ -1,4 +1,5 @@
 import { ADDR } from "./chain";
+import orvxLogo from "@/assets/orvx-token.png";
 
 export type Token = {
   address: `0x${string}`;
