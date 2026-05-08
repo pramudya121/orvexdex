@@ -32,12 +32,21 @@ type Mode = "wrap" | "unwrap" | "swap";
 function SwapPage() {
   const { address } = useAccount();
   const toast = useToast();
-  const [tokenIn, setTokenIn] = useState<Token>(NATIVE);
-  const [tokenOut, setTokenOut] = useState<Token>(WZKLTC);
+  const sp = Route.useSearch();
+  const [tokenIn, setTokenIn] = useState<Token>(() => findTokenByAddr(sp.from) ?? NATIVE);
+  const [tokenOut, setTokenOut] = useState<Token>(() => findTokenByAddr(sp.to) ?? WZKLTC);
   const [amountIn, setAmountIn] = useState("");
   const [slippageBps, setSlippageBps] = useState(50); // 0.50% default
   const [deadlineMin, setDeadlineMin] = useState(20);
   const [showSettings, setShowSettings] = useState(false);
+
+  useEffect(() => {
+    const a = findTokenByAddr(sp.from);
+    const b = findTokenByAddr(sp.to);
+    if (a) setTokenIn(a);
+    if (b) setTokenOut(b);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sp.from, sp.to]);
 
   const mode: Mode = useMemo(() => {
     if (tokenIn.isNative && tokenOut.isWrapped) return "wrap";
