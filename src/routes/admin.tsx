@@ -161,7 +161,7 @@ function AdminWithdrawForm({ onSubmit, disabled }: { onSubmit: (idx: number, amt
   );
 }
 
-function UserClaimForm({ onSubmit, disabled }: any) {
+function UserClaimForm({ onSubmit, disabled }: { onSubmit: (user: string, idx: number, count: string) => void; disabled?: boolean }) {
   const [user, setUser] = useState("");
   const [idx, setIdx] = useState(FAUCET_TOKENS[0].faucetIndex!);
   const [count, setCount] = useState("");
