@@ -185,15 +185,21 @@ function SwapPage() {
 
         {mode === "swap" && expectedOut > 0n && amountInWei > 0n && (
           <div className="mt-4 p-3 rounded-xl bg-surface-2 text-xs text-muted-foreground space-y-1">
-            <div className="flex justify-between">
-              <span>Rate</span>
-              <span>1 {tokenIn.symbol} ≈ {fmt((expectedOut * 10n ** BigInt(tokenIn.decimals)) / (amountInWei || 1n), tokenOut.decimals, 6)} {tokenOut.symbol}</span>
+            <div className="flex justify-between gap-2">
+              <span className="shrink-0">Rate</span>
+              <span className="text-right truncate">1 {tokenIn.symbol} ≈ {fmt((expectedOut * 10n ** BigInt(tokenIn.decimals)) / (amountInWei || 1n), tokenOut.decimals, 6)} {tokenOut.symbol}</span>
             </div>
-            <div className="flex justify-between">
-              <span>Slippage</span><span>1.00%</span>
+            <div className="flex justify-between"><span>Slippage</span><span>1.00%</span></div>
+            <div className="flex justify-between gap-2">
+              <span className="shrink-0">Route</span>
+              <span className="text-right truncate text-accent">
+                {route.hops === 2 ? `${tokenIn.symbol} → wzkLTC → ${tokenOut.symbol}` : `${tokenIn.symbol} → ${tokenOut.symbol}`}
+                {route.hops === 2 && <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-accent/20">SMART</span>}
+              </span>
             </div>
           </div>
         )}
+
 
         <button
           onClick={handleAction}
