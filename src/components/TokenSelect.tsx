@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { TOKENS, type Token } from "@/lib/tokens";
+import { type Token } from "@/lib/tokens";
+import { useAllTokens, useCustomTokens, useImportToken } from "@/lib/customTokens";
 
 export function TokenSelect({
   value,
@@ -14,9 +15,13 @@ export function TokenSelect({
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
+  const allTokens = useAllTokens();
+  const { remove: removeCustom, add: addCustom, list: customList } = useCustomTokens();
+  const customSet = useMemo(() => new Set(customList.map((t) => t.address.toLowerCase())), [customList]);
+  const importInfo = useImportToken(q.trim().startsWith("0x") ? q.trim() : undefined);
 
   const filtered = useMemo(() => {
-    const list = TOKENS.filter((t) => !exclude || t.address !== exclude.address);
+    const list = allTokens.filter((t) => !exclude || t.address.toLowerCase() !== exclude.address.toLowerCase());
     const needle = q.trim().toLowerCase();
     if (!needle) return list;
     return list.filter(
@@ -25,7 +30,7 @@ export function TokenSelect({
         t.name.toLowerCase().includes(needle) ||
         t.address.toLowerCase().includes(needle),
     );
-  }, [q, exclude]);
+  }, [q, exclude, allTokens]);
 
   return (
     <>
@@ -55,8 +60,27 @@ export function TokenSelect({
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">⌕</span>
             </div>
             <div className="space-y-1 max-h-[55vh] overflow-y-auto pr-1">
-              {filtered.length === 0 && (
+              {filtered.length === 0 && !importInfo.token && !importInfo.isLoading && (
                 <div className="text-center text-sm text-muted-foreground py-8">No tokens match "{q}"</div>
+              )}
+              {importInfo.isLoading && filtered.length === 0 && (
+                <div className="text-center text-sm text-muted-foreground py-6">Looking up token…</div>
+              )}
+              {importInfo.token && !filtered.some((t) => t.address.toLowerCase() === importInfo.token!.address.toLowerCase()) && (
+                <div className="p-3 rounded-xl border border-accent/40 bg-accent/5 mb-2">
+                  <div className="flex items-center gap-3 mb-2">
+                    <img src={importInfo.token.logo} alt={importInfo.token.symbol} className="h-8 w-8 rounded-full" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{importInfo.token.symbol} <span className="text-[10px] text-muted-foreground">unverified</span></div>
+                      <div className="text-xs text-muted-foreground truncate">{importInfo.token.name}</div>
+                    </div>
+                    <button
+                      onClick={() => { addCustom(importInfo.token!); onChange(importInfo.token!); setOpen(false); }}
+                      className="px-3 py-1.5 rounded-lg bg-gradient-brand text-primary-foreground text-xs font-semibold"
+                    >Import</button>
+                  </div>
+                  <div className="text-[11px] text-amber-400">Anyone can create a token. Verify the contract address before trading.</div>
+                </div>
               )}
               {filtered.map((t) => (
                 <button
@@ -70,6 +94,15 @@ export function TokenSelect({
                     <div className="text-xs text-muted-foreground truncate">{t.name}</div>
                   </div>
                   {t.isNative && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/20 text-accent">NATIVE</span>}
+                  {customSet.has(t.address.toLowerCase()) && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); removeCustom(t.address); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); removeCustom(t.address); } }}
+                      className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-2 text-muted-foreground hover:text-destructive border border-border"
+                    >remove</span>
+                  )}
                 </button>
               ))}
             </div>
