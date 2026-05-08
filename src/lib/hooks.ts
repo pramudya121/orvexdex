@@ -61,6 +61,50 @@ export function useAmountsOut(amountIn: bigint, path?: `0x${string}`[]) {
 }
 
 /**
+ * Smart router for EXACT-OUT trades: tries direct & multi-hop,
+ * returns the path with the SMALLEST input.
+ */
+export function useBestRouteExactOut(amountOut: bigint, tokenIn?: `0x${string}`, tokenOut?: `0x${string}`) {
+  const sameAsHop = (t?: `0x${string}`) => t && t.toLowerCase() === ADDR.wzkLTC.toLowerCase();
+  const directPath = tokenIn && tokenOut && tokenIn.toLowerCase() !== tokenOut.toLowerCase() ? [tokenIn, tokenOut] : undefined;
+  const hopPath = tokenIn && tokenOut && !sameAsHop(tokenIn) && !sameAsHop(tokenOut) && tokenIn.toLowerCase() !== tokenOut.toLowerCase()
+    ? [tokenIn, ADDR.wzkLTC, tokenOut] as `0x${string}`[]
+    : undefined;
+  const ZERO = "0x0000000000000000000000000000000000000000" as const;
+
+  const results = useReadContracts({
+    contracts: [
+      directPath && amountOut > 0n
+        ? { address: ADDR.router, abi: routerAbi, functionName: "getAmountsIn", args: [amountOut, directPath] as const }
+        : { address: ADDR.router, abi: routerAbi, functionName: "getAmountsIn", args: [0n, [ZERO, ZERO]] as const },
+      hopPath && amountOut > 0n
+        ? { address: ADDR.router, abi: routerAbi, functionName: "getAmountsIn", args: [amountOut, hopPath] as const }
+        : { address: ADDR.router, abi: routerAbi, functionName: "getAmountsIn", args: [0n, [ZERO, ZERO]] as const },
+    ],
+    allowFailure: true,
+    query: { enabled: amountOut > 0n && !!tokenIn && !!tokenOut, refetchInterval: 8000 },
+  });
+
+  const direct = results.data?.[0];
+  const hop = results.data?.[1];
+  const directIn = direct?.status === "success" ? (direct.result as bigint[]) : undefined;
+  const hopIn = hop?.status === "success" ? (hop.result as bigint[]) : undefined;
+  const directAmt = directIn && directPath ? directIn[0] : 0n;
+  const hopAmt = hopIn && hopPath ? hopIn[0] : 0n;
+
+  let bestPath: `0x${string}`[] | undefined;
+  let bestIn = 0n;
+  let hops = 0;
+  // pick smallest non-zero input
+  if (directAmt > 0n && (hopAmt === 0n || directAmt <= hopAmt)) {
+    bestPath = directPath; bestIn = directAmt; hops = 1;
+  } else if (hopAmt > 0n) {
+    bestPath = hopPath; bestIn = hopAmt; hops = 2;
+  }
+  return { path: bestPath, amountIn: bestIn, hops, isLoading: results.isLoading };
+}
+
+/**
  * Smart router: tries direct path A→B and multi-hop A→WzkLTC→B,
  * returns the path with the best output (AMM optimal route).
  */

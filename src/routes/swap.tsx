@@ -6,9 +6,10 @@ import { NATIVE, TOKENS, WZKLTC, type Token } from "@/lib/tokens";
 import { ADDR } from "@/lib/chain";
 import { erc20Abi, wzkltcAbi } from "@/lib/abis/wzkltc";
 import { routerAbi } from "@/lib/abis/router";
-import { useAllowance, useBestRoute, useGetPair, usePairReserves, useTokenBalance, MAX_UINT256 } from "@/lib/hooks";
-import { deadline, fmt, safeParse, slippageMin } from "@/lib/format";
+import { useAllowance, useBestRoute, useBestRouteExactOut, useGetPair, usePairReserves, useTokenBalance, MAX_UINT256 } from "@/lib/hooks";
+import { deadline, fmt, safeParse, slippageMin, slippageMax } from "@/lib/format";
 import { useToast } from "@/components/ui/toaster";
+import { explorerAddr } from "@/lib/chain";
 
 type SwapSearch = { from?: string; to?: string };
 
@@ -36,6 +37,8 @@ function SwapPage() {
   const [tokenIn, setTokenIn] = useState<Token>(() => findTokenByAddr(sp.from) ?? NATIVE);
   const [tokenOut, setTokenOut] = useState<Token>(() => findTokenByAddr(sp.to) ?? WZKLTC);
   const [amountIn, setAmountIn] = useState("");
+  const [amountOut, setAmountOut] = useState("");
+  const [tradeMode, setTradeMode] = useState<"exactIn" | "exactOut">("exactIn");
   const [slippageBps, setSlippageBps] = useState(50); // 0.50% default
   const [deadlineMin, setDeadlineMin] = useState(20);
   const [showSettings, setShowSettings] = useState(false);
@@ -55,6 +58,7 @@ function SwapPage() {
   }, [tokenIn, tokenOut]);
 
   const amountInWei = safeParse(amountIn, tokenIn.decimals);
+  const amountOutWei = safeParse(amountOut, tokenOut.decimals);
 
   // Native balance
   const nativeBal = useBalance({ address, query: { refetchInterval: 8000 } });
@@ -68,13 +72,16 @@ function SwapPage() {
   // Smart routing: best of direct vs multi-hop via WzkLTC
   const tokenInAddr = (tokenIn.isNative ? ADDR.wzkLTC : tokenIn.address) as `0x${string}`;
   const tokenOutAddr = (tokenOut.isNative ? ADDR.wzkLTC : tokenOut.address) as `0x${string}`;
-  const route = useBestRoute(mode === "swap" ? amountInWei : 0n, tokenInAddr, tokenOutAddr);
+  const routeIn = useBestRoute(mode === "swap" && tradeMode === "exactIn" ? amountInWei : 0n, tokenInAddr, tokenOutAddr);
+  const routeOut = useBestRouteExactOut(mode === "swap" && tradeMode === "exactOut" ? amountOutWei : 0n, tokenInAddr, tokenOutAddr);
+  const route = tradeMode === "exactIn" ? routeIn : { path: routeOut.path, hops: routeOut.hops };
   const path = mode === "swap" ? route.path : undefined;
 
-  const expectedOut = useMemo<bigint>(() => {
-    if (mode === "wrap" || mode === "unwrap") return amountInWei;
-    return route.amountOut;
-  }, [mode, amountInWei, route.amountOut]);
+  // Effective amounts shown in each panel
+  const effInWei = mode === "swap" && tradeMode === "exactOut" ? routeOut.amountIn : amountInWei;
+  const effOutWei = mode === "wrap" || mode === "unwrap" ? amountInWei
+    : tradeMode === "exactIn" ? routeIn.amountOut : amountOutWei;
+  const expectedOut = effOutWei; // back-compat alias
 
   // Price impact (direct path only). Returns percentage number (0–100).
   const directPair = useGetPair(
@@ -86,7 +93,7 @@ function SwapPage() {
     pairAddr && pairAddr !== "0x0000000000000000000000000000000000000000" ? pairAddr : undefined,
   );
   const priceImpact = useMemo<number | null>(() => {
-    if (mode !== "swap" || route.hops !== 1 || amountInWei <= 0n || expectedOut <= 0n) return null;
+    if (mode !== "swap" || route.hops !== 1 || effInWei <= 0n || effOutWei <= 0n) return null;
     const r = reserves.data;
     const reserveTuple = r?.[0]?.result as readonly [bigint, bigint, number] | undefined;
     const t0 = r?.[1]?.result as `0x${string}` | undefined;
@@ -98,11 +105,11 @@ function SwapPage() {
     // mid price (out per in) vs execution price
     const PREC = 10n ** 18n;
     const mid = (reserveOut * PREC) / reserveIn;
-    const exec = (expectedOut * PREC) / amountInWei;
+    const exec = (effOutWei * PREC) / (effInWei || 1n);
     if (mid === 0n) return null;
     const diff = mid > exec ? mid - exec : 0n;
     return Number((diff * 10000n) / mid) / 100; // % with 2 decimals
-  }, [mode, route.hops, amountInWei, expectedOut, reserves.data, tokenInAddr]);
+  }, [mode, route.hops, effInWei, effOutWei, reserves.data, tokenInAddr]);
 
 
 
@@ -112,7 +119,7 @@ function SwapPage() {
     address,
     ADDR.router,
   );
-  const needsApproval = mode === "swap" && !tokenIn.isNative && (allowance.data as bigint | undefined ?? 0n) < amountInWei;
+  const needsApproval = mode === "swap" && !tokenIn.isNative && (allowance.data as bigint | undefined ?? 0n) < effInWei;
 
   const { writeContractAsync, isPending } = useWriteContract();
   const [pendingHash, setPendingHash] = useState<`0x${string}` | undefined>();
@@ -123,6 +130,7 @@ function SwapPage() {
       toast.push({ title: "Transaction confirmed", type: "success", hash: pendingHash });
       setPendingHash(undefined);
       setAmountIn("");
+      setAmountOut("");
       allowance.refetch();
       nativeBal.refetch();
       inBal.refetch();
@@ -135,12 +143,14 @@ function SwapPage() {
     setTokenIn(tokenOut);
     setTokenOut(tokenIn);
     setAmountIn("");
+    setAmountOut("");
   };
 
   const buttonLabel = mode === "wrap" ? "WRAP" : mode === "unwrap" ? "UNWRAP" : needsApproval ? `Approve ${tokenIn.symbol}` : "SWAP";
 
   const handleAction = async () => {
-    if (!address || amountInWei <= 0n) return;
+    if (!address) return;
+    if (mode === "swap" && tradeMode === "exactOut" ? amountOutWei <= 0n : amountInWei <= 0n) return;
     try {
       if (mode === "wrap") {
         const hash = await writeContractAsync({
@@ -169,24 +179,45 @@ function SwapPage() {
         return;
       }
       if (!path) return;
-      const minOut = slippageMin(expectedOut, slippageBps);
       const dl = deadline(deadlineMin);
       let hash: `0x${string}`;
-      if (tokenIn.isNative) {
-        hash = await writeContractAsync({
-          address: ADDR.router, abi: routerAbi, functionName: "swapExactETHForTokens",
-          args: [minOut, path, address, dl], value: amountInWei,
-        });
-      } else if (tokenOut.isNative) {
-        hash = await writeContractAsync({
-          address: ADDR.router, abi: routerAbi, functionName: "swapExactTokensForETH",
-          args: [amountInWei, minOut, path, address, dl],
-        });
+      if (tradeMode === "exactIn") {
+        const minOut = slippageMin(effOutWei, slippageBps);
+        if (tokenIn.isNative) {
+          hash = await writeContractAsync({
+            address: ADDR.router, abi: routerAbi, functionName: "swapExactETHForTokens",
+            args: [minOut, path, address, dl], value: amountInWei,
+          });
+        } else if (tokenOut.isNative) {
+          hash = await writeContractAsync({
+            address: ADDR.router, abi: routerAbi, functionName: "swapExactTokensForETH",
+            args: [amountInWei, minOut, path, address, dl],
+          });
+        } else {
+          hash = await writeContractAsync({
+            address: ADDR.router, abi: routerAbi, functionName: "swapExactTokensForTokens",
+            args: [amountInWei, minOut, path, address, dl],
+          });
+        }
       } else {
-        hash = await writeContractAsync({
-          address: ADDR.router, abi: routerAbi, functionName: "swapExactTokensForTokens",
-          args: [amountInWei, minOut, path, address, dl],
-        });
+        // exact-out: send exactly amountOutWei, cap input by slippageMax(effInWei)
+        const maxIn = slippageMax(effInWei, slippageBps);
+        if (tokenIn.isNative) {
+          hash = await writeContractAsync({
+            address: ADDR.router, abi: routerAbi, functionName: "swapETHForExactTokens",
+            args: [amountOutWei, path, address, dl], value: maxIn,
+          });
+        } else if (tokenOut.isNative) {
+          hash = await writeContractAsync({
+            address: ADDR.router, abi: routerAbi, functionName: "swapTokensForExactETH",
+            args: [amountOutWei, maxIn, path, address, dl],
+          });
+        } else {
+          hash = await writeContractAsync({
+            address: ADDR.router, abi: routerAbi, functionName: "swapTokensForExactTokens",
+            args: [amountOutWei, maxIn, path, address, dl],
+          });
+        }
       }
       setPendingHash(hash);
       toast.push({ title: "Swapping…", hash });
@@ -195,7 +226,8 @@ function SwapPage() {
     }
   };
 
-  const disabled = !address || amountInWei <= 0n || isPending || !!pendingHash || (mode === "swap" && !needsApproval && expectedOut === 0n);
+  const userAmt = mode === "swap" && tradeMode === "exactOut" ? amountOutWei : amountInWei;
+  const disabled = !address || userAmt <= 0n || isPending || !!pendingHash || (mode === "swap" && !needsApproval && (effInWei === 0n || effOutWei === 0n));
 
   return (
     <div className="max-w-md mx-auto px-4 py-12">
@@ -255,9 +287,10 @@ function SwapPage() {
           token={tokenIn}
           onTokenChange={setTokenIn}
           excludeFor={tokenOut}
-          amount={amountIn}
-          onAmountChange={setAmountIn}
+          amount={mode === "swap" && tradeMode === "exactOut" ? fmt(effInWei, tokenIn.decimals) : amountIn}
+          onAmountChange={(v) => { setTradeMode("exactIn"); setAmountIn(v); }}
           balance={balanceIn}
+          readOnly={mode === "swap" && tradeMode === "exactOut"}
         />
 
         <div className="flex justify-center -my-2 relative z-10">
@@ -274,19 +307,24 @@ function SwapPage() {
           token={tokenOut}
           onTokenChange={setTokenOut}
           excludeFor={tokenIn}
-          amount={fmt(expectedOut, tokenOut.decimals)}
+          amount={mode === "swap" && tradeMode === "exactOut" ? amountOut : fmt(effOutWei, tokenOut.decimals)}
+          onAmountChange={mode === "swap" ? (v) => { setTradeMode("exactOut"); setAmountOut(v); } : undefined}
           balance={balanceOut}
-          readOnly
+          readOnly={mode !== "swap" || tradeMode === "exactIn"}
         />
 
-        {mode === "swap" && expectedOut > 0n && amountInWei > 0n && (
+        {mode === "swap" && effOutWei > 0n && effInWei > 0n && (
           <div className="mt-4 p-3 rounded-xl bg-surface-2 text-xs text-muted-foreground space-y-1">
             <div className="flex justify-between gap-2">
               <span className="shrink-0">Rate</span>
-              <span className="text-right truncate">1 {tokenIn.symbol} ≈ {fmt((expectedOut * 10n ** BigInt(tokenIn.decimals)) / (amountInWei || 1n), tokenOut.decimals, 6)} {tokenOut.symbol}</span>
+              <span className="text-right truncate">1 {tokenIn.symbol} ≈ {fmt((effOutWei * 10n ** BigInt(tokenIn.decimals)) / (effInWei || 1n), tokenOut.decimals, 6)} {tokenOut.symbol}</span>
             </div>
             <div className="flex justify-between"><span>Slippage</span><span>{(slippageBps / 100).toFixed(2)}%</span></div>
-            <div className="flex justify-between gap-2"><span className="shrink-0">Min received</span><span className="text-right truncate">{fmt(slippageMin(expectedOut, slippageBps), tokenOut.decimals)} {tokenOut.symbol}</span></div>
+            {tradeMode === "exactIn" ? (
+              <div className="flex justify-between gap-2"><span className="shrink-0">Min received</span><span className="text-right truncate">{fmt(slippageMin(effOutWei, slippageBps), tokenOut.decimals)} {tokenOut.symbol}</span></div>
+            ) : (
+              <div className="flex justify-between gap-2"><span className="shrink-0">Max sold</span><span className="text-right truncate">{fmt(slippageMax(effInWei, slippageBps), tokenIn.decimals)} {tokenIn.symbol}</span></div>
+            )}
             {priceImpact !== null && (
               <div className="flex justify-between">
                 <span>Price impact</span>
@@ -301,6 +339,19 @@ function SwapPage() {
                 {route.hops === 2 ? `${tokenIn.symbol} → wzkLTC → ${tokenOut.symbol}` : `${tokenIn.symbol} → ${tokenOut.symbol}`}
                 {route.hops === 2 && <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-accent/20">SMART</span>}
               </span>
+            </div>
+            {pairAddr && pairAddr !== "0x0000000000000000000000000000000000000000" && route.hops === 1 && (
+              <div className="flex justify-between gap-2">
+                <span className="shrink-0">Pair</span>
+                <a href={explorerAddr(pairAddr)} target="_blank" rel="noreferrer"
+                   className="text-right truncate font-mono hover:text-accent">
+                  {pairAddr.slice(0, 8)}…{pairAddr.slice(-6)} ↗
+                </a>
+              </div>
+            )}
+            <div className="flex justify-between pt-1 border-t border-border/50">
+              <span>Mode</span>
+              <span className="text-accent">{tradeMode === "exactIn" ? "Exact input" : "Exact output"}</span>
             </div>
           </div>
         )}

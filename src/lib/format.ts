@@ -23,3 +23,6 @@ export const deadline = (mins = 20) => BigInt(Math.floor(Date.now() / 1000) + mi
 
 export const slippageMin = (amount: bigint, bps = 50): bigint =>
   (amount * BigInt(10000 - bps)) / 10000n;
+
+export const slippageMax = (amount: bigint, bps = 50): bigint =>
+  (amount * BigInt(10000 + bps)) / 10000n;

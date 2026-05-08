@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useAccount, useReadContract, useReadContracts } from "wagmi";
+import { useAccount, useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { ADDR, explorerAddr } from "@/lib/chain";
 import { factoryAbi } from "@/lib/abis/factory";
 import { pairAbi } from "@/lib/abis/pair";
-import { findToken } from "@/lib/tokens";
+import { findToken, TOKENS, type Token } from "@/lib/tokens";
 import { fmt } from "@/lib/format";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { usePoolVolumes, VolumeBadge } from "@/components/PoolVolumes";
+import { useToast } from "@/components/ui/toaster";
 
 type SortKey = "tvl" | "supply" | "new";
 
@@ -75,6 +77,8 @@ function PoolsPage() {
       </div>
 
       <PoolList pairAddrs={pairAddrs} q={q} sort={sort} onlyMine={onlyMine} />
+
+      <CreatePairCard />
     </div>
   );
 }
@@ -99,6 +103,8 @@ function PoolList({ pairAddrs, q, sort, onlyMine }: { pairAddrs: `0x${string}`[]
     [pairAddrs, address],
   );
   const myBals = useReadContracts({ contracts: myCalls, query: { enabled: !!address && pairAddrs.length > 0, refetchInterval: 15000 } });
+
+  const volumes = usePoolVolumes(pairAddrs);
 
   const enriched = useMemo(() => {
     return pairAddrs.map((pair, i) => {
@@ -174,7 +180,7 @@ function PoolList({ pairAddrs, q, sort, onlyMine }: { pairAddrs: `0x${string}`[]
                   </a>
                 </div>
               </div>
-              <div className="flex gap-5 text-sm shrink-0">
+              <div className="flex gap-5 text-sm shrink-0 flex-wrap">
                 <div>
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{p.tk0?.symbol}</div>
                   <div className="font-mono">{fmt(p.r?.[0], p.tk0?.decimals ?? 18)}</div>
@@ -186,6 +192,12 @@ function PoolList({ pairAddrs, q, sort, onlyMine }: { pairAddrs: `0x${string}`[]
                 <div>
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground">LP Supply</div>
                   <div className="font-mono">{fmt(p.ts, 18)}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Recent Volume</div>
+                  <div className="text-xs">
+                    <VolumeBadge vol={volumes.data?.get(p.pair.toLowerCase())} sym0={p.tk0?.symbol} sym1={p.tk1?.symbol} d0={p.tk0?.decimals ?? 18} d1={p.tk1?.decimals ?? 18} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -216,5 +228,86 @@ function PoolList({ pairAddrs, q, sort, onlyMine }: { pairAddrs: `0x${string}`[]
         );
       })}
     </div>
+  );
+}
+
+function CreatePairCard() {
+  const toast = useToast();
+  const [a, setA] = useState<Token>(TOKENS[0]);
+  const [b, setB] = useState<Token>(TOKENS[2]);
+  const aAddr = (a.isNative ? ADDR.wzkLTC : a.address) as `0x${string}`;
+  const bAddr = (b.isNative ? ADDR.wzkLTC : b.address) as `0x${string}`;
+  const sameToken = aAddr.toLowerCase() === bAddr.toLowerCase();
+  const existing = useReadContract({
+    address: ADDR.factory, abi: factoryAbi, functionName: "getPair",
+    args: [aAddr, bAddr],
+    query: { enabled: !sameToken, refetchInterval: 10000 },
+  });
+  const exists = !!existing.data && existing.data !== "0x0000000000000000000000000000000000000000";
+
+  const { writeContractAsync, isPending } = useWriteContract();
+  const [hash, setHash] = useState<`0x${string}` | undefined>();
+  const receipt = useWaitForTransactionReceipt({ hash });
+  useEffect(() => {
+    if (receipt.isSuccess && hash) {
+      toast.push({ title: "Pair created", type: "success", hash });
+      setHash(undefined);
+      existing.refetch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [receipt.isSuccess]);
+
+  const create = async () => {
+    try {
+      const h = await writeContractAsync({
+        address: ADDR.factory, abi: factoryAbi, functionName: "createPair", args: [aAddr, bAddr],
+      });
+      setHash(h);
+      toast.push({ title: "Creating pair…", hash: h });
+    } catch (e: any) {
+      toast.push({ title: "Failed", description: e?.shortMessage || e?.message, type: "error" });
+    }
+  };
+
+  return (
+    <div className="glass rounded-2xl p-5 mt-8">
+      <h2 className="font-bold mb-1">Create New Pair</h2>
+      <p className="text-xs text-muted-foreground mb-4">Pre-create an empty pool so others can add liquidity. Creating then adding liquidity in one click is also done automatically by Add Liquidity.</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <PairTokenPicker value={a} onChange={setA} />
+        <span className="text-muted-foreground">/</span>
+        <PairTokenPicker value={b} onChange={setB} />
+        <button
+          onClick={create}
+          disabled={sameToken || exists || isPending || !!hash}
+          className="ml-auto px-4 py-2 rounded-xl bg-gradient-brand text-primary-foreground text-sm font-semibold shadow-neon disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {sameToken ? "Pick two different tokens" : exists ? "Pair already exists" : isPending || hash ? "Creating…" : "Create Pair"}
+        </button>
+      </div>
+      {exists && (
+        <a href={explorerAddr(existing.data as string)} target="_blank" rel="noreferrer"
+           className="block mt-2 text-xs font-mono text-accent hover:underline">
+          {(existing.data as string).slice(0, 10)}…{(existing.data as string).slice(-6)} ↗
+        </a>
+      )}
+    </div>
+  );
+}
+
+function PairTokenPicker({ value, onChange }: { value: Token; onChange: (t: Token) => void }) {
+  return (
+    <select
+      value={value.address + value.symbol}
+      onChange={(e) => {
+        const t = TOKENS.find((x) => x.address + x.symbol === e.target.value);
+        if (t) onChange(t);
+      }}
+      className="bg-surface-2 border border-border rounded-xl px-3 py-2 text-sm focus:border-primary outline-none"
+    >
+      {TOKENS.map((t) => (
+        <option key={t.address + t.symbol} value={t.address + t.symbol}>{t.symbol}</option>
+      ))}
+    </select>
   );
 }
