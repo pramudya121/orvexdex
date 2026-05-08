@@ -123,7 +123,7 @@ function TokenSelectIdx({ value, onChange }: { value: number; onChange: (n: numb
   );
 }
 
-function TokenAmountForm({ onSubmit, disabled, placeholder = "100", amountLabel = "amount" }: any) {
+function TokenAmountForm({ onSubmit, disabled, placeholder = "100", amountLabel = "amount" }: { onSubmit: (idx: number, amt: string) => void; disabled?: boolean; placeholder?: string; amountLabel?: string }) {
   const [idx, setIdx] = useState(FAUCET_TOKENS[0].faucetIndex!);
   const [amt, setAmt] = useState("");
   return (
