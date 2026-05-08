@@ -7,6 +7,7 @@ import { factoryAbi } from "@/lib/abis/factory";
 import { pairAbi } from "@/lib/abis/pair";
 import { fmt } from "@/lib/format";
 import { useMemo } from "react";
+import { ActivityFeed } from "@/components/ActivityFeed";
 
 export const Route = createFileRoute("/portfolio")({
   component: PortfolioPage,
@@ -51,6 +52,9 @@ function PortfolioPage() {
 
           <h2 className="text-lg font-semibold mb-3 mt-8">LP Positions</h2>
           <LPositions owner={address!} />
+
+          <h2 className="text-lg font-semibold mb-3 mt-8">Recent Activity</h2>
+          <ActivityFeed owner={address!} />
         </>
       )}
     </div>
