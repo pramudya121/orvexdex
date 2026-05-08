@@ -1,0 +1,18 @@
+export const faucetAbi = [
+  { inputs: [{ name: "tokenIndex", type: "uint8" }, { name: "amount", type: "uint256" }, { name: "to", type: "address" }], name: "adminWithdraw", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "tokenIndex", type: "uint8" }], name: "claim", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [], name: "claimAll", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "tokenIndex", type: "uint8" }, { name: "amount", type: "uint256" }], name: "refill", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "tokenIndex", type: "uint8" }, { name: "amount", type: "uint256" }], name: "setClaimAmount", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "seconds_", type: "uint256" }], name: "setCooldown", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "tokenIndex", type: "uint8" }, { name: "max", type: "uint256" }], name: "setMaxClaims", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "tokenIndex", type: "uint8" }, { name: "tokenAddress", type: "address" }], name: "setToken", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "user", type: "address" }, { name: "tokenIndex", type: "uint8" }, { name: "count", type: "uint256" }], name: "setUserClaimCount", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "", type: "uint256" }], name: "claimAmounts", outputs: [{ name: "", type: "uint256" }], stateMutability: "view", type: "function" },
+  { inputs: [], name: "cooldown", outputs: [{ name: "", type: "uint256" }], stateMutability: "view", type: "function" },
+  { inputs: [{ name: "", type: "address" }, { name: "", type: "uint8" }], name: "lastClaimed", outputs: [{ name: "", type: "uint256" }], stateMutability: "view", type: "function" },
+  { inputs: [{ name: "", type: "uint256" }], name: "maxClaims", outputs: [{ name: "", type: "uint256" }], stateMutability: "view", type: "function" },
+  { inputs: [], name: "owner", outputs: [{ name: "", type: "address" }], stateMutability: "view", type: "function" },
+  { inputs: [{ name: "", type: "uint256" }], name: "tokens", outputs: [{ name: "", type: "address" }], stateMutability: "view", type: "function" },
+  { inputs: [{ name: "", type: "address" }, { name: "", type: "uint8" }], name: "userClaimCount", outputs: [{ name: "", type: "uint256" }], stateMutability: "view", type: "function" },
+] as const;
