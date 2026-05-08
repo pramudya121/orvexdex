@@ -8,6 +8,8 @@ import { pairAbi } from "@/lib/abis/pair";
 import { fmt } from "@/lib/format";
 import { useMemo } from "react";
 import { ActivityFeed } from "@/components/ActivityFeed";
+import { usePoolStats, fmtWzk, type PoolMeta } from "@/lib/poolStats";
+import { findToken } from "@/lib/tokens";
 
 export const Route = createFileRoute("/portfolio")({
   component: PortfolioPage,
@@ -102,30 +104,103 @@ function LPositions({ owner }: { owner: `0x${string}` }) {
     [pairAddrs, owner],
   );
   const bals = useReadContracts({ contracts: balCalls, query: { enabled: pairAddrs.length > 0, refetchInterval: 12000 } });
-  const positions = pairAddrs
-    .map((p, i) => ({ pair: p, bal: bals.data?.[i]?.result as bigint | undefined }))
-    .filter((x) => x.bal && x.bal > 0n);
+  const heldPairs = pairAddrs.filter((_p, i) => {
+    const b = bals.data?.[i]?.result as bigint | undefined;
+    return b && b > 0n;
+  });
+
+  // Fetch metadata only for held pairs to power TVL pricing
+  const metaCalls = useMemo(
+    () => heldPairs.flatMap((p) => [
+      { address: p, abi: pairAbi, functionName: "token0" as const },
+      { address: p, abi: pairAbi, functionName: "token1" as const },
+      { address: p, abi: pairAbi, functionName: "getReserves" as const },
+      { address: p, abi: pairAbi, functionName: "totalSupply" as const },
+    ]),
+    [heldPairs],
+  );
+  const meta = useReadContracts({ contracts: metaCalls, query: { enabled: heldPairs.length > 0, refetchInterval: 15000 } });
+
+  // Build PoolMeta list — must include ALL pairs so prices can be derived from wzkLTC pools.
+  const allMetaCalls = useMemo(
+    () => pairAddrs.flatMap((p) => [
+      { address: p, abi: pairAbi, functionName: "token0" as const },
+      { address: p, abi: pairAbi, functionName: "token1" as const },
+      { address: p, abi: pairAbi, functionName: "getReserves" as const },
+    ]),
+    [pairAddrs],
+  );
+  const allMeta = useReadContracts({ contracts: allMetaCalls, query: { enabled: pairAddrs.length > 0, refetchInterval: 30000 } });
+  const poolMetas: PoolMeta[] = useMemo(() => pairAddrs.flatMap((pair, i) => {
+    const t0 = allMeta.data?.[i * 3]?.result as `0x${string}` | undefined;
+    const t1 = allMeta.data?.[i * 3 + 1]?.result as `0x${string}` | undefined;
+    const r = allMeta.data?.[i * 3 + 2]?.result as readonly [bigint, bigint, number] | undefined;
+    if (!t0 || !t1 || !r) return [];
+    return [{
+      pair, token0: t0, token1: t1,
+      reserve0: r[0], reserve1: r[1],
+      decimals0: findToken(t0)?.decimals ?? 18,
+      decimals1: findToken(t1)?.decimals ?? 18,
+    }];
+  }), [pairAddrs, allMeta.data]);
+  const stats = usePoolStats(poolMetas);
+
+  const positions = heldPairs.map((p, i) => {
+    const t0 = meta.data?.[i * 4]?.result as `0x${string}` | undefined;
+    const t1 = meta.data?.[i * 4 + 1]?.result as `0x${string}` | undefined;
+    const r = meta.data?.[i * 4 + 2]?.result as readonly [bigint, bigint, number] | undefined;
+    const ts = meta.data?.[i * 4 + 3]?.result as bigint | undefined;
+    const bal = bals.data?.[pairAddrs.indexOf(p)]?.result as bigint | undefined;
+    const stat = stats.data?.stats.get(p.toLowerCase());
+    const sharePct = bal && ts && ts > 0n ? Number((bal * 10000n) / ts) / 100 : 0;
+    const valueWzk = bal && ts && ts > 0n && stat ? (stat.tvlWzk * bal) / ts : 0n;
+    return { pair: p, bal: bal!, t0, t1, r, ts, valueWzk, sharePct, vol24Wzk: stat?.vol24Wzk ?? 0n };
+  });
 
   if (positions.length === 0) {
     return <div className="glass rounded-2xl p-8 text-center text-muted-foreground text-sm">No LP positions yet.</div>;
   }
 
+  const totalValue = positions.reduce<bigint>((a, p) => a + p.valueWzk, 0n);
+
   return (
-    <div className="space-y-2">
-      {positions.map((p) => <LPRow key={p.pair} pair={p.pair} balance={p.bal!} />)}
-    </div>
+    <>
+      <div className="glass-strong rounded-2xl p-4 mb-3 flex items-center justify-between">
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Total LP value</div>
+          <div className="font-bold text-2xl text-gradient-gold">{fmtWzk(totalValue, 4)} <span className="text-sm text-muted-foreground">wzkLTC</span></div>
+        </div>
+        <div className="text-right">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Positions</div>
+          <div className="font-bold text-2xl">{positions.length}</div>
+        </div>
+      </div>
+      <div className="space-y-2">
+        {positions.map((p) => (
+          <LPRow
+            key={p.pair}
+            pair={p.pair}
+            balance={p.bal}
+            t0={p.t0} t1={p.t1}
+            valueWzk={p.valueWzk}
+            sharePct={p.sharePct}
+            vol24Wzk={p.vol24Wzk}
+          />
+        ))}
+      </div>
+    </>
   );
 }
 
-function LPRow({ pair, balance }: { pair: `0x${string}`; balance: bigint }) {
-  const meta = useReadContracts({
-    contracts: [
-      { address: pair, abi: pairAbi, functionName: "token0" },
-      { address: pair, abi: pairAbi, functionName: "token1" },
-    ],
-  });
-  const t0 = meta.data?.[0]?.result as `0x${string}` | undefined;
-  const t1 = meta.data?.[1]?.result as `0x${string}` | undefined;
+function LPRow({ pair, balance, t0, t1, valueWzk, sharePct, vol24Wzk }: {
+  pair: `0x${string}`;
+  balance: bigint;
+  t0?: `0x${string}`;
+  t1?: `0x${string}`;
+  valueWzk: bigint;
+  sharePct: number;
+  vol24Wzk: bigint;
+}) {
   const tk0 = t0 ? TOKENS.find((x) => x.address.toLowerCase() === t0.toLowerCase()) : undefined;
   const tk1 = t1 ? TOKENS.find((x) => x.address.toLowerCase() === t1.toLowerCase()) : undefined;
   return (
@@ -136,13 +211,17 @@ function LPRow({ pair, balance }: { pair: `0x${string}`; balance: bigint }) {
           {tk1 && <img src={tk1.logo} className="h-8 w-8 rounded-full ring-2 ring-background" />}
         </div>
         <div>
-          <div className="font-semibold">{tk0?.symbol ?? "?"} / {tk1?.symbol ?? "?"}</div>
-          <div className="text-xs text-muted-foreground font-mono">{pair.slice(0, 8)}…</div>
+          <div className="font-semibold flex items-center gap-2">
+            {tk0?.symbol ?? "?"} / {tk1?.symbol ?? "?"}
+            {sharePct > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/15 text-accent">{sharePct < 0.01 ? "<0.01" : sharePct.toFixed(2)}%</span>}
+          </div>
+          <div className="text-xs text-muted-foreground font-mono">{pair.slice(0, 8)}… · 24h vol {fmtWzk(vol24Wzk)} wzkLTC</div>
         </div>
       </div>
       <div className="text-right">
-        <div className="text-xs text-muted-foreground">LP Tokens</div>
-        <div className="font-mono font-semibold">{fmt(balance, 18)}</div>
+        <div className="text-xs text-muted-foreground">Position value</div>
+        <div className="font-mono font-semibold text-gradient-gold">{fmtWzk(valueWzk, 4)} wzkLTC</div>
+        <div className="text-[10px] text-muted-foreground font-mono">{fmt(balance, 18, 4)} LP</div>
       </div>
     </a>
   );
