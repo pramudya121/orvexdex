@@ -10,10 +10,22 @@ import { useAllowance, useBestRoute, useGetPair, usePairReserves, useTokenBalanc
 import { deadline, fmt, safeParse, slippageMin } from "@/lib/format";
 import { useToast } from "@/components/ui/toaster";
 
+type SwapSearch = { from?: string; to?: string };
+
 export const Route = createFileRoute("/swap")({
   component: SwapPage,
   head: () => ({ meta: [{ title: "Swap — ORVEX" }] }),
+  validateSearch: (s: Record<string, unknown>): SwapSearch => ({
+    from: typeof s.from === "string" ? s.from : undefined,
+    to: typeof s.to === "string" ? s.to : undefined,
+  }),
 });
+
+function findTokenByAddr(addr?: string): Token | undefined {
+  if (!addr) return undefined;
+  const a = addr.toLowerCase();
+  return TOKENS.find((t) => t.address.toLowerCase() === a);
+}
 
 type Mode = "wrap" | "unwrap" | "swap";
 
