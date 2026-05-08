@@ -6,7 +6,7 @@ import { pairAbi } from "@/lib/abis/pair";
 import { findToken, TOKENS, type Token } from "@/lib/tokens";
 import { fmt } from "@/lib/format";
 import { useEffect, useMemo, useState } from "react";
-import { usePoolVolumes, VolumeBadge } from "@/components/PoolVolumes";
+import { usePoolStats, fmtWzk, type PoolMeta } from "@/lib/poolStats";
 import { useToast } from "@/components/ui/toaster";
 
 type SortKey = "tvl" | "supply" | "new";
@@ -42,7 +42,7 @@ function PoolsPage() {
     <div className="max-w-5xl mx-auto px-4 py-12">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gradient-brand">Pools</h1>
+          <h1 className="text-3xl font-bold text-gradient-luxe">Pools</h1>
           <p className="text-sm text-muted-foreground">All liquidity pairs on ORVEX • {total} pools</p>
         </div>
         <Link
@@ -104,7 +104,23 @@ function PoolList({ pairAddrs, q, sort, onlyMine }: { pairAddrs: `0x${string}`[]
   );
   const myBals = useReadContracts({ contracts: myCalls, query: { enabled: !!address && pairAddrs.length > 0, refetchInterval: 15000 } });
 
-  const volumes = usePoolVolumes(pairAddrs);
+  const poolMetas: PoolMeta[] = useMemo(() => {
+    return pairAddrs.flatMap((pair, i) => {
+      const t0 = meta.data?.[i * 4]?.result as `0x${string}` | undefined;
+      const t1 = meta.data?.[i * 4 + 1]?.result as `0x${string}` | undefined;
+      const r = meta.data?.[i * 4 + 2]?.result as readonly [bigint, bigint, number] | undefined;
+      if (!t0 || !t1 || !r) return [];
+      const tk0 = findToken(t0);
+      const tk1 = findToken(t1);
+      return [{
+        pair, token0: t0, token1: t1,
+        reserve0: r[0], reserve1: r[1],
+        decimals0: tk0?.decimals ?? 18,
+        decimals1: tk1?.decimals ?? 18,
+      }];
+    });
+  }, [pairAddrs, meta.data]);
+  const stats = usePoolStats(poolMetas);
 
   const enriched = useMemo(() => {
     return pairAddrs.map((pair, i) => {
@@ -115,11 +131,13 @@ function PoolList({ pairAddrs, q, sort, onlyMine }: { pairAddrs: `0x${string}`[]
       const myLp = myBals.data?.[i]?.result as bigint | undefined;
       const tk0 = t0 ? findToken(t0) : undefined;
       const tk1 = t1 ? findToken(t1) : undefined;
-      // Pseudo TVL = sum of normalized reserves (works since tokens here are 18d testnet)
-      const tvl = (r?.[0] ?? 0n) + (r?.[1] ?? 0n);
-      return { pair, idx: i, t0, t1, tk0, tk1, r, ts, myLp, tvl };
+      const stat = stats.data?.stats.get(pair.toLowerCase());
+      const tvl = stat?.tvlWzk ?? 0n;
+      const vol = stat?.vol24Wzk ?? 0n;
+      const swaps = stat?.swaps24 ?? 0;
+      return { pair, idx: i, t0, t1, tk0, tk1, r, ts, myLp, tvl, vol, swaps };
     });
-  }, [pairAddrs, meta.data, myBals.data]);
+  }, [pairAddrs, meta.data, myBals.data, stats.data]);
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -151,7 +169,19 @@ function PoolList({ pairAddrs, q, sort, onlyMine }: { pairAddrs: `0x${string}`[]
     return <div className="glass rounded-2xl p-8 text-center text-muted-foreground text-sm">No pools match your filters.</div>;
   }
 
+  // Aggregate totals across visible pools
+  const totalTvl = filtered.reduce<bigint>((a, p) => a + p.tvl, 0n);
+  const totalVol = filtered.reduce<bigint>((a, p) => a + p.vol, 0n);
+  const totalSwaps = filtered.reduce<number>((a, p) => a + p.swaps, 0);
+
   return (
+    <>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <SummaryStat label="Total TVL" value={`${fmtWzk(totalTvl)} wzkLTC`} />
+        <SummaryStat label="24h Volume" value={`${fmtWzk(totalVol)} wzkLTC`} />
+        <SummaryStat label="24h Swaps" value={totalSwaps.toString()} />
+        <SummaryStat label="Pools shown" value={filtered.length.toString()} />
+      </div>
     <div className="space-y-3">
       {filtered.map((p) => {
         const sharePct = p.myLp && p.ts && p.ts > 0n
@@ -182,22 +212,22 @@ function PoolList({ pairAddrs, q, sort, onlyMine }: { pairAddrs: `0x${string}`[]
               </div>
               <div className="flex gap-5 text-sm shrink-0 flex-wrap">
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{p.tk0?.symbol}</div>
-                  <div className="font-mono">{fmt(p.r?.[0], p.tk0?.decimals ?? 18)}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">TVL</div>
+                  <div className="font-mono font-semibold text-gradient-gold">{fmtWzk(p.tvl)} <span className="text-[10px] text-muted-foreground">wzkLTC</span></div>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{p.tk1?.symbol}</div>
-                  <div className="font-mono">{fmt(p.r?.[1], p.tk1?.decimals ?? 18)}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">24h Vol</div>
+                  <div className="font-mono">{fmtWzk(p.vol)} <span className="text-[10px] text-muted-foreground">wzkLTC</span></div>
+                  <div className="text-[10px] text-muted-foreground">{p.swaps} swaps</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Reserves</div>
+                  <div className="font-mono text-xs">{fmt(p.r?.[0], p.tk0?.decimals ?? 18, 2)} {p.tk0?.symbol}</div>
+                  <div className="font-mono text-xs">{fmt(p.r?.[1], p.tk1?.decimals ?? 18, 2)} {p.tk1?.symbol}</div>
                 </div>
                 <div>
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground">LP Supply</div>
-                  <div className="font-mono">{fmt(p.ts, 18)}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Recent Volume</div>
-                  <div className="text-xs">
-                    <VolumeBadge vol={volumes.data?.get(p.pair.toLowerCase())} sym0={p.tk0?.symbol} sym1={p.tk1?.symbol} d0={p.tk0?.decimals ?? 18} d1={p.tk1?.decimals ?? 18} />
-                  </div>
+                  <div className="font-mono">{fmt(p.ts, 18, 2)}</div>
                 </div>
               </div>
             </div>
@@ -227,6 +257,16 @@ function PoolList({ pairAddrs, q, sort, onlyMine }: { pairAddrs: `0x${string}`[]
           </div>
         );
       })}
+    </div>
+    </>
+  );
+}
+
+function SummaryStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="glass rounded-2xl p-4">
+      <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
+      <div className="font-bold text-lg text-gradient-luxe">{value}</div>
     </div>
   );
 }
