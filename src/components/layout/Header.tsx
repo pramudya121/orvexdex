@@ -9,7 +9,6 @@ const NAV = [
   { to: "/pools", label: "Pools" },
   { to: "/portfolio", label: "Portfolio" },
   { to: "/faucet", label: "Faucet" },
-  { to: "/brand", label: "Brand" },
 ];
 
 export function Header() {
