@@ -1,0 +1,53 @@
+type Factory @entity(immutable: false) {
+  id: ID!
+  pairCount: Int!
+  totalVolumeWZK: BigDecimal!
+  totalLiquidityWZK: BigDecimal!
+}
+
+type Token @entity(immutable: false) {
+  id: ID!                  # token address
+  symbol: String!
+  name: String!
+  decimals: BigInt!
+  derivedWZK: BigDecimal!  # price of 1 token in wzkLTC
+  totalLiquidity: BigDecimal!
+}
+
+type Pair @entity(immutable: false) {
+  id: ID!                  # pair address
+  token0: Token!
+  token1: Token!
+  reserve0: BigDecimal!
+  reserve1: BigDecimal!
+  totalSupply: BigDecimal!
+  reserveWZK: BigDecimal!  # TVL in wzkLTC
+  volumeWZK: BigDecimal!   # lifetime volume in wzkLTC
+  txCount: BigInt!
+  createdAtBlock: BigInt!
+  createdAtTimestamp: BigInt!
+}
+
+type Swap @entity(immutable: true) {
+  id: ID!                  # tx hash + log index
+  pair: Pair!
+  sender: Bytes!
+  to: Bytes!
+  amount0In: BigDecimal!
+  amount1In: BigDecimal!
+  amount0Out: BigDecimal!
+  amount1Out: BigDecimal!
+  amountWZK: BigDecimal!
+  timestamp: BigInt!
+  block: BigInt!
+  txHash: Bytes!
+}
+
+type PairDayData @entity(immutable: false) {
+  id: ID!                  # pair-<dayStartTimestamp>
+  date: Int!
+  pair: Pair!
+  reserveWZK: BigDecimal!
+  dailyVolumeWZK: BigDecimal!
+  dailyTxns: BigInt!
+}
