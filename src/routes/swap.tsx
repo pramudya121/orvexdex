@@ -230,10 +230,50 @@ function SwapPage() {
   const disabled = !address || userAmt <= 0n || isPending || !!pendingHash || (mode === "swap" && !needsApproval && (effInWei === 0n || effOutWei === 0n));
 
   return (
-    <div className="max-w-md mx-auto px-4 py-12">
-      <div className="glass-strong rounded-3xl p-6 shadow-neon">
+    <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden">
+      {/* Ambient aurora */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute -top-32 left-1/4 h-[520px] w-[520px] rounded-full bg-[oklch(0.55_0.28_295)/0.25] blur-3xl animate-aurora" />
+        <div className="absolute top-40 right-10 h-[420px] w-[420px] rounded-full bg-[oklch(0.75_0.18_85)/0.18] blur-3xl animate-aurora-2" />
+        <div className="absolute bottom-0 left-10 h-[360px] w-[360px] rounded-full bg-[oklch(0.65_0.22_220)/0.18] blur-3xl animate-aurora" />
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 pt-12 pb-8 grid lg:grid-cols-[1fr_minmax(420px,460px)_1fr] gap-8 items-start">
+        {/* Left brand column */}
+        <div className="hidden lg:block animate-rise space-y-6 pt-8">
+          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-2/70 border border-border text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" /> ORVEX · Atelier
+          </span>
+          <h2 className="text-5xl font-bold leading-[1.05]">
+            Trade with <span className="text-gradient-brand">precision</span>.<br/>
+            Settle with <span className="text-gradient-brand">grace</span>.
+          </h2>
+          <p className="text-muted-foreground max-w-sm">
+            Swap on LitVM LiteForge with smart routing through wzkLTC, transparent price impact, and atelier-grade execution.
+          </p>
+          <div className="grid grid-cols-2 gap-3 max-w-sm">
+            {[
+              { k: "Routing", v: "Smart 2-hop" },
+              { k: "Network", v: "LitVM" },
+              { k: "Default fee", v: "0.30%" },
+              { k: "Slippage", v: "0.50%" },
+            ].map((s) => (
+              <div key={s.k} className="rounded-xl glass p-3 border border-border">
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{s.k}</div>
+                <div className="text-sm font-semibold mt-1">{s.v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Center swap card */}
+        <div className="animated-border rounded-3xl mx-auto w-full max-w-md animate-rise" style={{ animationDelay: "80ms" }}>
+        <div className="glass-strong rounded-3xl p-6 shadow-neon">
         <div className="flex items-center justify-between mb-5">
-          <h1 className="text-2xl font-bold">Swap</h1>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Swap</h1>
+            <div className="text-[11px] text-muted-foreground mt-0.5">Atelier execution · zero hidden fees</div>
+          </div>
           <div className="flex items-center gap-2">
             <span className="text-xs px-2 py-1 rounded-full bg-surface-2 text-muted-foreground">
               {mode === "wrap" ? "Wrap" : mode === "unwrap" ? "Unwrap" : "AMM"}
@@ -371,6 +411,33 @@ function SwapPage() {
         >
           {!address ? "Connect wallet" : isPending || pendingHash ? "Confirming…" : buttonLabel}
         </button>
+        </div>
+        </div>
+
+        {/* Right info column */}
+        <div className="hidden lg:block animate-rise space-y-3 pt-8" style={{ animationDelay: "160ms" }}>
+          <div className="rounded-2xl glass-strong border border-border p-5">
+            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Live route</div>
+            {mode === "swap" && effOutWei > 0n && effInWei > 0n ? (
+              <>
+                <div className="text-sm font-medium">
+                  {route.hops === 2 ? `${tokenIn.symbol} → wzkLTC → ${tokenOut.symbol}` : `${tokenIn.symbol} → ${tokenOut.symbol}`}
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-1">
+                  {route.hops === 2 ? "Smart routing engaged" : "Direct pair"}
+                </div>
+              </>
+            ) : (
+              <div className="text-sm text-muted-foreground">Enter an amount to preview routing.</div>
+            )}
+          </div>
+          <div className="rounded-2xl glass border border-border p-5">
+            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Tip</div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Click the gear icon to fine-tune slippage tolerance and transaction deadline before confirming a trade.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
