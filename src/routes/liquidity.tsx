@@ -9,6 +9,7 @@ import { routerAbi } from "@/lib/abis/router";
 import { pairAbi } from "@/lib/abis/pair";
 import { useAllowance, useGetPair, usePairReserves, useTokenBalance, MAX_UINT256 } from "@/lib/hooks";
 import { deadline, fmt, safeParse, slippageMin } from "@/lib/format";
+import { formatUnits } from "viem";
 import { useToast } from "@/components/ui/toaster";
 
 type LiqSearch = { a?: string; b?: string; tab?: "add" | "remove" };
@@ -107,6 +108,8 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
   const [tokenB, setTokenB] = useState<Token>(() => findTokenByAddr(prefillB) ?? TOKENS.find((t) => t.symbol === "ORVX")!);
   const [amountA, setAmountA] = useState("");
   const [amountB, setAmountB] = useState("");
+  const [lastEdited, setLastEdited] = useState<"A" | "B">("A");
+  const [slipBps, setSlipBps] = useState(50);
   useEffect(() => {
     const a = findTokenByAddr(prefillA); const b = findTokenByAddr(prefillB);
     if (a) setTokenA(a); if (b) setTokenB(b);
@@ -127,6 +130,56 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
 
   const needA = !tokenA.isNative && (allowA.data as bigint | undefined ?? 0n) < amtAWei && amtAWei > 0n;
   const needB = !tokenB.isNative && (allowB.data as bigint | undefined ?? 0n) < amtBWei && amtBWei > 0n;
+
+  // Pool / AMM lookup
+  const aAddr = (tokenA.isNative ? ADDR.wzkLTC : tokenA.address) as `0x${string}`;
+  const bAddr = (tokenB.isNative ? ADDR.wzkLTC : tokenB.address) as `0x${string}`;
+  const pair = useGetPair(aAddr, bAddr);
+  const pairAddr = pair.data as `0x${string}` | undefined;
+  const pairExists = !!pairAddr && pairAddr !== "0x0000000000000000000000000000000000000000";
+  const reservesQ = usePairReserves(pairExists ? pairAddr : undefined);
+  const totalSupplyQ = useReadContract({
+    address: pairExists ? pairAddr : undefined,
+    abi: pairAbi, functionName: "totalSupply",
+    query: { enabled: pairExists, refetchInterval: 8000 },
+  });
+
+  const { reserveA, reserveB } = useMemo(() => {
+    if (!reservesQ.data || !pairExists) return { reserveA: 0n, reserveB: 0n };
+    const reserves = reservesQ.data[0]?.result as readonly [bigint, bigint, number] | undefined;
+    const t0 = reservesQ.data[1]?.result as `0x${string}` | undefined;
+    if (!reserves || !t0) return { reserveA: 0n, reserveB: 0n };
+    const isAToken0 = t0.toLowerCase() === aAddr.toLowerCase();
+    return {
+      reserveA: isAToken0 ? reserves[0] : reserves[1],
+      reserveB: isAToken0 ? reserves[1] : reserves[0],
+    };
+  }, [reservesQ.data, pairExists, aAddr]);
+
+  // Auto-quote the opposite side using the pool ratio
+  useEffect(() => {
+    if (!pairExists || reserveA === 0n || reserveB === 0n) return;
+    if (lastEdited === "A" && amtAWei > 0n) {
+      const out = (amtAWei * reserveB) / reserveA;
+      setAmountB(formatUnits(out, tokenB.decimals));
+    } else if (lastEdited === "B" && amtBWei > 0n) {
+      const out = (amtBWei * reserveA) / reserveB;
+      setAmountA(formatUnits(out, tokenA.decimals));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [amtAWei, amtBWei, reserveA, reserveB, lastEdited, pairExists]);
+
+  const totalSupply = (totalSupplyQ.data as bigint | undefined) ?? 0n;
+  // share-of-pool estimate: lpMinted ≈ amtA * totalSupply / reserveA (when pool exists)
+  const lpEstimated = pairExists && reserveA > 0n && totalSupply > 0n && amtAWei > 0n
+    ? (amtAWei * totalSupply) / reserveA
+    : 0n;
+  const shareBps = pairExists && totalSupply > 0n && lpEstimated > 0n
+    ? Number((lpEstimated * 10000n) / (totalSupply + lpEstimated))
+    : 0;
+  const priceAB = reserveA > 0n
+    ? Number(formatUnits(reserveB, tokenB.decimals)) / Number(formatUnits(reserveA, tokenA.decimals))
+    : 0;
 
   const { writeContractAsync, isPending } = useWriteContract();
   const [hash, setHash] = useState<`0x${string}` | undefined>();
@@ -161,13 +214,13 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
         const ethAmt = tokenA.isNative ? amtAWei : amtBWei;
         h = await writeContractAsync({
           address: ADDR.router, abi: routerAbi, functionName: "addLiquidityETH",
-          args: [tok.address as `0x${string}`, tokAmt, slippageMin(tokAmt), slippageMin(ethAmt), address, dl],
+          args: [tok.address as `0x${string}`, tokAmt, slippageMin(tokAmt, slipBps), slippageMin(ethAmt, slipBps), address, dl],
           value: ethAmt,
         });
       } else {
         h = await writeContractAsync({
           address: ADDR.router, abi: routerAbi, functionName: "addLiquidity",
-          args: [tokenA.address as `0x${string}`, tokenB.address as `0x${string}`, amtAWei, amtBWei, slippageMin(amtAWei), slippageMin(amtBWei), address, dl],
+          args: [tokenA.address as `0x${string}`, tokenB.address as `0x${string}`, amtAWei, amtBWei, slippageMin(amtAWei, slipBps), slippageMin(amtBWei, slipBps), address, dl],
         });
       }
       setHash(h); toast.push({ title: "Adding liquidity…", hash: h });
@@ -180,9 +233,59 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
 
   return (
     <>
-      <Field label="Token A" token={tokenA} onChange={setTokenA} amount={amountA} setAmount={setAmountA} balance={balA} exclude={tokenB} />
+      <Field label="Token A" token={tokenA} onChange={setTokenA} amount={amountA}
+        setAmount={(v: string) => { setAmountA(v); setLastEdited("A"); }}
+        balance={balA} exclude={tokenB} />
       <div className="text-center text-2xl text-muted-foreground my-2">+</div>
-      <Field label="Token B" token={tokenB} onChange={setTokenB} amount={amountB} setAmount={setAmountB} balance={balB} exclude={tokenA} />
+      <Field label="Token B" token={tokenB} onChange={setTokenB} amount={amountB}
+        setAmount={(v: string) => { setAmountB(v); setLastEdited("B"); }}
+        balance={balB} exclude={tokenA} />
+
+      {/* AMM info panel */}
+      <div className="mt-4 rounded-2xl bg-surface-2/40 border border-border p-4 space-y-2 text-xs">
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">Pool</span>
+          <span className="font-mono">
+            {pairExists ? <span className="text-accent">● Active</span> : <span className="text-amber-400">◇ Will be created</span>}
+          </span>
+        </div>
+        {pairExists && (
+          <>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Price</span>
+              <span className="font-mono">1 {tokenA.symbol} = {priceAB > 0 ? priceAB.toLocaleString(undefined, { maximumFractionDigits: 6 }) : "—"} {tokenB.symbol}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Reserves</span>
+              <span className="font-mono">{fmt(reserveA, tokenA.decimals, 2)} {tokenA.symbol} · {fmt(reserveB, tokenB.decimals, 2)} {tokenB.symbol}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Share of pool</span>
+              <span className="font-mono">{shareBps > 0 ? `${(shareBps / 100).toFixed(shareBps < 100 ? 4 : 2)}%` : "—"}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">LP minted (est.)</span>
+              <span className="font-mono">{lpEstimated > 0n ? fmt(lpEstimated, 18, 6) : "—"}</span>
+            </div>
+          </>
+        )}
+        <div className="flex items-center justify-between pt-1 border-t border-border/60 mt-2">
+          <span className="text-muted-foreground">Slippage</span>
+          <div className="flex gap-1">
+            {[10, 50, 100, 300].map((bps) => (
+              <button key={bps} onClick={() => setSlipBps(bps)}
+                className={`px-2 py-0.5 rounded-md text-[10px] font-mono border ${slipBps === bps ? "bg-gradient-brand text-primary-foreground border-transparent" : "border-border text-muted-foreground hover:border-primary/40"}`}>
+                {bps / 100}%
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">Min received</span>
+          <span className="font-mono">{fmt(slippageMin(amtAWei, slipBps), tokenA.decimals, 4)} {tokenA.symbol} / {fmt(slippageMin(amtBWei, slipBps), tokenB.decimals, 4)} {tokenB.symbol}</span>
+        </div>
+      </div>
+
       <button
         onClick={submit}
         disabled={!address || amtAWei <= 0n || amtBWei <= 0n || isPending || !!hash}
@@ -222,6 +325,7 @@ function RemoveLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?:
   const [tokenA, setTokenA] = useState<Token>(() => findTokenByAddr(prefillA) ?? WZKLTC);
   const [tokenB, setTokenB] = useState<Token>(() => findTokenByAddr(prefillB) ?? TOKENS.find((t) => t.symbol === "ORVX")!);
   const [pct, setPct] = useState(50);
+  const [slipBps, setSlipBps] = useState(50);
   useEffect(() => {
     const a = findTokenByAddr(prefillA); const b = findTokenByAddr(prefillB);
     if (a) setTokenA(a); if (b) setTokenB(b);
@@ -233,6 +337,13 @@ function RemoveLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?:
 
   const pair = useGetPair(a, b);
   const pairAddr = pair.data as `0x${string}` | undefined;
+  const pairExists = !!pairAddr && pairAddr !== "0x0000000000000000000000000000000000000000";
+  const reservesQ = usePairReserves(pairExists ? pairAddr : undefined);
+  const totalSupplyQ = useReadContract({
+    address: pairExists ? pairAddr : undefined,
+    abi: pairAbi, functionName: "totalSupply",
+    query: { enabled: pairExists, refetchInterval: 8000 },
+  });
 
   const lpBal = useReadContract({
     address: pairAddr,
@@ -253,6 +364,23 @@ function RemoveLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?:
   const balance = (lpBal.data as bigint | undefined) ?? 0n;
   const liquidity = (balance * BigInt(pct)) / 100n;
   const needsApprove = (lpAllow.data as bigint | undefined ?? 0n) < liquidity && liquidity > 0n;
+
+  const totalSupply = (totalSupplyQ.data as bigint | undefined) ?? 0n;
+  const { reserveA, reserveB } = useMemo(() => {
+    if (!reservesQ.data || !pairExists) return { reserveA: 0n, reserveB: 0n };
+    const reserves = reservesQ.data[0]?.result as readonly [bigint, bigint, number] | undefined;
+    const t0 = reservesQ.data[1]?.result as `0x${string}` | undefined;
+    if (!reserves || !t0) return { reserveA: 0n, reserveB: 0n };
+    const isAToken0 = t0.toLowerCase() === a.toLowerCase();
+    return {
+      reserveA: isAToken0 ? reserves[0] : reserves[1],
+      reserveB: isAToken0 ? reserves[1] : reserves[0],
+    };
+  }, [reservesQ.data, pairExists, a]);
+
+  const expectedA = totalSupply > 0n ? (liquidity * reserveA) / totalSupply : 0n;
+  const expectedB = totalSupply > 0n ? (liquidity * reserveB) / totalSupply : 0n;
+  const userShareBps = totalSupply > 0n && balance > 0n ? Number((balance * 10000n) / totalSupply) : 0;
 
   const { writeContractAsync, isPending } = useWriteContract();
   const [hash, setHash] = useState<`0x${string}` | undefined>();
@@ -277,14 +405,16 @@ function RemoveLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?:
       let h: `0x${string}`;
       if (tokenA.isNative || tokenB.isNative) {
         const tok = tokenA.isNative ? tokenB : tokenA;
+        const tokExpected = tokenA.isNative ? expectedB : expectedA;
+        const ethExpected = tokenA.isNative ? expectedA : expectedB;
         h = await writeContractAsync({
           address: ADDR.router, abi: routerAbi, functionName: "removeLiquidityETH",
-          args: [tok.address as `0x${string}`, liquidity, 0n, 0n, address, dl],
+          args: [tok.address as `0x${string}`, liquidity, slippageMin(tokExpected, slipBps), slippageMin(ethExpected, slipBps), address, dl],
         });
       } else {
         h = await writeContractAsync({
           address: ADDR.router, abi: routerAbi, functionName: "removeLiquidity",
-          args: [a, b, liquidity, 0n, 0n, address, dl],
+          args: [a, b, liquidity, slippageMin(expectedA, slipBps), slippageMin(expectedB, slipBps), address, dl],
         });
       }
       setHash(h); toast.push({ title: "Removing liquidity…", hash: h });
@@ -317,6 +447,41 @@ function RemoveLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?:
           {[25, 50, 75, 100].map((v) => (
             <button key={v} onClick={() => setPct(v)} className="flex-1 py-1.5 rounded-lg bg-surface-2 text-xs hover:border-primary/60 border border-border">{v}%</button>
           ))}
+        </div>
+      </div>
+
+      {/* AMM expected output */}
+      <div className="mt-4 rounded-2xl bg-surface-2/40 border border-border p-4 space-y-2 text-xs">
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">You receive</span>
+          <span className="font-mono text-gradient-brand font-semibold">
+            {fmt(expectedA, tokenA.decimals, 6)} {tokenA.symbol}
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">+</span>
+          <span className="font-mono text-gradient-brand font-semibold">
+            {fmt(expectedB, tokenB.decimals, 6)} {tokenB.symbol}
+          </span>
+        </div>
+        <div className="flex items-center justify-between border-t border-border/60 pt-2">
+          <span className="text-muted-foreground">Your pool share</span>
+          <span className="font-mono">{userShareBps > 0 ? `${(userShareBps / 100).toFixed(userShareBps < 100 ? 4 : 2)}%` : "—"}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">Burning LP</span>
+          <span className="font-mono">{fmt(liquidity, 18, 6)}</span>
+        </div>
+        <div className="flex items-center justify-between pt-1 border-t border-border/60">
+          <span className="text-muted-foreground">Slippage</span>
+          <div className="flex gap-1">
+            {[10, 50, 100, 300].map((bps) => (
+              <button key={bps} onClick={() => setSlipBps(bps)}
+                className={`px-2 py-0.5 rounded-md text-[10px] font-mono border ${slipBps === bps ? "bg-gradient-brand text-primary-foreground border-transparent" : "border-border text-muted-foreground hover:border-primary/40"}`}>
+                {bps / 100}%
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
