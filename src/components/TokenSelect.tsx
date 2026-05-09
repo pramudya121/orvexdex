@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
 import { type Token } from "@/lib/tokens";
 import { useAllTokens, useCustomTokens, useImportToken } from "@/lib/customTokens";
+import { useAccount, useBalance, useReadContracts } from "wagmi";
+import { erc20Abi } from "@/lib/abis/wzkltc";
+import { fmt } from "@/lib/format";
 
 export function TokenSelect({
   value,
@@ -19,18 +22,39 @@ export function TokenSelect({
   const { remove: removeCustom, add: addCustom, list: customList } = useCustomTokens();
   const customSet = useMemo(() => new Set(customList.map((t) => t.address.toLowerCase())), [customList]);
   const importInfo = useImportToken(q.trim().startsWith("0x") ? q.trim() : undefined);
+  const { address } = useAccount();
+  const native = useBalance({ address, query: { enabled: !!address && open, refetchInterval: 12000 } });
+  const erc20Tokens = useMemo(() => allTokens.filter((t) => !t.isNative), [allTokens]);
+  const balCalls = useMemo(
+    () => (address ? erc20Tokens.map((t) => ({ address: t.address, abi: erc20Abi, functionName: "balanceOf" as const, args: [address] as const })) : []),
+    [erc20Tokens, address],
+  );
+  const bals = useReadContracts({ contracts: balCalls, query: { enabled: !!address && open && balCalls.length > 0, refetchInterval: 12000 } });
+  const balanceOf = (t: Token): bigint | undefined => {
+    if (!address) return undefined;
+    if (t.isNative) return native.data?.value;
+    const i = erc20Tokens.findIndex((x) => x.address === t.address && x.symbol === t.symbol);
+    return i >= 0 ? (bals.data?.[i]?.result as bigint | undefined) : undefined;
+  };
 
   const filtered = useMemo(() => {
     const list = allTokens.filter((t) => !exclude || t.address.toLowerCase() !== exclude.address.toLowerCase());
     const needle = q.trim().toLowerCase();
-    if (!needle) return list;
-    return list.filter(
+    const matched = !needle ? list : list.filter(
       (t) =>
         t.symbol.toLowerCase().includes(needle) ||
         t.name.toLowerCase().includes(needle) ||
         t.address.toLowerCase().includes(needle),
     );
-  }, [q, exclude, allTokens]);
+    // Sort by balance desc when wallet connected
+    if (!address) return matched;
+    return [...matched].sort((a, b) => {
+      const ba = balanceOf(a) ?? 0n;
+      const bb = balanceOf(b) ?? 0n;
+      return ba > bb ? -1 : ba < bb ? 1 : 0;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, exclude, allTokens, address, native.data?.value, bals.data]);
 
   return (
     <>
@@ -93,6 +117,12 @@ export function TokenSelect({
                     <div className="font-medium truncate">{t.symbol}</div>
                     <div className="text-xs text-muted-foreground truncate">{t.name}</div>
                   </div>
+                  {address && (
+                    <div className="text-right shrink-0 mr-2">
+                      <div className="font-mono text-sm tabular-nums">{fmt(balanceOf(t), t.decimals, 4)}</div>
+                      <div className="text-[10px] text-muted-foreground uppercase tracking-wider">balance</div>
+                    </div>
+                  )}
                   {t.isNative && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/20 text-accent">NATIVE</span>}
                   {customSet.has(t.address.toLowerCase()) && (
                     <span
