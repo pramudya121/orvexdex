@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useConnect, useAccount, useDisconnect, useChainId, useSwitchChain } from "wagmi";
 import { litvm } from "@/lib/chain";
 import { useEip6963Providers, type Eip6963Detail } from "@/lib/eip6963";
@@ -20,6 +20,8 @@ export function WalletModal({ open, onClose }: { open: boolean; onClose: () => v
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [cursor, setCursor] = useState(0);
+  const listRef = useRef<HTMLDivElement>(null);
   const detected = useEip6963Providers();
 
   // Build merged list: detected providers first, then suggestions for non-detected popular wallets.
@@ -33,6 +35,17 @@ export function WalletModal({ open, onClose }: { open: boolean; onClose: () => v
   const filteredInstallables = q
     ? installables.filter((s) => s.name.toLowerCase().includes(q) || s.rdns.toLowerCase().includes(q))
     : installables;
+
+  // Flat keyboard-navigable list: [...detected, ...installables]
+  type Row =
+    | { kind: "detected"; detail: Eip6963Detail }
+    | { kind: "install"; suggestion: WalletSuggestion };
+  const rows: Row[] = useMemo(() => [
+    ...filteredDetected.map((d) => ({ kind: "detected" as const, detail: d })),
+    ...filteredInstallables.map((s) => ({ kind: "install" as const, suggestion: s })),
+  ], [filteredDetected, filteredInstallables]);
+
+  useEffect(() => { setCursor(0); }, [query, detected.length]);
 
   const handleConnect = async (d: Eip6963Detail) => {
     setErr(null);
@@ -51,14 +64,49 @@ export function WalletModal({ open, onClose }: { open: boolean; onClose: () => v
     }
   };
 
+  // Global key handling: Escape to close, ↑/↓ to move cursor, Enter to activate.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); onClose(); return; }
+      if (rows.length === 0) return;
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setCursor((c) => (c + 1) % rows.length);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setCursor((c) => (c - 1 + rows.length) % rows.length);
+      } else if (e.key === "Enter") {
+        const r = rows[cursor];
+        if (!r) return;
+        e.preventDefault();
+        if (r.kind === "detected") handleConnect(r.detail);
+        else window.open(r.suggestion.installUrl, "_blank", "noopener");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, rows, cursor]);
+
+  // Scroll active row into view when cursor moves.
+  useEffect(() => {
+    if (!open) return;
+    const el = listRef.current?.querySelector<HTMLElement>(`[data-row-index="${cursor}"]`);
+    el?.scrollIntoView({ block: "nearest" });
+  }, [cursor, open]);
+
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Connect a wallet"
     >
       <div
-        className="glass-strong rounded-t-3xl sm:rounded-3xl p-6 w-full sm:max-w-md shadow-neon border-gold animate-in slide-in-from-bottom sm:zoom-in-95 max-h-[90vh] overflow-y-auto"
+        className="glass-strong rounded-t-3xl sm:rounded-3xl p-6 w-full sm:max-w-md shadow-neon border-gold animate-scale-in max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between mb-1">
@@ -92,6 +140,7 @@ export function WalletModal({ open, onClose }: { open: boolean; onClose: () => v
           </div>
         )}
 
+        <div ref={listRef}>
         {detected.length > 0 ? (
           <>
             <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2 px-1 flex items-center justify-between">
@@ -102,12 +151,19 @@ export function WalletModal({ open, onClose }: { open: boolean; onClose: () => v
               {filteredDetected.length === 0 && (
                 <div className="text-xs text-muted-foreground p-3 rounded-xl bg-surface-2/50 text-center">No installed wallet matches “{query}”.</div>
               )}
-              {filteredDetected.map((d) => (
+              {filteredDetected.map((d, i) => {
+                const idx = i;
+                const active = cursor === idx;
+                return (
                 <button
                   key={d.info.uuid}
+                  data-row-index={idx}
                   onClick={() => handleConnect(d)}
+                  onMouseEnter={() => setCursor(idx)}
                   disabled={busy !== null}
-                  className="w-full flex items-center gap-3 p-3 rounded-2xl border border-border hover:border-primary/60 hover:bg-surface-2 transition disabled:opacity-50"
+                  className={`w-full flex items-center gap-3 p-3 rounded-2xl border transition disabled:opacity-50 animate-fade-in ${
+                    active ? "border-primary/60 bg-surface-2 shadow-cyan" : "border-border hover:border-primary/60 hover:bg-surface-2"
+                  }`}
                 >
                   <img
                     src={d.info.icon}
@@ -123,7 +179,7 @@ export function WalletModal({ open, onClose }: { open: boolean; onClose: () => v
                   </div>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30">DETECTED</span>
                 </button>
-              ))}
+              );})}
             </div>
           </>
         ) : (
@@ -138,13 +194,20 @@ export function WalletModal({ open, onClose }: { open: boolean; onClose: () => v
               {detected.length > 0 ? "Other wallets" : "Get a wallet"}
             </div>
             <div className="grid grid-cols-2 gap-2">
-              {filteredInstallables.map((s) => (
+              {filteredInstallables.map((s, i) => {
+                const idx = filteredDetected.length + i;
+                const active = cursor === idx;
+                return (
                 <a
                   key={s.rdns}
+                  data-row-index={idx}
                   href={s.installUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-2 p-3 rounded-2xl border border-border hover:border-primary/40 hover:bg-surface-2 transition"
+                  onMouseEnter={() => setCursor(idx)}
+                  className={`flex items-center gap-2 p-3 rounded-2xl border transition animate-fade-in ${
+                    active ? "border-primary/60 bg-surface-2" : "border-border hover:border-primary/40 hover:bg-surface-2"
+                  }`}
                 >
                   <img
                     src={s.icon}
@@ -157,20 +220,22 @@ export function WalletModal({ open, onClose }: { open: boolean; onClose: () => v
                     <div className="text-[10px] text-muted-foreground">Install ↗</div>
                   </div>
                 </a>
-              ))}
+              );})}
             </div>
           </>
         )}
+        </div>
 
         {err && (
-          <div className="mt-4 p-3 rounded-xl bg-destructive/10 border border-destructive/30 text-xs text-destructive">
+          <div className="mt-4 p-3 rounded-xl bg-destructive/10 border border-destructive/30 text-xs text-destructive animate-fade-in">
             {err}
           </div>
         )}
 
-        <p className="mt-5 text-[10px] text-muted-foreground text-center leading-relaxed">
-          By connecting, you accept that ORVEX is non-custodial — your keys, your assets.
-        </p>
+        <div className="mt-5 flex items-center justify-between text-[10px] text-muted-foreground gap-2">
+          <span className="hidden sm:inline">Use <kbd className="px-1 py-0.5 rounded bg-surface-2 border border-border">↑</kbd> <kbd className="px-1 py-0.5 rounded bg-surface-2 border border-border">↓</kbd> <kbd className="px-1 py-0.5 rounded bg-surface-2 border border-border">↵</kbd> · <kbd className="px-1 py-0.5 rounded bg-surface-2 border border-border">Esc</kbd> to close</span>
+          <span className="text-center sm:text-right flex-1">Non-custodial — your keys, your assets.</span>
+        </div>
       </div>
     </div>
   );
