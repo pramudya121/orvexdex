@@ -236,14 +236,8 @@ function LPRow({ pair, balance, t0, t1, valueWzk, sharePct, vol24Wzk, swaps24, u
         </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3 pt-3 border-t border-border/60">
-        <div>
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Underlying {tk0?.symbol ?? "T0"}</div>
-          <div className="font-mono text-sm">{fmt(underlying0, tk0?.decimals ?? 18, 4)}</div>
-        </div>
-        <div>
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Underlying {tk1?.symbol ?? "T1"}</div>
-          <div className="font-mono text-sm">{fmt(underlying1, tk1?.decimals ?? 18, 4)}</div>
-        </div>
+        <UnderlyingCell amount={underlying0} symbol={tk0?.symbol} decimals={tk0?.decimals ?? 18} logo={tk0?.logo} />
+        <UnderlyingCell amount={underlying1} symbol={tk1?.symbol} decimals={tk1?.decimals ?? 18} logo={tk1?.logo} />
         <div>
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Pool 24h vol</div>
           <div className="font-mono text-sm">{fmtWzk(vol24Wzk)} <span className="text-[10px] text-muted-foreground">wzkLTC</span></div>
@@ -251,5 +245,26 @@ function LPRow({ pair, balance, t0, t1, valueWzk, sharePct, vol24Wzk, swaps24, u
         </div>
       </div>
     </a>
+  );
+}
+
+function UnderlyingCell({ amount, symbol, decimals, logo }: { amount: bigint; symbol?: string; decimals: number; logo?: string }) {
+  const sym = symbol ?? "Token";
+  const tooltip =
+    `Your share of ${sym} held in the pool.\n` +
+    `Formula: reserve × (your LP / totalSupply)\n` +
+    `Updates live with reserves; uses ${decimals} decimals.`;
+  return (
+    <div className="group/cell relative" title={tooltip}>
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+        Underlying {sym}
+        <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-border text-[8px] text-muted-foreground/80">i</span>
+      </div>
+      <div className="flex items-center gap-1.5 mt-0.5">
+        {logo && <img src={logo} alt="" className="h-4 w-4 rounded-full" />}
+        <span className="font-mono text-sm tabular-nums">{fmt(amount, decimals, 4)}</span>
+        <span className="text-[10px] text-muted-foreground">{sym}</span>
+      </div>
+    </div>
   );
 }
