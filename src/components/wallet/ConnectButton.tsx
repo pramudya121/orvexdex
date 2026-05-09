@@ -271,7 +271,7 @@ function FeaturedCard({
 
 /* ------------------------ Anchored dropdown (header) ------------------------ */
 
-function WalletDropdown({ open, onClose, anchorRef }: { open: boolean; onClose: () => void; anchorRef: React.RefObject<HTMLElement> }) {
+function WalletDropdown({ open, onClose, anchorRef }: { open: boolean; onClose: () => void; anchorRef: React.RefObject<HTMLElement | null> }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
