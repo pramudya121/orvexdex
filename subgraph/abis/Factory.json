@@ -1,0 +1,15 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "name": "token0", "type": "address" },
+      { "indexed": true, "name": "token1", "type": "address" },
+      { "indexed": false, "name": "pair", "type": "address" },
+      { "indexed": false, "name": "", "type": "uint256" }
+    ],
+    "name": "PairCreated",
+    "type": "event"
+  },
+  { "inputs": [], "name": "allPairsLength", "outputs": [{"name":"","type":"uint256"}], "stateMutability": "view", "type": "function" },
+  { "inputs": [{"name":"","type":"uint256"}], "name": "allPairs", "outputs": [{"name":"","type":"address"}], "stateMutability": "view", "type": "function" }
+]

@@ -1,0 +1,66 @@
+specVersion: 1.0.0
+description: ORVEX DEX — TVL & 24h volume per pool on LitVM LiteForge Testnet (chainId 4441)
+repository: https://github.com/orvex/subgraph
+schema:
+  file: ./schema.graphql
+
+# NOTE: LitVM LiteForge is not in the hosted graph-node network registry yet.
+# To deploy, run a self-hosted graph-node pointed at the LitVM RPC and configure
+# the network name below to match your graph-node `ethereum:` config (e.g.
+# `litvm-liteforge`). See README.md for the full deploy flow.
+dataSources:
+  - kind: ethereum/contract
+    name: Factory
+    network: litvm-liteforge
+    source:
+      address: "0x42e4E19020aa23947e1BE3260b7e4CCFDd246128"
+      abi: Factory
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/factory.ts
+      entities:
+        - Pair
+        - Token
+        - Factory
+      abis:
+        - name: Factory
+          file: ./abis/Factory.json
+        - name: Pair
+          file: ./abis/Pair.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: PairCreated(indexed address,indexed address,address,uint256)
+          handler: handlePairCreated
+templates:
+  - kind: ethereum/contract
+    name: Pair
+    network: litvm-liteforge
+    source:
+      abi: Pair
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/pair.ts
+      entities:
+        - Pair
+        - Swap
+        - PairDayData
+      abis:
+        - name: Pair
+          file: ./abis/Pair.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: Swap(indexed address,uint256,uint256,uint256,uint256,indexed address)
+          handler: handleSwap
+        - event: Sync(uint112,uint112)
+          handler: handleSync
+        - event: Mint(indexed address,uint256,uint256)
+          handler: handleMint
+        - event: Burn(indexed address,uint256,uint256,indexed address)
+          handler: handleBurn

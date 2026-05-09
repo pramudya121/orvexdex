@@ -1,0 +1,19 @@
+{
+  "name": "orvex-subgraph",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Graph subgraph for ORVEX DEX on LitVM LiteForge Testnet",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "create-local": "graph create --node http://localhost:8020/ orvex/orvex",
+    "remove-local": "graph remove --node http://localhost:8020/ orvex/orvex",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 orvex/orvex",
+    "deploy-studio": "graph deploy --studio orvex",
+    "deploy-hosted": "graph deploy --product hosted-service <GITHUB_USER>/orvex"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "0.80.0",
+    "@graphprotocol/graph-ts": "0.35.1"
+  }
+}
