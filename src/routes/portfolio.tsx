@@ -33,9 +33,18 @@ function PortfolioPage() {
   const balances = useReadContracts({ contracts: balanceCalls as any, query: { enabled: !!address, refetchInterval: 10000 } });
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold mb-2">Portfolio</h1>
-      <p className="text-sm text-muted-foreground mb-6">{address ? `${address.slice(0, 10)}…${address.slice(-6)}` : "Connect wallet to view"}</p>
+    <div className="relative max-w-4xl mx-auto px-4 py-12">
+      <div className="pointer-events-none absolute inset-x-0 -top-10 h-[360px] overflow-hidden -z-10">
+        <div className="absolute top-0 left-10 h-72 w-72 rounded-full blur-3xl animate-aurora" style={{ background: "var(--gradient-luxe)" }} />
+        <div className="absolute -top-10 right-0 h-72 w-72 rounded-full blur-3xl animate-aurora-2" style={{ background: "var(--gradient-gold)" }} />
+      </div>
+      <div className="animate-rise">
+        <div className="text-[11px] tracking-[0.3em] uppercase text-gradient-gold font-semibold mb-2">Atelier · Holdings</div>
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-gradient-luxe">Portfolio</h1>
+        <p className="text-sm text-muted-foreground mt-1 mb-8 font-mono">
+          {address ? `${address.slice(0, 10)}…${address.slice(-6)}` : "Connect wallet to view"}
+        </p>
+      </div>
 
       {!isConnected && (
         <div className="glass rounded-2xl p-10 text-center text-muted-foreground">Connect a wallet to see your balances and LP positions.</div>
@@ -43,7 +52,7 @@ function PortfolioPage() {
 
       {isConnected && (
         <>
-          <h2 className="text-lg font-semibold mb-3 mt-2">Tokens</h2>
+          <SectionHeader title="Tokens" subtitle="Live balances" />
           <div className="grid sm:grid-cols-2 gap-3">
             <TokenCard logo={TOKENS[0].logo} symbol="zkLTC" name="Native" balance={native.data?.value} decimals={18} />
             {TOKENS.filter((t) => !t.isNative).map((t, i) => {
@@ -52,10 +61,10 @@ function PortfolioPage() {
             })}
           </div>
 
-          <h2 className="text-lg font-semibold mb-3 mt-8">LP Positions</h2>
+          <SectionHeader title="LP Positions" subtitle="Underlying assets · live" className="mt-10" />
           <LPositions owner={address!} />
 
-          <h2 className="text-lg font-semibold mb-3 mt-8">Recent Activity</h2>
+          <SectionHeader title="Recent Activity" subtitle="Streamed from LitVM logs" className="mt-10" />
           <ActivityFeed owner={address!} />
         </>
       )}
@@ -63,11 +72,20 @@ function PortfolioPage() {
   );
 }
 
+function SectionHeader({ title, subtitle, className = "" }: { title: string; subtitle?: string; className?: string }) {
+  return (
+    <div className={`flex items-end justify-between mb-3 ${className}`}>
+      <h2 className="text-xl font-bold tracking-tight">{title}</h2>
+      {subtitle && <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{subtitle}</span>}
+    </div>
+  );
+}
+
 function TokenCard({ logo, symbol, name, balance, decimals, address }: { logo: string; symbol: string; name: string; balance?: bigint; decimals: number; address?: string }) {
   return (
-    <div className="glass rounded-2xl p-4 flex items-center justify-between hover:neon-border transition">
+    <div className="glass rounded-2xl p-4 flex items-center justify-between card-hover animate-rise">
       <div className="flex items-center gap-3">
-        <img src={logo} alt={symbol} className="h-10 w-10 rounded-full" />
+        <img src={logo} alt={symbol} className="h-10 w-10 rounded-full ring-2 ring-white/5" />
         <div>
           <div className="font-semibold">{symbol}</div>
           <div className="text-xs text-muted-foreground">{name}</div>
@@ -214,7 +232,7 @@ function LPRow({ pair, balance, t0, t1, valueWzk, sharePct, vol24Wzk, swaps24, u
   const tk0 = t0 ? TOKENS.find((x) => x.address.toLowerCase() === t0.toLowerCase()) : undefined;
   const tk1 = t1 ? TOKENS.find((x) => x.address.toLowerCase() === t1.toLowerCase()) : undefined;
   return (
-    <a href={explorerAddr(pair)} target="_blank" rel="noreferrer" className="glass rounded-2xl p-4 block hover:neon-border transition">
+    <a href={explorerAddr(pair)} target="_blank" rel="noreferrer" className="glass rounded-2xl p-4 block card-hover animate-rise">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex -space-x-2 shrink-0">
