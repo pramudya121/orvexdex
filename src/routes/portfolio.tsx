@@ -154,7 +154,11 @@ function LPositions({ owner }: { owner: `0x${string}` }) {
     const stat = stats.data?.stats.get(p.toLowerCase());
     const sharePct = bal && ts && ts > 0n ? Number((bal * 10000n) / ts) / 100 : 0;
     const valueWzk = bal && ts && ts > 0n && stat ? (stat.tvlWzk * bal) / ts : 0n;
-    return { pair: p, bal: bal!, t0, t1, r, ts, valueWzk, sharePct, vol24Wzk: stat?.vol24Wzk ?? 0n };
+    const underlying0 = bal && ts && ts > 0n && r ? (r[0] * bal) / ts : 0n;
+    const underlying1 = bal && ts && ts > 0n && r ? (r[1] * bal) / ts : 0n;
+    return { pair: p, bal: bal!, t0, t1, r, ts, valueWzk, sharePct,
+      vol24Wzk: stat?.vol24Wzk ?? 0n, swaps24: stat?.swaps24 ?? 0,
+      underlying0, underlying1 };
   });
 
   if (positions.length === 0) {
@@ -185,6 +189,9 @@ function LPositions({ owner }: { owner: `0x${string}` }) {
             valueWzk={p.valueWzk}
             sharePct={p.sharePct}
             vol24Wzk={p.vol24Wzk}
+            swaps24={p.swaps24}
+            underlying0={p.underlying0}
+            underlying1={p.underlying1}
           />
         ))}
       </div>
@@ -192,7 +199,7 @@ function LPositions({ owner }: { owner: `0x${string}` }) {
   );
 }
 
-function LPRow({ pair, balance, t0, t1, valueWzk, sharePct, vol24Wzk }: {
+function LPRow({ pair, balance, t0, t1, valueWzk, sharePct, vol24Wzk, swaps24, underlying0, underlying1 }: {
   pair: `0x${string}`;
   balance: bigint;
   t0?: `0x${string}`;
@@ -200,28 +207,48 @@ function LPRow({ pair, balance, t0, t1, valueWzk, sharePct, vol24Wzk }: {
   valueWzk: bigint;
   sharePct: number;
   vol24Wzk: bigint;
+  swaps24: number;
+  underlying0: bigint;
+  underlying1: bigint;
 }) {
   const tk0 = t0 ? TOKENS.find((x) => x.address.toLowerCase() === t0.toLowerCase()) : undefined;
   const tk1 = t1 ? TOKENS.find((x) => x.address.toLowerCase() === t1.toLowerCase()) : undefined;
   return (
-    <a href={explorerAddr(pair)} target="_blank" rel="noreferrer" className="glass rounded-2xl p-4 flex items-center justify-between hover:neon-border transition">
-      <div className="flex items-center gap-3">
-        <div className="flex -space-x-2">
-          {tk0 && <img src={tk0.logo} className="h-8 w-8 rounded-full ring-2 ring-background" />}
-          {tk1 && <img src={tk1.logo} className="h-8 w-8 rounded-full ring-2 ring-background" />}
-        </div>
-        <div>
-          <div className="font-semibold flex items-center gap-2">
-            {tk0?.symbol ?? "?"} / {tk1?.symbol ?? "?"}
-            {sharePct > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/15 text-accent">{sharePct < 0.01 ? "<0.01" : sharePct.toFixed(2)}%</span>}
+    <a href={explorerAddr(pair)} target="_blank" rel="noreferrer" className="glass rounded-2xl p-4 block hover:neon-border transition">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex -space-x-2 shrink-0">
+            {tk0 && <img src={tk0.logo} className="h-9 w-9 rounded-full ring-2 ring-background" />}
+            {tk1 && <img src={tk1.logo} className="h-9 w-9 rounded-full ring-2 ring-background" />}
           </div>
-          <div className="text-xs text-muted-foreground font-mono">{pair.slice(0, 8)}… · 24h vol {fmtWzk(vol24Wzk)} wzkLTC</div>
+          <div className="min-w-0">
+            <div className="font-semibold flex items-center gap-2 flex-wrap">
+              {tk0?.symbol ?? "?"} / {tk1?.symbol ?? "?"}
+              {sharePct > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/15 text-accent">{sharePct < 0.01 ? "<0.01" : sharePct.toFixed(2)}%</span>}
+            </div>
+            <div className="text-xs text-muted-foreground font-mono">{pair.slice(0, 8)}…{pair.slice(-4)}</div>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Position value</div>
+          <div className="font-mono font-semibold text-gradient-gold">{fmtWzk(valueWzk, 4)} <span className="text-[10px] text-muted-foreground">wzkLTC</span></div>
+          <div className="text-[10px] text-muted-foreground font-mono">{fmt(balance, 18, 4)} LP</div>
         </div>
       </div>
-      <div className="text-right">
-        <div className="text-xs text-muted-foreground">Position value</div>
-        <div className="font-mono font-semibold text-gradient-gold">{fmtWzk(valueWzk, 4)} wzkLTC</div>
-        <div className="text-[10px] text-muted-foreground font-mono">{fmt(balance, 18, 4)} LP</div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3 pt-3 border-t border-border/60">
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Underlying {tk0?.symbol ?? "T0"}</div>
+          <div className="font-mono text-sm">{fmt(underlying0, tk0?.decimals ?? 18, 4)}</div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Underlying {tk1?.symbol ?? "T1"}</div>
+          <div className="font-mono text-sm">{fmt(underlying1, tk1?.decimals ?? 18, 4)}</div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Pool 24h vol</div>
+          <div className="font-mono text-sm">{fmtWzk(vol24Wzk)} <span className="text-[10px] text-muted-foreground">wzkLTC</span></div>
+          <div className="text-[10px] text-muted-foreground">{swaps24} swaps</div>
+        </div>
       </div>
     </a>
   );
