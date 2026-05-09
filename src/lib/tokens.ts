@@ -46,11 +46,11 @@ export const TOKENS: Token[] = [
   { address: ADDR.ORVX, symbol: "ORVX", name: "Orvex", decimals: 18, logo: orvxLogo, faucetIndex: 6 },
 ];
 
-// Faucet token list (matches contract index ordering)
-export const FAUCET_TOKENS: Token[] = [
-  { ...WZKLTC, faucetIndex: 0 },
-  ...TOKENS.filter((t) => t.faucetIndex !== undefined && t.faucetIndex !== 0),
-].sort((a, b) => (a.faucetIndex ?? 0) - (b.faucetIndex ?? 0));
+// Faucet token list (matches contract index ordering, excludes wzkLTC).
+// Users get native zkLTC from the network bridge, so the wrapper isn't shown.
+export const FAUCET_TOKENS: Token[] = TOKENS
+  .filter((t) => t.faucetIndex !== undefined && t.faucetIndex !== 0)
+  .sort((a, b) => (a.faucetIndex ?? 0) - (b.faucetIndex ?? 0));
 
 export const findToken = (addr: string) =>
   TOKENS.find((t) => t.address.toLowerCase() === addr.toLowerCase());

@@ -36,16 +36,34 @@ function FaucetPage() {
   const { writeContractAsync, isPending } = useWriteContract();
   const [hash, setHash] = useState<`0x${string}` | undefined>();
   const receipt = useWaitForTransactionReceipt({ hash });
+
+  // ───── Anti-bot captcha ─────
+  const [captcha, setCaptcha] = useState(() => genCaptcha());
+  const [captchaInput, setCaptchaInput] = useState("");
+  const [verified, setVerified] = useState(false);
+  const captchaOk = verified && Number(captchaInput) === captcha.answer;
+
+  function refreshCaptcha() {
+    setCaptcha(genCaptcha());
+    setCaptchaInput("");
+    setVerified(false);
+  }
+
   useEffect(() => {
     if (receipt.isSuccess && hash) {
       toast.push({ title: "Claim successful", type: "success", hash });
       setHash(undefined);
       reads.refetch();
+      refreshCaptcha();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receipt.isSuccess]);
 
   const claim = async (idx: number) => {
+    if (!captchaOk) {
+      toast.push({ title: "Verifikasi captcha terlebih dahulu", type: "error" });
+      return;
+    }
     try {
       const h = await writeContractAsync({ address: ADDR.faucet, abi: faucetAbi, functionName: "claim", args: [idx] });
       setHash(h); toast.push({ title: "Claiming…", hash: h });
@@ -55,6 +73,10 @@ function FaucetPage() {
   };
 
   const claimAll = async () => {
+    if (!captchaOk) {
+      toast.push({ title: "Verifikasi captcha terlebih dahulu", type: "error" });
+      return;
+    }
     try {
       const h = await writeContractAsync({ address: ADDR.faucet, abi: faucetAbi, functionName: "claimAll" });
       setHash(h); toast.push({ title: "Claiming all…", hash: h });
@@ -124,12 +146,52 @@ function FaucetPage() {
             <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-2">Recipient address</div>
             <div className="font-mono text-sm break-all">{address ?? "Connect a wallet to receive tokens…"}</div>
           </div>
+
+          {/* Captcha */}
+          <div className="rounded-2xl bg-surface-2 border border-border p-4 mb-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Human verification</div>
+              {captchaOk && <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30">✓ Verified</span>}
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div
+                className="select-none px-4 py-2 rounded-xl bg-gradient-brand text-primary-foreground font-mono text-lg tracking-[0.4em] font-bold"
+                style={{ textShadow: "0 0 12px rgba(255,255,255,0.4)", letterSpacing: "0.4em" }}
+              >
+                {captcha.a} + {captcha.b} = ?
+              </div>
+              <input
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="Jawaban"
+                value={captchaInput}
+                onChange={(e) => { setCaptchaInput(e.target.value.replace(/\D/g, "")); setVerified(false); }}
+                className="w-28 px-3 py-2 rounded-xl bg-surface border border-border outline-none focus:border-primary text-center font-mono"
+              />
+              <button
+                onClick={() => {
+                  if (Number(captchaInput) === captcha.answer) setVerified(true);
+                  else { setVerified(false); refreshCaptcha(); toast.push({ title: "Captcha salah", type: "error" }); }
+                }}
+                disabled={!captchaInput}
+                className="px-4 py-2 rounded-xl bg-surface-2 border border-border hover:border-primary/60 text-sm font-semibold transition disabled:opacity-40"
+              >Verifikasi</button>
+              <button
+                onClick={refreshCaptcha}
+                className="ml-auto h-9 w-9 rounded-xl bg-surface border border-border hover:border-primary/60 transition"
+                aria-label="Refresh captcha"
+                title="Ganti soal"
+              >↻</button>
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-2">Lindungi faucet dari bot — selesaikan soal sederhana untuk meng-claim.</div>
+          </div>
+
           <button
             onClick={claimAll}
-            disabled={!address || isPending || !!hash}
+            disabled={!address || isPending || !!hash || !captchaOk}
             className="w-full py-4 rounded-2xl bg-gradient-luxe text-primary-foreground font-bold text-lg shadow-neon hover:shadow-gold hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:translate-y-0"
           >
-            {!address ? "Connect Wallet" : isPending || hash ? "Confirming…" : "💧 Claim All Now"}
+            {!address ? "Connect Wallet" : isPending || hash ? "Confirming…" : !captchaOk ? "🔒 Verifikasi captcha" : "💧 Claim All Now"}
           </button>
         </div>
       </div>
@@ -174,10 +236,10 @@ function FaucetPage() {
               </div>
               <button
                 onClick={() => claim(t.faucetIndex!)}
-                disabled={!address || isPending || !!hash || !ready}
+                disabled={!address || isPending || !!hash || !ready || !captchaOk}
                 className="w-full py-3 rounded-xl bg-surface-2 hover:bg-gradient-brand hover:text-primary-foreground border border-border hover:border-transparent transition font-semibold disabled:opacity-40"
               >
-                {!address ? "Connect wallet" : !ready ? `Wait ${wait}s` : "Claim"}
+                {!address ? "Connect wallet" : !ready ? `Wait ${wait}s` : !captchaOk ? "Verifikasi captcha" : "Claim"}
               </button>
             </div>
           );
@@ -185,6 +247,12 @@ function FaucetPage() {
       </div>
     </div>
   );
+}
+
+function genCaptcha() {
+  const a = Math.floor(Math.random() * 9) + 2;
+  const b = Math.floor(Math.random() * 9) + 2;
+  return { a, b, answer: a + b };
 }
 
 function StatCard({ label, value, unit, icon }: { label: string; value: string; unit: string; icon: string }) {

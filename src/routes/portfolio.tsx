@@ -41,10 +41,26 @@ function PortfolioPage() {
       <div className="animate-rise">
         <div className="text-[11px] tracking-[0.3em] uppercase text-gradient-gold font-semibold mb-2">Atelier · Holdings</div>
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-gradient-luxe">Portfolio</h1>
-        <p className="text-sm text-muted-foreground mt-1 mb-8 font-mono">
+        <p className="text-sm text-muted-foreground mt-1 mb-6 font-mono">
           {address ? `${address.slice(0, 10)}…${address.slice(-6)}` : "Connect wallet to view"}
         </p>
       </div>
+
+      {isConnected && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8 animate-rise" style={{ animationDelay: "60ms" }}>
+          <KpiCard label="Native zkLTC" value={fmt(native.data?.value, 18, 4)} accent="luxe" />
+          <KpiCard
+            label="Token assets"
+            value={String(
+              (balances.data ?? []).filter((r) => ((r?.result as bigint | undefined) ?? 0n) > 0n).length
+              + (((native.data?.value ?? 0n) > 0n) ? 1 : 0)
+            )}
+            accent="brand"
+          />
+          <KpiCard label="Network" value="LitVM" accent="gold" />
+          <KpiCard label="Status" value="Live" accent="brand" pulse />
+        </div>
+      )}
 
       {!isConnected && (
         <div className="glass rounded-2xl p-10 text-center text-muted-foreground">Connect a wallet to see your balances and LP positions.</div>
@@ -77,6 +93,19 @@ function SectionHeader({ title, subtitle, className = "" }: { title: string; sub
     <div className={`flex items-end justify-between mb-3 ${className}`}>
       <h2 className="text-xl font-bold tracking-tight">{title}</h2>
       {subtitle && <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{subtitle}</span>}
+    </div>
+  );
+}
+
+function KpiCard({ label, value, accent = "brand", pulse }: { label: string; value: string; accent?: "brand" | "luxe" | "gold"; pulse?: boolean }) {
+  const grad = accent === "luxe" ? "text-gradient-luxe" : accent === "gold" ? "text-gradient-gold" : "text-gradient-brand";
+  return (
+    <div className="glass rounded-2xl p-4 card-hover relative overflow-hidden">
+      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2 flex items-center gap-2">
+        {label}
+        {pulse && <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />}
+      </div>
+      <div className={`text-2xl font-black tabular-nums ${grad}`}>{value}</div>
     </div>
   );
 }
