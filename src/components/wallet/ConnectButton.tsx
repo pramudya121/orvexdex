@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useConnect, useAccount, useDisconnect, useChainId, useSwitchChain } from "wagmi";
 import { litvm } from "@/lib/chain";
 import { useEip6963Providers, type Eip6963Detail } from "@/lib/eip6963";
+
+const ACTIVE_RDNS_KEY = "orvex.activeWalletRdns";
 
 // Fallback metadata for popular wallets the user may not have installed.
 // Install links only — actual provider detection uses EIP-6963 (modern standard).
@@ -17,11 +19,20 @@ export function WalletModal({ open, onClose }: { open: boolean; onClose: () => v
   const { connectAsync, connectors } = useConnect();
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
   const detected = useEip6963Providers();
 
   // Build merged list: detected providers first, then suggestions for non-detected popular wallets.
   const detectedRdns = new Set(detected.map((d) => d.info.rdns.toLowerCase()));
   const installables = SUGGESTIONS.filter((s) => !detectedRdns.has(s.rdns.toLowerCase()));
+
+  const q = query.trim().toLowerCase();
+  const filteredDetected = q
+    ? detected.filter((d) => d.info.name.toLowerCase().includes(q) || d.info.rdns.toLowerCase().includes(q))
+    : detected;
+  const filteredInstallables = q
+    ? installables.filter((s) => s.name.toLowerCase().includes(q) || s.rdns.toLowerCase().includes(q))
+    : installables;
 
   const handleConnect = async (d: Eip6963Detail) => {
     setErr(null);
@@ -31,6 +42,7 @@ export function WalletModal({ open, onClose }: { open: boolean; onClose: () => v
       if (!injectedConn) throw new Error("No injected connector available");
       (injectedConn as any).getProvider = async () => d.provider;
       await connectAsync({ connector: injectedConn });
+      try { localStorage.setItem(ACTIVE_RDNS_KEY, d.info.rdns); } catch { /* noop */ }
       onClose();
     } catch (e: any) {
       setErr(e?.shortMessage || e?.message || "Failed to connect");
@@ -60,15 +72,37 @@ export function WalletModal({ open, onClose }: { open: boolean; onClose: () => v
             aria-label="Close"
           >✕</button>
         </div>
-        <p className="text-xs text-muted-foreground mb-5">
+        <p className="text-xs text-muted-foreground mb-4">
           LitVM LiteForge Testnet · Chain ID 4441
         </p>
 
+        {(detected.length + installables.length) > 3 && (
+          <div className="mb-4 flex items-center gap-2 bg-surface-2 rounded-xl px-3 py-2 border border-border focus-within:border-primary/60 transition">
+            <span className="text-muted-foreground text-sm">⌕</span>
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search wallets…"
+              className="flex-1 bg-transparent outline-none text-sm"
+            />
+            {query && (
+              <button onClick={() => setQuery("")} className="text-xs text-muted-foreground hover:text-foreground">clear</button>
+            )}
+          </div>
+        )}
+
         {detected.length > 0 ? (
           <>
-            <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2 px-1">Installed</div>
+            <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2 px-1 flex items-center justify-between">
+              <span>Installed</span>
+              <span className="text-muted-foreground/60 normal-case tracking-normal">{filteredDetected.length} of {detected.length}</span>
+            </div>
             <div className="space-y-2 mb-5">
-              {detected.map((d) => (
+              {filteredDetected.length === 0 && (
+                <div className="text-xs text-muted-foreground p-3 rounded-xl bg-surface-2/50 text-center">No installed wallet matches “{query}”.</div>
+              )}
+              {filteredDetected.map((d) => (
                 <button
                   key={d.info.uuid}
                   onClick={() => handleConnect(d)}
@@ -98,13 +132,13 @@ export function WalletModal({ open, onClose }: { open: boolean; onClose: () => v
           </div>
         )}
 
-        {installables.length > 0 && (
+        {filteredInstallables.length > 0 && (
           <>
             <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2 px-1">
               {detected.length > 0 ? "Other wallets" : "Get a wallet"}
             </div>
             <div className="grid grid-cols-2 gap-2">
-              {installables.map((s) => (
+              {filteredInstallables.map((s) => (
                 <a
                   key={s.rdns}
                   href={s.installUrl}
@@ -151,18 +185,33 @@ export function ConnectButton() {
   const detected = useEip6963Providers();
   const wrong = isConnected && chainId !== litvm.id;
 
-  // Best-effort: identify which detected provider is currently connected
-  const activeWallet = (() => {
-    if (typeof window === "undefined") return null;
+  // Identify the active EIP-6963 provider so the header logo matches the truly connected wallet.
+  const activeWallet = useMemo<Eip6963Detail | null>(() => {
+    if (!isConnected || typeof window === "undefined") return null;
+    let storedRdns: string | null = null;
+    try { storedRdns = localStorage.getItem(ACTIVE_RDNS_KEY); } catch { /* noop */ }
+    if (storedRdns) {
+      const byRdns = detected.find((d) => d.info.rdns.toLowerCase() === storedRdns!.toLowerCase());
+      if (byRdns) return byRdns;
+    }
     const eth: any = (window as any).ethereum;
-    return detected.find((d) => d.provider === eth || d.provider?.selectedAddress?.toLowerCase?.() === address?.toLowerCase?.()) ?? detected[0] ?? null;
-  })();
+    const byProvider = detected.find((d) =>
+      d.provider === eth ||
+      d.provider?.selectedAddress?.toLowerCase?.() === address?.toLowerCase?.(),
+    );
+    return byProvider ?? detected[0] ?? null;
+  }, [detected, address, isConnected]);
 
   useEffect(() => {
     if (wrong) {
       try { switchChain({ chainId: litvm.id }); } catch { /* noop */ }
     }
   }, [wrong, switchChain]);
+
+  const handleDisconnect = () => {
+    try { localStorage.removeItem(ACTIVE_RDNS_KEY); } catch { /* noop */ }
+    disconnect();
+  };
 
   if (!isConnected) {
     return (
@@ -189,7 +238,8 @@ export function ConnectButton() {
         </button>
       )}
       <button
-        onClick={() => disconnect()}
+        onClick={handleDisconnect}
+        title={activeWallet ? `Disconnect ${activeWallet.info.name}` : "Disconnect"}
         className="flex items-center gap-2 px-3 py-2 rounded-xl glass text-sm font-mono hover:border-primary/60 transition"
       >
         {activeWallet?.info.icon && (
