@@ -39,15 +39,22 @@ function PoolsPage() {
     .filter(Boolean) as `0x${string}`[];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12">
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+    <div className="relative max-w-5xl mx-auto px-4 py-12">
+      {/* Aurora backdrop */}
+      <div className="pointer-events-none absolute inset-x-0 -top-10 h-[420px] overflow-hidden -z-10">
+        <div className="absolute -top-24 left-1/4 h-72 w-72 rounded-full blur-3xl animate-aurora" style={{ background: "var(--gradient-luxe)" }} />
+        <div className="absolute top-10 right-10 h-80 w-80 rounded-full blur-3xl animate-aurora-2" style={{ background: "var(--gradient-gold)" }} />
+      </div>
+
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6 animate-rise">
         <div>
-          <h1 className="text-3xl font-bold text-gradient-luxe">Pools</h1>
-          <p className="text-sm text-muted-foreground">All liquidity pairs on ORVEX • {total} pools</p>
+          <div className="text-[11px] tracking-[0.3em] uppercase text-gradient-gold font-semibold mb-2">Atelier · Liquidity</div>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-gradient-luxe tracking-tight">Pools</h1>
+          <p className="text-sm text-muted-foreground mt-1">All liquidity pairs on ORVEX • <span className="text-foreground/80 font-semibold">{total}</span> pools live</p>
         </div>
         <Link
           to="/liquidity"
-          className="px-4 py-2 rounded-xl bg-gradient-brand text-primary-foreground font-semibold text-sm shadow-neon hover:opacity-95 transition w-fit"
+          className="px-5 py-2.5 rounded-full bg-gradient-luxe text-primary-foreground font-semibold text-sm shadow-neon hover:-translate-y-0.5 hover:shadow-gold transition-all w-fit"
         >+ Create / Add Liquidity</Link>
       </div>
 
@@ -188,7 +195,11 @@ function PoolList({ pairAddrs, q, sort, onlyMine }: { pairAddrs: `0x${string}`[]
           ? Number((p.myLp * 10000n) / p.ts) / 100
           : 0;
         return (
-          <div key={p.pair} className="glass rounded-2xl p-5 hover:neon-border transition group">
+          <div
+            key={p.pair}
+            className="glass rounded-2xl p-5 card-hover group animate-rise"
+            style={{ animationDelay: `${Math.min(filtered.indexOf(p) * 40, 320)}ms` }}
+          >
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="flex -space-x-2 shrink-0">
