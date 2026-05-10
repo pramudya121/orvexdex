@@ -9,6 +9,8 @@ import { factoryAbi } from "@/lib/abis/factory";
 import { pairAbi } from "@/lib/abis/pair";
 import { TOKENS } from "@/lib/tokens";
 import { WalletModal } from "@/components/wallet/ConnectButton";
+import { findToken } from "@/lib/tokens";
+import { usePoolStats, fmtWzk, type PoolMeta } from "@/lib/poolStats";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -26,6 +28,45 @@ function Landing() {
   });
   const total = Number((len.data as bigint | undefined) ?? 0n);
 
+  // Build poolMetas (every pair) so we can derive token prices in wzkLTC.
+  const pairCalls = useMemo(
+    () => Array.from({ length: total }, (_, i) => ({
+      address: ADDR.factory as `0x${string}`,
+      abi: factoryAbi,
+      functionName: "allPairs" as const,
+      args: [BigInt(i)] as const,
+    })),
+    [total],
+  );
+  const pairsQ = useReadContracts({ contracts: pairCalls, query: { enabled: total > 0 } });
+  const pairAddrs = (pairsQ.data ?? [])
+    .map((r) => r.result as `0x${string}` | undefined)
+    .filter(Boolean) as `0x${string}`[];
+
+  const metaCalls = useMemo(
+    () => pairAddrs.flatMap((p) => [
+      { address: p, abi: pairAbi, functionName: "token0" as const },
+      { address: p, abi: pairAbi, functionName: "token1" as const },
+      { address: p, abi: pairAbi, functionName: "getReserves" as const },
+    ]),
+    [pairAddrs],
+  );
+  const metaQ = useReadContracts({ contracts: metaCalls, query: { enabled: pairAddrs.length > 0, refetchInterval: 30000 } });
+  const poolMetas: PoolMeta[] = useMemo(() => pairAddrs.flatMap((pair, i) => {
+    const t0 = metaQ.data?.[i * 3]?.result as `0x${string}` | undefined;
+    const t1 = metaQ.data?.[i * 3 + 1]?.result as `0x${string}` | undefined;
+    const r = metaQ.data?.[i * 3 + 2]?.result as readonly [bigint, bigint, number] | undefined;
+    if (!t0 || !t1 || !r) return [];
+    return [{
+      pair, token0: t0, token1: t1,
+      reserve0: r[0], reserve1: r[1],
+      decimals0: findToken(t0)?.decimals ?? 18,
+      decimals1: findToken(t1)?.decimals ?? 18,
+    }];
+  }), [pairAddrs, metaQ.data]);
+  const stats = usePoolStats(poolMetas);
+  const prices = stats.data?.prices;
+
   // Native balance
   const nativeBal = useBalance({ address, query: { enabled: !!address } });
 
@@ -42,18 +83,35 @@ function Landing() {
   );
   const bals = useReadContracts({ contracts: balCalls as any, query: { enabled: !!address } });
 
+  // Per-token holding with raw bigint + wzkLTC value, sorted by value.
+  const ONE = 10n ** 18n;
+  const wzkAddr = ADDR.wzkLTC.toLowerCase();
   const holdings = useMemo(() => {
+    const toWzk = (raw: bigint, decimals: number, addrLower: string): bigint => {
+      if (raw === 0n) return 0n;
+      // native zkLTC == wzkLTC for pricing purposes
+      const px = prices?.get(addrLower) ?? (addrLower === wzkAddr ? ONE : undefined);
+      if (!px) return 0n;
+      const norm = decimals === 18 ? raw
+        : decimals < 18 ? raw * 10n ** BigInt(18 - decimals)
+        : raw / 10n ** BigInt(decimals - 18);
+      return (norm * px) / ONE;
+    };
     const list = [
-      { token: TOKENS[0], amount: nativeBal.data ? Number(formatUnits(nativeBal.data.value, 18)) : 0 },
-      ...erc20s.map((t, i) => ({
-        token: t,
-        amount: Number(formatUnits(((bals.data?.[i]?.result as bigint | undefined) ?? 0n), t.decimals)),
-      })),
+      {
+        token: TOKENS[0],
+        raw: (nativeBal.data?.value ?? 0n),
+        valueWzk: toWzk(nativeBal.data?.value ?? 0n, 18, wzkAddr),
+      },
+      ...erc20s.map((t, i) => {
+        const raw = (bals.data?.[i]?.result as bigint | undefined) ?? 0n;
+        return { token: t, raw, valueWzk: toWzk(raw, t.decimals, t.address.toLowerCase()) };
+      }),
     ];
-    return list.sort((a, b) => b.amount - a.amount);
-  }, [nativeBal.data, bals.data, erc20s]);
+    return list.sort((a, b) => (a.valueWzk < b.valueWzk ? 1 : a.valueWzk > b.valueWzk ? -1 : 0));
+  }, [nativeBal.data, bals.data, erc20s, prices, wzkAddr]);
 
-  const totalUnits = holdings.reduce((s, h) => s + h.amount, 0);
+  const totalValueWzk: bigint = holdings.reduce<bigint>((s, h) => s + h.valueWzk, 0n);
 
   return (
     <div className="relative">
@@ -102,10 +160,15 @@ function Landing() {
                   <div>
                     <div className="text-[11px] tracking-[0.25em] uppercase text-muted-foreground">Total Portfolio Value</div>
                     <div className="mt-1 text-4xl sm:text-5xl font-extrabold text-gradient-luxe">
-                      {isConnected ? `${totalUnits.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : "$1.28M"}
+                      {isConnected ? (
+                        <>
+                          {fmtWzk(totalValueWzk, 4)}{" "}
+                          <span className="text-2xl text-muted-foreground font-bold">wzkLTC</span>
+                        </>
+                      ) : "1.28M wzkLTC"}
                     </div>
                     <div className="text-[11px] text-muted-foreground mt-1">
-                      {isConnected ? "Live on-chain balance · LitVM" : "Demo · connect to view live"}
+                      {isConnected ? "Priced via on-chain wzkLTC pools" : "Demo · connect to view live"}
                     </div>
                   </div>
                   <div className="px-3 py-2 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-black font-bold text-sm shadow-[0_0_30px_rgba(52,211,153,0.45)]">
@@ -160,8 +223,13 @@ function Landing() {
                     <img src={h.token.logo} alt={h.token.symbol} className="h-10 w-10 mx-auto rounded-full ring-2 ring-primary/40" />
                     <div className="mt-2 text-sm font-bold">{h.token.symbol}</div>
                     <div className="text-[10px] text-muted-foreground truncate">
-                      {isConnected ? h.amount.toLocaleString(undefined, { maximumFractionDigits: 3 }) : h.token.name}
+                      {isConnected
+                        ? `${Number(formatUnits(h.raw, h.token.decimals)).toLocaleString(undefined, { maximumFractionDigits: 3 })}`
+                        : h.token.name}
                     </div>
+                    {isConnected && h.valueWzk > 0n && (
+                      <div className="text-[10px] text-gradient-gold font-mono">{fmtWzk(h.valueWzk, 2)} wzk</div>
+                    )}
                   </div>
                 ))}
               </div>
