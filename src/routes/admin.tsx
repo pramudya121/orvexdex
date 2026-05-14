@@ -1,10 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { parseUnits } from "viem";
-import { ADDR } from "@/lib/chain";
+import { useEffect, useMemo, useState } from "react";
+import {
+  useAccount,
+  useReadContract,
+  useReadContracts,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+} from "wagmi";
+import { formatUnits, parseUnits } from "viem";
+import { ADDR, explorerAddr } from "@/lib/chain";
 import { faucetAbi } from "@/lib/abis/faucet";
-import { FAUCET_TOKENS } from "@/lib/tokens";
+import { erc20Abi } from "@/lib/abis/wzkltc";
+import { FAUCET_TOKENS, type Token } from "@/lib/tokens";
 import { useToast } from "@/components/ui/toaster";
 
 export const Route = createFileRoute("/admin")({
@@ -12,171 +19,403 @@ export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
       { title: "Admin — ORVEX" },
-      { name: "description", content: "Internal admin panel for ORVEX protocol operators." },
+      { name: "description", content: "Internal admin panel for ORVEX faucet operators." },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
 });
 
+function fmt(n: bigint | undefined, decimals = 18, max = 4) {
+  if (n === undefined) return "—";
+  const s = formatUnits(n, decimals);
+  const [i, d] = s.split(".");
+  return d ? `${i}.${d.slice(0, max)}` : i;
+}
+
+function shortAddr(a?: string) {
+  return a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "—";
+}
+
 function AdminPage() {
   const { address } = useAccount();
-  const toast = useToast();
   const owner = useReadContract({ address: ADDR.faucet, abi: faucetAbi, functionName: "owner" });
-  const isOwner = address && owner.data && (owner.data as string).toLowerCase() === address.toLowerCase();
-
-  const { writeContractAsync, isPending } = useWriteContract();
-  const [hash, setHash] = useState<`0x${string}` | undefined>();
-  const receipt = useWaitForTransactionReceipt({ hash });
-  useEffect(() => {
-    if (receipt.isSuccess && hash) {
-      toast.push({ title: "Confirmed", type: "success", hash });
-      setHash(undefined);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [receipt.isSuccess]);
-
-  const exec = async (label: string, args: any) => {
-    try {
-      const h = await writeContractAsync({ address: ADDR.faucet, abi: faucetAbi, ...args });
-      setHash(h); toast.push({ title: label, hash: h });
-    } catch (e: any) {
-      toast.push({ title: "Failed", description: e?.shortMessage || e?.message, type: "error" });
-    }
-  };
+  const cooldown = useReadContract({ address: ADDR.faucet, abi: faucetAbi, functionName: "cooldown" });
+  const isOwner =
+    !!address && !!owner.data && (owner.data as string).toLowerCase() === address.toLowerCase();
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-12 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Faucet Admin</h1>
-        <p className="text-sm text-muted-foreground">Owner-only controls for the ORVEX faucet contract</p>
-      </div>
-
-      <div className={`glass rounded-2xl p-4 text-sm ${isOwner ? "border-accent/50" : "border-destructive/50"}`}>
-        <div>Connected: <span className="font-mono">{address ?? "—"}</span></div>
-        <div>Owner: <span className="font-mono">{(owner.data as string | undefined) ?? "loading…"}</span></div>
-        <div className={`mt-1 font-semibold ${isOwner ? "text-accent" : "text-destructive"}`}>
-          {!address ? "Connect wallet" : isOwner ? "✓ Owner access granted" : "✗ Not the owner — actions will revert"}
+    <div className="max-w-6xl mx-auto px-4 py-10 space-y-6">
+      <header className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Faucet Admin</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Owner-only controls for the ORVEX faucet contract
+          </p>
         </div>
-      </div>
+        <div className={`glass rounded-2xl p-3 text-xs space-y-1 min-w-[260px] border ${isOwner ? "border-accent/40" : "border-destructive/40"}`}>
+          <Row label="Faucet" value={
+            <a href={explorerAddr(ADDR.faucet)} target="_blank" rel="noreferrer" className="font-mono text-primary hover:underline">{shortAddr(ADDR.faucet)}</a>
+          } />
+          <Row label="Owner" value={<span className="font-mono">{shortAddr(owner.data as string | undefined)}</span>} />
+          <Row label="You" value={<span className="font-mono">{shortAddr(address)}</span>} />
+          <div className={`mt-1 font-semibold ${isOwner ? "text-accent" : "text-destructive"}`}>
+            {!address ? "Connect wallet" : isOwner ? "✓ Owner access" : "✗ Not the owner — actions will revert"}
+          </div>
+        </div>
+      </header>
 
-      <Card title="Set Cooldown (seconds)">
-        <SingleInput placeholder="3600" onSubmit={(v: string) => exec("Setting cooldown…", { functionName: "setCooldown", args: [BigInt(v)] })} disabled={isPending || !!hash} />
-      </Card>
+      <CooldownCard current={cooldown.data as bigint | undefined} disabled={!isOwner} />
 
-      <Card title="Set Claim Amount">
-        <TokenAmountForm
-          onSubmit={(idx: number, amt: string) => exec("Setting claim amount…", { functionName: "setClaimAmount", args: [idx, parseUnits(amt as `${number}`, 18)] })}
-          disabled={isPending || !!hash}
-        />
-      </Card>
+      <section className="space-y-3">
+        <h2 className="font-semibold text-lg">Tokens</h2>
+        <div className="space-y-3">
+          {FAUCET_TOKENS.map((t) => (
+            <TokenRow key={t.address} token={t} adminAddress={address} disabled={!isOwner} />
+          ))}
+        </div>
+      </section>
 
-      <Card title="Set Max Claims (per user)">
-        <TokenAmountForm
-          amountLabel="max" placeholder="100"
-          onSubmit={(idx: number, amt: string) => exec("Setting max claims…", { functionName: "setMaxClaims", args: [idx, BigInt(amt)] })}
-          disabled={isPending || !!hash}
-        />
-      </Card>
-
-      <Card title="Refill (transfers tokens INTO faucet — requires prior approval)">
-        <TokenAmountForm
-          onSubmit={(idx: number, amt: string) => exec("Refilling…", { functionName: "refill", args: [idx, parseUnits(amt as `${number}`, 18)] })}
-          disabled={isPending || !!hash}
-        />
-      </Card>
-
-      <Card title="Set Token Address">
-        <SetTokenForm onSubmit={(idx: number, addr: string) => exec("Setting token…", { functionName: "setToken", args: [idx, addr as `0x${string}`] })} disabled={isPending || !!hash} />
-      </Card>
-
-      <Card title="Admin Withdraw">
-        <AdminWithdrawForm onSubmit={(idx: number, amt: string, to: string) => exec("Withdrawing…", { functionName: "adminWithdraw", args: [idx, parseUnits(amt as `${number}`, 18), to as `0x${string}`] })} disabled={isPending || !!hash} />
-      </Card>
-
-      <Card title="Reset User Claim Count">
-        <UserClaimForm onSubmit={(user: string, idx: number, count: string) => exec("Setting user count…", { functionName: "setUserClaimCount", args: [user as `0x${string}`, idx, BigInt(count)] })} disabled={isPending || !!hash} />
-      </Card>
+      <ResetUserCard disabled={!isOwner} />
     </div>
   );
 }
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function Row({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-muted-foreground">{label}</span>
+      {value}
+    </div>
+  );
+}
+
+function useTxRunner(label: string) {
+  const toast = useToast();
+  const { writeContractAsync, isPending, reset } = useWriteContract();
+  const [hash, setHash] = useState<`0x${string}` | undefined>();
+  const receipt = useWaitForTransactionReceipt({ hash });
+  useEffect(() => {
+    if (receipt.isSuccess && hash) {
+      toast.push({ title: `${label} confirmed`, type: "success", hash });
+      setHash(undefined);
+      reset();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [receipt.isSuccess]);
+  const run = async (args: Parameters<typeof writeContractAsync>[0], title?: string) => {
+    try {
+      const h = await writeContractAsync(args);
+      setHash(h);
+      toast.push({ title: title ?? `${label} submitted`, hash: h });
+      return h;
+    } catch (e: any) {
+      toast.push({ title: `${label} failed`, description: e?.shortMessage || e?.message, type: "error" });
+    }
+  };
+  return { run, isPending, isMining: receipt.isLoading, hash };
+}
+
+function CooldownCard({ current, disabled }: { current: bigint | undefined; disabled?: boolean }) {
+  const [val, setVal] = useState("");
+  const { run, isPending, isMining } = useTxRunner("Cooldown");
+  const busy = isPending || isMining || disabled;
+  const currentSec = current !== undefined ? Number(current) : undefined;
   return (
     <div className="glass rounded-2xl p-5">
-      <h3 className="font-semibold mb-3">{title}</h3>
+      <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+        <div>
+          <h3 className="font-semibold">Global Cooldown</h3>
+          <p className="text-xs text-muted-foreground">Time required between consecutive claims (per token)</p>
+        </div>
+        <div className="text-sm">
+          Current: <span className="font-mono font-semibold">{currentSec ?? "—"}s</span>
+          {currentSec !== undefined && <span className="text-muted-foreground ml-2">({(currentSec / 3600).toFixed(2)}h)</span>}
+        </div>
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        <input
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          placeholder="seconds (e.g. 3600)"
+          inputMode="numeric"
+          className="flex-1 min-w-[10rem] bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary"
+        />
+        <PresetBtn onClick={() => setVal("60")}>1m</PresetBtn>
+        <PresetBtn onClick={() => setVal("3600")}>1h</PresetBtn>
+        <PresetBtn onClick={() => setVal("21600")}>6h</PresetBtn>
+        <PresetBtn onClick={() => setVal("86400")}>24h</PresetBtn>
+        <button
+          onClick={() => run({ address: ADDR.faucet, abi: faucetAbi, functionName: "setCooldown", args: [BigInt(val || "0")] })}
+          disabled={busy || !val}
+          className="px-4 py-2 rounded-xl bg-gradient-brand text-primary-foreground font-semibold disabled:opacity-40"
+        >
+          {isPending || isMining ? "…" : "Update"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PresetBtn({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="px-3 py-2 text-xs rounded-xl border border-border hover:border-primary text-muted-foreground hover:text-foreground"
+    >
+      {children}
+    </button>
+  );
+}
+
+function TokenRow({ token, adminAddress, disabled }: { token: Token; adminAddress?: string; disabled?: boolean }) {
+  const idx = token.faucetIndex!;
+  const dec = token.decimals;
+
+  const reads = useReadContracts({
+    contracts: [
+      { address: ADDR.faucet, abi: faucetAbi, functionName: "claimAmounts", args: [BigInt(idx)] },
+      { address: ADDR.faucet, abi: faucetAbi, functionName: "maxClaims", args: [BigInt(idx)] },
+      { address: ADDR.faucet, abi: faucetAbi, functionName: "tokens", args: [BigInt(idx)] },
+      { address: token.address, abi: erc20Abi, functionName: "balanceOf", args: [ADDR.faucet] },
+      {
+        address: token.address,
+        abi: erc20Abi,
+        functionName: "allowance",
+        args: adminAddress ? [adminAddress as `0x${string}`, ADDR.faucet] : undefined,
+      },
+      { address: token.address, abi: erc20Abi, functionName: "balanceOf", args: adminAddress ? [adminAddress as `0x${string}`] : undefined },
+    ],
+    query: { refetchInterval: 15_000 },
+  });
+
+  const claimAmount = reads.data?.[0]?.result as bigint | undefined;
+  const maxClaims = reads.data?.[1]?.result as bigint | undefined;
+  const onChainAddr = reads.data?.[2]?.result as string | undefined;
+  const faucetBal = reads.data?.[3]?.result as bigint | undefined;
+  const allowance = reads.data?.[4]?.result as bigint | undefined;
+  const myBal = reads.data?.[5]?.result as bigint | undefined;
+
+  const addrMismatch = onChainAddr && onChainAddr.toLowerCase() !== token.address.toLowerCase();
+
+  // Editable fields (controlled, default to current values when known)
+  const [claimVal, setClaimVal] = useState("");
+  const [maxVal, setMaxVal] = useState("");
+  const [refillVal, setRefillVal] = useState("");
+  const [withdrawVal, setWithdrawVal] = useState("");
+  const [withdrawTo, setWithdrawTo] = useState("");
+  const [newAddr, setNewAddr] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  useEffect(() => {
+    if (claimAmount !== undefined && claimVal === "") setClaimVal(formatUnits(claimAmount, dec));
+  }, [claimAmount, dec, claimVal]);
+  useEffect(() => {
+    if (maxClaims !== undefined && maxVal === "") setMaxVal(maxClaims.toString());
+  }, [maxClaims, maxVal]);
+
+  const setClaim = useTxRunner(`${token.symbol} claim amount`);
+  const setMax = useTxRunner(`${token.symbol} max claims`);
+  const refill = useTxRunner(`${token.symbol} refill`);
+  const approve = useTxRunner(`${token.symbol} approve`);
+  const withdraw = useTxRunner(`${token.symbol} withdraw`);
+  const setTokenAddr = useTxRunner(`${token.symbol} set address`);
+
+  const refillBig = useMemo(() => {
+    try { return refillVal ? parseUnits(refillVal as `${number}`, dec) : 0n; } catch { return 0n; }
+  }, [refillVal, dec]);
+  const needsApprove = refillBig > 0n && (allowance ?? 0n) < refillBig;
+
+  // # claims fundable at current claim amount
+  const fundable = claimAmount && claimAmount > 0n && faucetBal !== undefined ? faucetBal / claimAmount : undefined;
+
+  return (
+    <div className="glass rounded-2xl p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+        <div className="flex items-center gap-3">
+          <img src={token.logo} alt={`${token.symbol} token logo`} className="h-10 w-10 rounded-full" />
+          <div>
+            <div className="font-bold text-lg leading-none">{token.symbol}</div>
+            <div className="text-xs text-muted-foreground">{token.name} · #{idx}</div>
+            <a
+              href={explorerAddr(token.address)} target="_blank" rel="noreferrer"
+              className="text-[11px] font-mono text-primary hover:underline"
+            >{shortAddr(token.address)}</a>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-right text-sm flex-1 min-w-[260px]">
+          <Stat label="Faucet bal" value={fmt(faucetBal, dec)} />
+          <Stat label="Claim/req" value={fmt(claimAmount, dec)} />
+          <Stat label="Max/user" value={maxClaims?.toString() ?? "—"} />
+          <Stat label="Fundable" value={fundable !== undefined ? `${fundable}×` : "—"} />
+        </div>
+      </div>
+
+      {addrMismatch && (
+        <div className="mb-3 text-xs px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/40 text-destructive">
+          ⚠ On-chain address (<span className="font-mono">{shortAddr(onChainAddr)}</span>) doesn't match config (<span className="font-mono">{shortAddr(token.address)}</span>).
+        </div>
+      )}
+
+      <div className="grid md:grid-cols-2 gap-3">
+        {/* Claim amount */}
+        <Field label="Claim amount per request">
+          <div className="flex gap-2">
+            <input value={claimVal} onChange={(e) => setClaimVal(e.target.value)}
+              className="flex-1 bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-sm" />
+            <button
+              disabled={disabled || setClaim.isPending || setClaim.isMining || !claimVal}
+              onClick={() => setClaim.run({ address: ADDR.faucet, abi: faucetAbi, functionName: "setClaimAmount", args: [idx, parseUnits(claimVal as `${number}`, dec)] })}
+              className="px-3 py-2 rounded-xl bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 text-sm font-semibold disabled:opacity-40">Save</button>
+          </div>
+        </Field>
+
+        {/* Max claims */}
+        <Field label="Max claims per user">
+          <div className="flex gap-2">
+            <input value={maxVal} onChange={(e) => setMaxVal(e.target.value)} inputMode="numeric"
+              className="flex-1 bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-sm" />
+            <button
+              disabled={disabled || setMax.isPending || setMax.isMining || !maxVal}
+              onClick={() => setMax.run({ address: ADDR.faucet, abi: faucetAbi, functionName: "setMaxClaims", args: [idx, BigInt(maxVal)] })}
+              className="px-3 py-2 rounded-xl bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 text-sm font-semibold disabled:opacity-40">Save</button>
+          </div>
+        </Field>
+
+        {/* Refill */}
+        <Field label={`Refill faucet (your bal: ${fmt(myBal, dec)})`}>
+          <div className="flex gap-2 flex-wrap">
+            <input value={refillVal} onChange={(e) => setRefillVal(e.target.value)} placeholder="0.0"
+              className="flex-1 min-w-[6rem] bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-sm" />
+            <button type="button" onClick={() => myBal !== undefined && setRefillVal(formatUnits(myBal, dec))}
+              className="px-2 py-2 text-xs rounded-xl border border-border hover:border-primary text-muted-foreground">MAX</button>
+            {needsApprove ? (
+              <button
+                disabled={disabled || approve.isPending || approve.isMining || refillBig === 0n}
+                onClick={() => approve.run({ address: token.address, abi: erc20Abi, functionName: "approve", args: [ADDR.faucet, refillBig] })}
+                className="px-3 py-2 rounded-xl bg-accent/20 text-accent border border-accent/40 hover:bg-accent/30 text-sm font-semibold disabled:opacity-40">
+                Approve
+              </button>
+            ) : (
+              <button
+                disabled={disabled || refill.isPending || refill.isMining || refillBig === 0n}
+                onClick={() => refill.run({ address: ADDR.faucet, abi: faucetAbi, functionName: "refill", args: [idx, refillBig] })}
+                className="px-3 py-2 rounded-xl bg-gradient-brand text-primary-foreground text-sm font-semibold disabled:opacity-40">
+                Refill
+              </button>
+            )}
+          </div>
+          <div className="text-[10px] text-muted-foreground mt-1">
+            Allowance: {fmt(allowance, dec)} {needsApprove && refillBig > 0n && <span className="text-accent">→ approve required</span>}
+          </div>
+        </Field>
+
+        {/* Withdraw */}
+        <Field label="Withdraw from faucet">
+          <div className="flex gap-2 flex-wrap">
+            <input value={withdrawVal} onChange={(e) => setWithdrawVal(e.target.value)} placeholder="amount"
+              className="w-24 bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-sm" />
+            <input value={withdrawTo} onChange={(e) => setWithdrawTo(e.target.value)} placeholder={adminAddress ?? "to 0x…"}
+              className="flex-1 min-w-[8rem] font-mono bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-xs" />
+            <button type="button" onClick={() => adminAddress && setWithdrawTo(adminAddress)}
+              className="px-2 py-2 text-xs rounded-xl border border-border hover:border-primary text-muted-foreground">SELF</button>
+            <button
+              disabled={disabled || withdraw.isPending || withdraw.isMining || !withdrawVal || !withdrawTo}
+              onClick={() => withdraw.run({ address: ADDR.faucet, abi: faucetAbi, functionName: "adminWithdraw", args: [idx, parseUnits(withdrawVal as `${number}`, dec), withdrawTo as `0x${string}`] })}
+              className="px-3 py-2 rounded-xl bg-destructive/15 text-destructive border border-destructive/30 hover:bg-destructive/25 text-sm font-semibold disabled:opacity-40">Withdraw</button>
+          </div>
+        </Field>
+      </div>
+
+      <button
+        onClick={() => setShowAdvanced((s) => !s)}
+        className="mt-3 text-xs text-muted-foreground hover:text-foreground"
+      >
+        {showAdvanced ? "▾ Hide advanced" : "▸ Advanced (change token address)"}
+      </button>
+      {showAdvanced && (
+        <div className="mt-3 pt-3 border-t border-border">
+          <Field label={`Replace token #${idx} address (current: ${shortAddr(onChainAddr)})`}>
+            <div className="flex gap-2 flex-wrap">
+              <input value={newAddr} onChange={(e) => setNewAddr(e.target.value)} placeholder="new 0x…"
+                className="flex-1 min-w-[10rem] font-mono bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-xs" />
+              <button
+                disabled={disabled || setTokenAddr.isPending || setTokenAddr.isMining || !newAddr}
+                onClick={() => setTokenAddr.run({ address: ADDR.faucet, abi: faucetAbi, functionName: "setToken", args: [idx, newAddr as `0x${string}`] })}
+                className="px-3 py-2 rounded-xl bg-destructive/15 text-destructive border border-destructive/30 hover:bg-destructive/25 text-sm font-semibold disabled:opacity-40">Replace</button>
+            </div>
+          </Field>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="text-right">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="font-mono font-semibold text-sm">{value}</div>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
       {children}
     </div>
   );
 }
 
-function SingleInput({ placeholder, onSubmit, disabled }: { placeholder?: string; onSubmit: (v: string) => void; disabled?: boolean }) {
-  const [v, setV] = useState("");
-  return (
-    <div className="flex gap-2">
-      <input value={v} onChange={(e) => setV(e.target.value)} placeholder={placeholder} className="flex-1 bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary" />
-      <button onClick={() => onSubmit(v)} disabled={disabled || !v} className="px-4 py-2 rounded-xl bg-gradient-brand text-primary-foreground font-semibold disabled:opacity-40">Submit</button>
-    </div>
-  );
-}
-
-function TokenSelectIdx({ value, onChange }: { value: number; onChange: (n: number) => void }) {
-  return (
-    <select value={value} onChange={(e) => onChange(+e.target.value)} className="bg-surface-2 rounded-xl px-3 py-2 border border-border">
-      {FAUCET_TOKENS.map((t) => (
-        <option key={t.faucetIndex} value={t.faucetIndex}>#{t.faucetIndex} {t.symbol}</option>
-      ))}
-    </select>
-  );
-}
-
-function TokenAmountForm({ onSubmit, disabled, placeholder = "100", amountLabel = "amount" }: { onSubmit: (idx: number, amt: string) => void; disabled?: boolean; placeholder?: string; amountLabel?: string }) {
-  const [idx, setIdx] = useState(FAUCET_TOKENS[0].faucetIndex!);
-  const [amt, setAmt] = useState("");
-  return (
-    <div className="flex gap-2 flex-wrap">
-      <TokenSelectIdx value={idx} onChange={setIdx} />
-      <input value={amt} onChange={(e) => setAmt(e.target.value)} placeholder={`${amountLabel} (${placeholder})`} className="flex-1 min-w-[8rem] bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary" />
-      <button onClick={() => onSubmit(idx, amt)} disabled={disabled || !amt} className="px-4 py-2 rounded-xl bg-gradient-brand text-primary-foreground font-semibold disabled:opacity-40">Submit</button>
-    </div>
-  );
-}
-
-function SetTokenForm({ onSubmit, disabled }: { onSubmit: (idx: number, addr: string) => void; disabled?: boolean }) {
-  const [idx, setIdx] = useState(0);
-  const [addr, setAddr] = useState("");
-  return (
-    <div className="flex gap-2 flex-wrap">
-      <input type="number" value={idx} onChange={(e) => setIdx(+e.target.value)} className="w-24 bg-surface-2 rounded-xl px-3 py-2 border border-border" />
-      <input value={addr} onChange={(e) => setAddr(e.target.value)} placeholder="0x…" className="flex-1 bg-surface-2 rounded-xl px-3 py-2 border border-border font-mono" />
-      <button onClick={() => onSubmit(idx, addr)} disabled={disabled || !addr} className="px-4 py-2 rounded-xl bg-gradient-brand text-primary-foreground font-semibold disabled:opacity-40">Submit</button>
-    </div>
-  );
-}
-
-function AdminWithdrawForm({ onSubmit, disabled }: { onSubmit: (idx: number, amt: string, to: string) => void; disabled?: boolean }) {
-  const [idx, setIdx] = useState(FAUCET_TOKENS[0].faucetIndex!);
-  const [amt, setAmt] = useState("");
-  const [to, setTo] = useState("");
-  return (
-    <div className="grid sm:grid-cols-4 gap-2">
-      <TokenSelectIdx value={idx} onChange={setIdx} />
-      <input value={amt} onChange={(e) => setAmt(e.target.value)} placeholder="amount" className="bg-surface-2 rounded-xl px-3 py-2 border border-border" />
-      <input value={to} onChange={(e) => setTo(e.target.value)} placeholder="to 0x…" className="bg-surface-2 rounded-xl px-3 py-2 border border-border font-mono sm:col-span-1" />
-      <button onClick={() => onSubmit(idx, amt, to)} disabled={disabled || !amt || !to} className="px-4 py-2 rounded-xl bg-gradient-brand text-primary-foreground font-semibold disabled:opacity-40">Withdraw</button>
-    </div>
-  );
-}
-
-function UserClaimForm({ onSubmit, disabled }: { onSubmit: (user: string, idx: number, count: string) => void; disabled?: boolean }) {
+function ResetUserCard({ disabled }: { disabled?: boolean }) {
   const [user, setUser] = useState("");
-  const [idx, setIdx] = useState(FAUCET_TOKENS[0].faucetIndex!);
-  const [count, setCount] = useState("");
+  const [idx, setIdx] = useState<number>(FAUCET_TOKENS[0].faucetIndex!);
+  const [count, setCount] = useState("0");
+  const { run, isPending, isMining } = useTxRunner("Reset user count");
+
+  const userClaim = useReadContract({
+    address: ADDR.faucet,
+    abi: faucetAbi,
+    functionName: "userClaimCount",
+    args: user && /^0x[a-fA-F0-9]{40}$/.test(user) ? [user as `0x${string}`, idx] : undefined,
+  });
+  const lastClaim = useReadContract({
+    address: ADDR.faucet,
+    abi: faucetAbi,
+    functionName: "lastClaimed",
+    args: user && /^0x[a-fA-F0-9]{40}$/.test(user) ? [user as `0x${string}`, idx] : undefined,
+  });
+  const lastTs = lastClaim.data ? new Date(Number(lastClaim.data as bigint) * 1000).toLocaleString() : "—";
+
   return (
-    <div className="grid sm:grid-cols-4 gap-2">
-      <input value={user} onChange={(e) => setUser(e.target.value)} placeholder="user 0x…" className="bg-surface-2 rounded-xl px-3 py-2 border border-border font-mono sm:col-span-2" />
-      <TokenSelectIdx value={idx} onChange={setIdx} />
-      <input type="number" value={count} onChange={(e) => setCount(e.target.value)} placeholder="count" className="bg-surface-2 rounded-xl px-3 py-2 border border-border" />
-      <button onClick={() => onSubmit(user, idx, count)} disabled={disabled || !user || !count} className="px-4 py-2 rounded-xl bg-gradient-brand text-primary-foreground font-semibold disabled:opacity-40 sm:col-span-4">Submit</button>
+    <div className="glass rounded-2xl p-5">
+      <h3 className="font-semibold mb-1">Reset user claim count</h3>
+      <p className="text-xs text-muted-foreground mb-3">Lookup a user, then override their claim count for a specific token.</p>
+      <div className="grid sm:grid-cols-12 gap-2">
+        <input value={user} onChange={(e) => setUser(e.target.value)} placeholder="user 0x…"
+          className="sm:col-span-6 font-mono bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-sm" />
+        <select value={idx} onChange={(e) => setIdx(+e.target.value)}
+          className="sm:col-span-3 bg-surface-2 rounded-xl px-3 py-2 border border-border text-sm">
+          {FAUCET_TOKENS.map((t) => (
+            <option key={t.faucetIndex} value={t.faucetIndex!}>#{t.faucetIndex} {t.symbol}</option>
+          ))}
+        </select>
+        <input value={count} onChange={(e) => setCount(e.target.value)} placeholder="count" inputMode="numeric"
+          className="sm:col-span-3 bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-sm" />
+      </div>
+      <div className="text-xs text-muted-foreground mt-2 flex flex-wrap gap-x-4">
+        <span>Current count: <span className="font-mono text-foreground">{(userClaim.data as bigint | undefined)?.toString() ?? "—"}</span></span>
+        <span>Last claim: <span className="text-foreground">{lastTs}</span></span>
+      </div>
+      <button
+        disabled={disabled || isPending || isMining || !user || !count}
+        onClick={() => run({ address: ADDR.faucet, abi: faucetAbi, functionName: "setUserClaimCount", args: [user as `0x${string}`, idx, BigInt(count)] })}
+        className="mt-3 px-4 py-2 rounded-xl bg-gradient-brand text-primary-foreground font-semibold disabled:opacity-40">
+        {isPending || isMining ? "Submitting…" : "Apply"}
+      </button>
     </div>
   );
 }
