@@ -73,6 +73,7 @@ function HistoryPage() {
         </div>
       ) : (
         <>
+          <h2 className="sr-only">Filters</h2>
           <div className="flex flex-wrap items-center gap-2 mb-4 animate-rise">
             <div className="flex gap-1 bg-surface-2 rounded-xl p-1">
               <button
@@ -94,6 +95,7 @@ function HistoryPage() {
 
           {tab === "local" ? (
             <>
+              <h2 className="sr-only">Transaction list</h2>
               <div className="flex flex-wrap gap-2 mb-4">
                 {([
                   { k: "all", l: "All" },
