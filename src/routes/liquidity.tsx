@@ -120,7 +120,7 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
   const [amountA, setAmountA] = useState("");
   const [amountB, setAmountB] = useState("");
   const [lastEdited, setLastEdited] = useState<"A" | "B">("A");
-  const [slipBps, setSlipBps] = useState(50);
+  const [slipBps, setSlipBps] = useState(100);
   useEffect(() => {
     const a = findTokenByAddr(prefillA); const b = findTokenByAddr(prefillB);
     if (a) setTokenA(a); if (b) setTokenB(b);
@@ -139,8 +139,13 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
   const allowA = useAllowance(!tokenA.isNative ? (tokenA.address as `0x${string}`) : undefined, address);
   const allowB = useAllowance(!tokenB.isNative ? (tokenB.address as `0x${string}`) : undefined, address);
 
-  const needA = !tokenA.isNative && (allowA.data as bigint | undefined ?? 0n) < amtAWei && amtAWei > 0n;
-  const needB = !tokenB.isNative && (allowB.data as bigint | undefined ?? 0n) < amtBWei && amtBWei > 0n;
+  const allowAVal = (allowA.data as bigint | undefined) ?? 0n;
+  const allowBVal = (allowB.data as bigint | undefined) ?? 0n;
+  const needA = !tokenA.isNative && allowAVal < amtAWei && amtAWei > 0n;
+  const needB = !tokenB.isNative && allowBVal < amtBWei && amtBWei > 0n;
+  const allowanceLoading =
+    (!tokenA.isNative && (allowA.isLoading || allowA.isFetching)) ||
+    (!tokenB.isNative && (allowB.isLoading || allowB.isFetching));
 
   // Pool / AMM lookup
   const aAddr = (tokenA.isNative ? ADDR.wzkLTC : tokenA.address) as `0x${string}`;
@@ -194,11 +199,13 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
 
   const { writeContractAsync, isPending } = useWriteContract();
   const [hash, setHash] = useState<`0x${string}` | undefined>();
+  const [pendingKind, setPendingKind] = useState<"approveA" | "approveB" | "add" | undefined>();
   const receipt = useWaitForTransactionReceipt({ hash });
   useEffect(() => {
     if (receipt.isSuccess && hash) {
       toast.push({ title: "Confirmed", type: "success", hash });
       setHash(undefined);
+      setPendingKind(undefined);
       allowA.refetch(); allowB.refetch(); aBal.refetch(); bBal.refetch(); nativeBal.refetch();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -206,15 +213,29 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
 
   const submit = async () => {
     if (!address || amtAWei <= 0n || amtBWei <= 0n) return;
+    // Guard: native balance must leave room for gas
+    if (tokenA.isNative && balA !== undefined && amtAWei >= balA) {
+      toast.push({ title: "Sisakan zkLTC untuk gas", description: "Kurangi sedikit jumlah zkLTC (klik MAX kemudian kurangi ~0.01).", type: "error" });
+      return;
+    }
+    if (tokenB.isNative && balB !== undefined && amtBWei >= balB) {
+      toast.push({ title: "Sisakan zkLTC untuk gas", description: "Kurangi sedikit jumlah zkLTC (klik MAX kemudian kurangi ~0.01).", type: "error" });
+      return;
+    }
+    // Guard: allowance still loading — avoid sending an addLiquidity that would revert on transferFrom
+    if (allowanceLoading) {
+      toast.push({ title: "Mengecek allowance…", description: "Coba lagi sebentar.", type: "info" as any });
+      return;
+    }
     try {
       if (needA) {
         const h = await writeContractAsync({ address: tokenA.address as `0x${string}`, abi: erc20Abi, functionName: "approve", args: [ADDR.router, MAX_UINT256] });
-        setHash(h); toast.push({ title: `Approving ${tokenA.symbol}…`, hash: h });
+        setHash(h); setPendingKind("approveA"); toast.push({ title: `Approving ${tokenA.symbol}…`, hash: h });
         return;
       }
       if (needB) {
         const h = await writeContractAsync({ address: tokenB.address as `0x${string}`, abi: erc20Abi, functionName: "approve", args: [ADDR.router, MAX_UINT256] });
-        setHash(h); toast.push({ title: `Approving ${tokenB.symbol}…`, hash: h });
+        setHash(h); setPendingKind("approveB"); toast.push({ title: `Approving ${tokenB.symbol}…`, hash: h });
         return;
       }
       const dl = deadline(20);
@@ -234,13 +255,17 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
           args: [tokenA.address as `0x${string}`, tokenB.address as `0x${string}`, amtAWei, amtBWei, slippageMin(amtAWei, slipBps), slippageMin(amtBWei, slipBps), address, dl],
         });
       }
-      setHash(h); toast.push({ title: "Adding liquidity…", hash: h });
+      setHash(h); setPendingKind("add"); toast.push({ title: "Adding liquidity…", hash: h });
     } catch (e: any) {
-      toast.push({ title: "Failed", description: e?.shortMessage || e?.message, type: "error" });
+      const msg = e?.shortMessage || e?.cause?.shortMessage || e?.message || "Transaction reverted";
+      toast.push({ title: "Failed", description: msg, type: "error" });
+      setPendingKind(undefined);
     }
   };
 
-  const label = needA ? `Approve ${tokenA.symbol}` : needB ? `Approve ${tokenB.symbol}` : "Add Liquidity";
+  const label = allowanceLoading
+    ? "Checking allowance…"
+    : needA ? `Approve ${tokenA.symbol}` : needB ? `Approve ${tokenB.symbol}` : "Add Liquidity";
 
   return (
     <>
@@ -316,7 +341,19 @@ function Field({ label, token, onChange, amount, setAmount, balance, exclude }: 
         <span className="truncate text-right">
           Balance: {fmt(balance, token.decimals)}{" "}
           {balance !== undefined && balance > 0n && (
-            <button onClick={() => setAmount(fmt(balance, token.decimals, 18))} className="text-accent hover:underline ml-1">MAX</button>
+            <button
+              onClick={() => {
+                // For native zkLTC keep ~0.01 for gas to avoid reverts
+                if (token.isNative) {
+                  const reserve = 10_000_000_000_000_000n; // 0.01
+                  const usable = balance > reserve ? balance - reserve : 0n;
+                  setAmount(fmt(usable, token.decimals, 18));
+                } else {
+                  setAmount(fmt(balance, token.decimals, 18));
+                }
+              }}
+              className="text-accent hover:underline ml-1"
+            >MAX</button>
           )}
         </span>
       </div>
