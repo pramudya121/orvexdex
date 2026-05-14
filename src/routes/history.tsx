@@ -10,8 +10,15 @@ export const Route = createFileRoute("/history")({
   head: () => ({
     meta: [
       { title: "History — ORVEX" },
-      { name: "description", content: "Riwayat transaksi swap, liquidity & approve di ORVEX." },
+      { name: "description", content: "Your ORVEX transaction history: swaps, liquidity events, approvals, and wraps with on-chain links." },
+      { property: "og:title", content: "History — ORVEX" },
+      { property: "og:description", content: "Your ORVEX transaction history: swaps, liquidity events, approvals, and wraps with on-chain links." },
+      { property: "og:url", content: "https://orvexdex12.lovable.app/history" },
+      { name: "twitter:title", content: "History — ORVEX" },
+      { name: "twitter:description", content: "Your ORVEX transaction history: swaps, liquidity events, approvals, and wraps with on-chain links." },
+      { name: "robots", content: "noindex" },
     ],
+    links: [{ rel: "canonical", href: "https://orvexdex12.lovable.app/history" }],
   }),
 });
 
