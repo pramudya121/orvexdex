@@ -121,6 +121,9 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
   const [amountB, setAmountB] = useState("");
   const [lastEdited, setLastEdited] = useState<"A" | "B">("A");
   const [slipBps, setSlipBps] = useState(100);
+  // When user clicks submit, keep going through approveA → approveB → add
+  // automatically as each on-chain step confirms and allowance refetches.
+  const [autoContinue, setAutoContinue] = useState(false);
   useEffect(() => {
     const a = findTokenByAddr(prefillA); const b = findTokenByAddr(prefillB);
     if (a) setTokenA(a); if (b) setTokenB(b);
@@ -204,15 +207,52 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
   useEffect(() => {
     if (receipt.isSuccess && hash) {
       toast.push({ title: "Confirmed", type: "success", hash });
+      const wasAdd = pendingKind === "add";
       setHash(undefined);
       setPendingKind(undefined);
       allowA.refetch(); allowB.refetch(); aBal.refetch(); bBal.refetch(); nativeBal.refetch();
+      if (wasAdd) setAutoContinue(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receipt.isSuccess]);
 
+  // Reset auto-continue when the user changes inputs/tokens (avoid surprise tx)
+  useEffect(() => {
+    setAutoContinue(false);
+  }, [tokenA.address, tokenB.address]);
+
+  // MINIMUM_LIQUIDITY = 1000 (UniV2). For first-mint, sqrt(amtA*amtB) must
+  // exceed this or `addLiquidity` reverts with "INSUFFICIENT_LIQUIDITY_MINTED".
+  const sqrtBig = (n: bigint): bigint => {
+    if (n <= 0n) return 0n;
+    let x = n, y = (n + 1n) / 2n;
+    while (y < x) { x = y; y = (n / y + y) / 2n; }
+    return x;
+  };
+  const initialMintEst = !pairExists && amtAWei > 0n && amtBWei > 0n
+    ? sqrtBig(amtAWei * amtBWei)
+    : 0n;
+  const belowMinLiquidity = !pairExists && amtAWei > 0n && amtBWei > 0n && initialMintEst <= 1000n;
+
+  // Off-chain ratio validation: when a pool exists, the deposit ratio MUST
+  // be close to the current reserve ratio or the router will refund/revert.
+  const ratioOffBps = useMemo(() => {
+    if (!pairExists || reserveA === 0n || reserveB === 0n) return 0;
+    if (amtAWei <= 0n || amtBWei <= 0n) return 0;
+    const expectedB = (amtAWei * reserveB) / reserveA;
+    if (expectedB === 0n) return 10000;
+    const diff = amtBWei > expectedB ? amtBWei - expectedB : expectedB - amtBWei;
+    return Number((diff * 10000n) / expectedB);
+  }, [pairExists, reserveA, reserveB, amtAWei, amtBWei]);
+  const ratioOff = ratioOffBps > slipBps;
+
   const submit = async () => {
     if (!address || amtAWei <= 0n || amtBWei <= 0n) return;
+    // Decimal sanity: token metadata must be in valid ERC20 range.
+    if (tokenA.decimals < 0 || tokenA.decimals > 36 || tokenB.decimals < 0 || tokenB.decimals > 36) {
+      toast.push({ title: "Token decimals tidak valid", type: "error" });
+      return;
+    }
     // Guard: native balance must leave room for gas
     if (tokenA.isNative && balA !== undefined && amtAWei >= balA) {
       toast.push({ title: "Sisakan zkLTC untuk gas", description: "Kurangi sedikit jumlah zkLTC (klik MAX kemudian kurangi ~0.01).", type: "error" });
@@ -220,6 +260,33 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
     }
     if (tokenB.isNative && balB !== undefined && amtBWei >= balB) {
       toast.push({ title: "Sisakan zkLTC untuk gas", description: "Kurangi sedikit jumlah zkLTC (klik MAX kemudian kurangi ~0.01).", type: "error" });
+      return;
+    }
+    // Guard: balance must cover deposit on each side
+    if (balA !== undefined && amtAWei > balA) {
+      toast.push({ title: `Saldo ${tokenA.symbol} tidak cukup`, type: "error" });
+      return;
+    }
+    if (balB !== undefined && amtBWei > balB) {
+      toast.push({ title: `Saldo ${tokenB.symbol} tidak cukup`, type: "error" });
+      return;
+    }
+    // Guard: deposit ratio must match pool ratio within slippage tolerance.
+    if (pairExists && ratioOff) {
+      toast.push({
+        title: "Rasio tidak sesuai pool",
+        description: `Selisih ${(ratioOffBps / 100).toFixed(2)}% > slippage ${(slipBps / 100).toFixed(2)}%. Edit salah satu sisi untuk auto-quote ulang, atau naikkan slippage.`,
+        type: "error",
+      });
+      return;
+    }
+    // Guard: first-mint must clear MINIMUM_LIQUIDITY (1000 LP units).
+    if (belowMinLiquidity) {
+      toast.push({
+        title: "Initial liquidity terlalu kecil",
+        description: "Pool baru butuh sqrt(amountA × amountB) > 1000 wei. Naikkan jumlah deposit.",
+        type: "error",
+      });
       return;
     }
     // Guard: allowance still loading — avoid sending an addLiquidity that would revert on transferFrom
@@ -260,12 +327,29 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
       const msg = e?.shortMessage || e?.cause?.shortMessage || e?.message || "Transaction reverted";
       toast.push({ title: "Failed", description: msg, type: "error" });
       setPendingKind(undefined);
+      setAutoContinue(false);
     }
   };
 
+  // Auto-continue: once an approve confirms and allowance is fresh, fire the
+  // next required tx (second approve or addLiquidity) without user re-clicking.
+  useEffect(() => {
+    if (!autoContinue) return;
+    if (isPending || hash) return;            // a tx is in-flight
+    if (allowanceLoading) return;              // wait for fresh allowance
+    if (amtAWei <= 0n || amtBWei <= 0n) return;
+    if (pairExists && ratioOff) return;        // user must fix ratio first
+    submit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoContinue, isPending, hash, allowanceLoading, allowAVal, allowBVal]);
+
   const label = allowanceLoading
     ? "Checking allowance…"
-    : needA ? `Approve ${tokenA.symbol}` : needB ? `Approve ${tokenB.symbol}` : "Add Liquidity";
+    : ratioOff ? "Rasio tidak sesuai pool"
+    : belowMinLiquidity ? "Initial liquidity terlalu kecil"
+    : needA ? `Approve ${tokenA.symbol}` : needB ? `Approve ${tokenB.symbol}`
+    : autoContinue ? "Continuing…"
+    : "Add Liquidity";
 
   return (
     <>
@@ -323,8 +407,8 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
       </div>
 
       <button
-        onClick={submit}
-        disabled={!address || amtAWei <= 0n || amtBWei <= 0n || isPending || !!hash}
+        onClick={() => { setAutoContinue(true); submit(); }}
+        disabled={!address || amtAWei <= 0n || amtBWei <= 0n || isPending || !!hash || ratioOff || belowMinLiquidity}
         className="mt-5 w-full py-4 rounded-xl bg-gradient-brand text-primary-foreground font-bold text-lg shadow-neon disabled:opacity-40"
       >
         {!address ? "Connect wallet" : isPending || hash ? "Confirming…" : label}
