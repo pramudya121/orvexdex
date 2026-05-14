@@ -13,7 +13,18 @@ import { findToken } from "@/lib/tokens";
 
 export const Route = createFileRoute("/portfolio")({
   component: PortfolioPage,
-  head: () => ({ meta: [{ title: "Portfolio — ORVEX" }] }),
+  head: () => ({
+    meta: [
+      { title: "Portfolio — ORVEX" },
+      { name: "description", content: "Track your token balances, LP positions, and on-chain activity on ORVEX, valued live in wzkLTC." },
+      { property: "og:title", content: "Portfolio — ORVEX" },
+      { property: "og:description", content: "Track your token balances, LP positions, and on-chain activity on ORVEX, valued live in wzkLTC." },
+      { property: "og:url", content: "https://orvexdex12.lovable.app/portfolio" },
+      { name: "twitter:title", content: "Portfolio — ORVEX" },
+      { name: "twitter:description", content: "Track your token balances, LP positions, and on-chain activity on ORVEX, valued live in wzkLTC." },
+    ],
+    links: [{ rel: "canonical", href: "https://orvexdex12.lovable.app/portfolio" }],
+  }),
 });
 
 function PortfolioPage() {
