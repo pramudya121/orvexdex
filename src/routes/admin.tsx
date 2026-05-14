@@ -428,3 +428,163 @@ function ResetUserCard({ disabled }: { disabled?: boolean }) {
     </div>
   );
 }
+
+// ─────────────────────────── Bulk Operations ───────────────────────────
+// Refill ALL tokens in one flow (auto approve→refill per row), or withdraw
+// the entire faucet balance per token to the admin's own address.
+function BulkOpsCard({ adminAddress, disabled }: { adminAddress?: string; disabled?: boolean }) {
+  const toast = useToast();
+  const { writeContractAsync } = useWriteContract();
+  const [amounts, setAmounts] = useState<Record<number, string>>({});
+  const [running, setRunning] = useState<null | "refill" | "withdraw">(null);
+  const [log, setLog] = useState<string[]>([]);
+
+  const reads = useReadContracts({
+    contracts: ADMIN_TOKENS.flatMap((t) => [
+      { address: t.address, abi: erc20Abi, functionName: "balanceOf", args: [ADDR.faucet] } as const,
+      { address: t.address, abi: erc20Abi, functionName: "balanceOf", args: adminAddress ? [adminAddress as `0x${string}`] : undefined } as const,
+      { address: t.address, abi: erc20Abi, functionName: "allowance", args: adminAddress ? [adminAddress as `0x${string}`, ADDR.faucet] : undefined } as const,
+    ]),
+    query: { refetchInterval: 20_000 },
+  });
+
+  const append = (s: string) => setLog((l) => [...l, s]);
+
+  const runBulkRefill = async () => {
+    if (!adminAddress) return;
+    setRunning("refill");
+    setLog([]);
+    try {
+      for (let i = 0; i < ADMIN_TOKENS.length; i++) {
+        const t = ADMIN_TOKENS[i];
+        const raw = amounts[t.faucetIndex!];
+        if (!raw) continue;
+        let amt: bigint;
+        try { amt = parseUnits(raw as `${number}`, t.decimals); } catch { append(`✗ ${t.symbol}: invalid amount`); continue; }
+        if (amt === 0n) continue;
+        const off = i * 3;
+        const myBal = (reads.data?.[off + 1]?.result as bigint | undefined) ?? 0n;
+        const allow = (reads.data?.[off + 2]?.result as bigint | undefined) ?? 0n;
+        if (amt > myBal) { append(`✗ ${t.symbol}: insufficient balance (${fmt(myBal, t.decimals)})`); continue; }
+        try {
+          if (allow < amt) {
+            append(`→ ${t.symbol}: approving ${raw}…`);
+            const h = await writeContractAsync({ address: t.address, abi: erc20Abi, functionName: "approve", args: [ADDR.faucet, amt] });
+            append(`  approve tx ${h.slice(0, 10)}…`);
+          }
+          append(`→ ${t.symbol}: refilling ${raw}…`);
+          const h = await writeContractAsync({ address: ADDR.faucet, abi: faucetAbi, functionName: "refill", args: [t.faucetIndex!, amt] });
+          append(`✓ ${t.symbol} refilled (${h.slice(0, 10)}…)`);
+        } catch (e: any) {
+          append(`✗ ${t.symbol}: ${e?.shortMessage || e?.message || "failed"}`);
+        }
+      }
+      toast.push({ title: "Bulk refill done", type: "success" });
+      reads.refetch();
+    } finally {
+      setRunning(null);
+    }
+  };
+
+  const runBulkWithdraw = async () => {
+    if (!adminAddress) return;
+    if (!confirm("Withdraw the FULL faucet balance of every token to your wallet?")) return;
+    setRunning("withdraw");
+    setLog([]);
+    try {
+      for (let i = 0; i < ADMIN_TOKENS.length; i++) {
+        const t = ADMIN_TOKENS[i];
+        const off = i * 3;
+        const bal = (reads.data?.[off]?.result as bigint | undefined) ?? 0n;
+        if (bal === 0n) { append(`· ${t.symbol}: empty, skip`); continue; }
+        try {
+          append(`→ ${t.symbol}: withdraw ${fmt(bal, t.decimals)}…`);
+          const h = await writeContractAsync({ address: ADDR.faucet, abi: faucetAbi, functionName: "adminWithdraw", args: [t.faucetIndex!, bal, adminAddress as `0x${string}`] });
+          append(`✓ ${t.symbol} withdrawn (${h.slice(0, 10)}…)`);
+        } catch (e: any) {
+          append(`✗ ${t.symbol}: ${e?.shortMessage || e?.message || "failed"}`);
+        }
+      }
+      toast.push({ title: "Bulk withdraw done", type: "success" });
+      reads.refetch();
+    } finally {
+      setRunning(null);
+    }
+  };
+
+  return (
+    <div className="glass rounded-2xl p-5">
+      <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+        <div>
+          <h3 className="font-semibold">Bulk Operations</h3>
+          <p className="text-xs text-muted-foreground">Refill or drain every faucet slot in one click. Each token still triggers its own wallet prompt.</p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={runBulkWithdraw}
+            disabled={disabled || !!running}
+            className="px-3 py-2 rounded-xl bg-destructive/15 text-destructive border border-destructive/30 hover:bg-destructive/25 text-sm font-semibold disabled:opacity-40"
+          >
+            {running === "withdraw" ? "Draining…" : "Drain all → me"}
+          </button>
+          <button
+            onClick={runBulkRefill}
+            disabled={disabled || !!running || Object.values(amounts).every((v) => !v)}
+            className="px-3 py-2 rounded-xl bg-gradient-brand text-primary-foreground text-sm font-semibold disabled:opacity-40"
+          >
+            {running === "refill" ? "Refilling…" : "Refill all"}
+          </button>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            <tr><th className="text-left py-1">Token</th><th className="text-right">Faucet bal</th><th className="text-right">Your bal</th><th className="text-right pl-2">Refill amount</th></tr>
+          </thead>
+          <tbody>
+            {ADMIN_TOKENS.map((t, i) => {
+              const off = i * 3;
+              const bal = reads.data?.[off]?.result as bigint | undefined;
+              const my = reads.data?.[off + 1]?.result as bigint | undefined;
+              return (
+                <tr key={t.address} className="border-t border-border/60">
+                  <td className="py-2">
+                    <div className="flex items-center gap-2">
+                      <img src={t.logo} alt={`${t.symbol} logo`} className="h-6 w-6 rounded-full" />
+                      <span className="font-semibold">{t.symbol}</span>
+                      <span className="text-[10px] text-muted-foreground">#{t.faucetIndex}</span>
+                    </div>
+                  </td>
+                  <td className="text-right font-mono">{fmt(bal, t.decimals)}</td>
+                  <td className="text-right font-mono">{fmt(my, t.decimals)}</td>
+                  <td className="text-right pl-2">
+                    <div className="flex gap-1 justify-end">
+                      <input
+                        value={amounts[t.faucetIndex!] ?? ""}
+                        onChange={(e) => setAmounts((s) => ({ ...s, [t.faucetIndex!]: e.target.value }))}
+                        placeholder="0.0"
+                        className="w-24 bg-surface-2 rounded-lg px-2 py-1 outline-none border border-border focus:border-primary text-xs text-right font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => my !== undefined && setAmounts((s) => ({ ...s, [t.faucetIndex!]: formatUnits(my, t.decimals) }))}
+                        className="px-2 text-[10px] rounded-lg border border-border hover:border-primary text-muted-foreground"
+                      >MAX</button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {log.length > 0 && (
+        <div className="mt-3 rounded-xl bg-surface-2 border border-border p-3 max-h-48 overflow-auto text-[11px] font-mono space-y-0.5">
+          {log.map((l, i) => <div key={i}>{l}</div>)}
+        </div>
+      )}
+    </div>
+  );
+}
