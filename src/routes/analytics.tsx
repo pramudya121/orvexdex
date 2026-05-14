@@ -116,8 +116,8 @@ function AnalyticsPage() {
                   <td className="py-2.5 pr-2">
                     <a href={explorerAddr(p.pair)} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-accent">
                       <div className="flex -space-x-2">
-                        {p.tk0 && <img src={p.tk0.logo} className="h-6 w-6 rounded-full ring-2 ring-background" />}
-                        {p.tk1 && <img src={p.tk1.logo} className="h-6 w-6 rounded-full ring-2 ring-background" />}
+                        {p.tk0 && <img src={p.tk0.logo} alt={`${p.tk0.symbol} token logo`} className="h-6 w-6 rounded-full ring-2 ring-background" />}
+                        {p.tk1 && <img src={p.tk1.logo} alt={`${p.tk1.symbol} token logo`} className="h-6 w-6 rounded-full ring-2 ring-background" />}
                       </div>
                       <span className="font-semibold">{p.tk0?.symbol ?? "?"}–{p.tk1?.symbol ?? "?"}</span>
                     </a>
@@ -173,8 +173,8 @@ function ChartCard({ title, rows, max, field, tone }: {
                 <div className="flex items-center justify-between text-xs mb-1">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="flex -space-x-1.5 shrink-0">
-                      {p.tk0 && <img src={p.tk0.logo} className="h-5 w-5 rounded-full ring-2 ring-background" />}
-                      {p.tk1 && <img src={p.tk1.logo} className="h-5 w-5 rounded-full ring-2 ring-background" />}
+                      {p.tk0 && <img src={p.tk0.logo} alt={`${p.tk0.symbol} token logo`} className="h-5 w-5 rounded-full ring-2 ring-background" />}
+                      {p.tk1 && <img src={p.tk1.logo} alt={`${p.tk1.symbol} token logo`} className="h-5 w-5 rounded-full ring-2 ring-background" />}
                     </div>
                     <span className="font-semibold truncate">{p.tk0?.symbol ?? "?"}–{p.tk1?.symbol ?? "?"}</span>
                   </div>
