@@ -111,8 +111,8 @@ export function ActivityFeed({ owner }: { owner: Address }) {
             <div className="flex items-center gap-3 min-w-0">
               <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${kindClass}`}>{it.kind}</span>
               <div className="flex -space-x-2">
-                {tk0 && <img src={tk0.logo} className="h-7 w-7 rounded-full ring-2 ring-background" />}
-                {tk1 && <img src={tk1.logo} className="h-7 w-7 rounded-full ring-2 ring-background" />}
+                {tk0 && <img src={tk0.logo} alt={`${tk0.symbol} token logo`} className="h-7 w-7 rounded-full ring-2 ring-background" />}
+                {tk1 && <img src={tk1.logo} alt={`${tk1.symbol} token logo`} className="h-7 w-7 rounded-full ring-2 ring-background" />}
               </div>
               <span className="text-sm truncate">{label}</span>
             </div>
