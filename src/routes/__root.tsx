@@ -95,6 +95,34 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
     ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "ORVEX",
+          url: "https://orvexdex12.lovable.app",
+          logo: "https://orvexdex12.lovable.app/favicon.ico",
+          sameAs: [],
+          description: "ORVEX — premium AMM DEX on LitVM LiteForge Testnet.",
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "ORVEX",
+          url: "https://orvexdex12.lovable.app",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "https://orvexdex12.lovable.app/pools?q={search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
+        }),
+      },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
