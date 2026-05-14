@@ -193,6 +193,7 @@ function PoolList({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search…"
+            aria-label="Search pools"
             className="flex-1 bg-transparent outline-none text-sm"
           />
         </div>
@@ -201,6 +202,7 @@ function PoolList({
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortKey)}
+            aria-label="Sort pools"
             className="bg-surface-2 border border-border rounded-xl px-3 py-2 text-xs focus:border-primary outline-none"
           >
             <option value="tvl">TVL</option>
@@ -433,6 +435,7 @@ function PairTokenPicker({ value, onChange }: { value: Token; onChange: (t: Toke
         const t = TOKENS.find((x) => x.address + x.symbol === e.target.value);
         if (t) onChange(t);
       }}
+      aria-label="Select pair token"
       className="bg-surface-2 border border-border rounded-xl px-3 py-2 text-sm focus:border-primary outline-none"
     >
       {TOKENS.map((t) => (
