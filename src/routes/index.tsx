@@ -14,6 +14,18 @@ import { usePoolStats, fmtWzk, type PoolMeta } from "@/lib/poolStats";
 
 export const Route = createFileRoute("/")({
   component: Landing,
+  head: () => ({
+    meta: [
+      { title: "ORVEX — Premium AMM DEX on LitVM LiteForge" },
+      { name: "description", content: "ORVEX is a premium AMM DEX on LitVM LiteForge Testnet. Swap, provide liquidity, and earn — fully on-chain." },
+      { property: "og:title", content: "ORVEX — Premium AMM DEX on LitVM LiteForge" },
+      { property: "og:description", content: "Swap, provide liquidity, and track your portfolio live on the ORVEX AMM DEX." },
+      { property: "og:url", content: "https://orvexdex12.lovable.app/" },
+      { name: "twitter:title", content: "ORVEX — Premium AMM DEX on LitVM LiteForge" },
+      { name: "twitter:description", content: "Swap, provide liquidity, and track your portfolio live on the ORVEX AMM DEX." },
+    ],
+    links: [{ rel: "canonical", href: "https://orvexdex12.lovable.app/" }],
+  }),
 });
 
 function Landing() {
@@ -211,6 +223,7 @@ function Landing() {
 
           {/* DASHBOARD ROW */}
           <div className="relative grid lg:grid-cols-12 gap-6 px-6 sm:px-10 lg:px-14 pb-10">
+            <h2 className="sr-only">Portfolio overview</h2>
             {/* Holdings */}
             <div className="lg:col-span-7 rounded-2xl glass border-gold p-6 card-hover animate-rise" style={{ animationDelay: "240ms" }}>
               <div className="flex items-center justify-between mb-5">
@@ -250,6 +263,7 @@ function Landing() {
 
           {/* FEATURED ROW */}
           <div className="relative grid lg:grid-cols-12 gap-6 px-6 sm:px-10 lg:px-14 pb-12">
+            <h2 className="sr-only">Featured products</h2>
             <FeaturedCard
               title="Featured Pools"
               subtitle={`${total > 0 ? total : "—"} active markets`}
