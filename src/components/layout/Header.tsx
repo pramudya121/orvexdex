@@ -2,6 +2,9 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { TxIndicator } from "@/components/wallet/TxIndicator";
 import logo from "@/assets/orvex-logo.png";
+import { useAccount, useReadContract } from "wagmi";
+import { ADDR } from "@/lib/chain";
+import { faucetAbi } from "@/lib/abis/faucet";
 
 const NAV = [
   { to: "/swap", label: "Swap" },
@@ -15,6 +18,10 @@ const NAV = [
 
 export function Header() {
   const { location } = useRouterState();
+  const { address } = useAccount();
+  const owner = useReadContract({ address: ADDR.faucet, abi: faucetAbi, functionName: "owner" });
+  const isOwner = !!address && !!owner.data && (owner.data as string).toLowerCase() === address.toLowerCase();
+  const nav = isOwner ? [...NAV, { to: "/admin", label: "Admin" }] : NAV;
   return (
     <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/60 border-b border-border">
       <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-luxe opacity-50" />
@@ -27,7 +34,7 @@ export function Header() {
           </div>
         </Link>
         <nav className="hidden md:flex items-center gap-1 glass rounded-full px-2 py-1.5">
-          {NAV.map((n) => {
+          {nav.map((n) => {
             const active = location.pathname.startsWith(n.to);
             return (
               <Link
@@ -51,7 +58,7 @@ export function Header() {
       </div>
       <div className="md:hidden border-t border-border overflow-x-auto">
         <div className="flex gap-1 px-4 py-2 min-w-max">
-          {NAV.map((n) => {
+          {nav.map((n) => {
             const active = location.pathname.startsWith(n.to);
             return (
               <Link
