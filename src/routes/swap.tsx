@@ -15,7 +15,18 @@ type SwapSearch = { from?: string; to?: string };
 
 export const Route = createFileRoute("/swap")({
   component: SwapPage,
-  head: () => ({ meta: [{ title: "Swap — ORVEX" }] }),
+  head: () => ({
+    meta: [
+      { title: "Swap — ORVEX" },
+      { name: "description", content: "Trade tokens instantly on ORVEX with smart routing, live price impact, and slippage controls on LitVM." },
+      { property: "og:title", content: "Swap — ORVEX" },
+      { property: "og:description", content: "Trade tokens instantly on ORVEX with smart routing, live price impact, and slippage controls on LitVM." },
+      { property: "og:url", content: "https://orvexdex12.lovable.app/swap" },
+      { name: "twitter:title", content: "Swap — ORVEX" },
+      { name: "twitter:description", content: "Trade tokens instantly on ORVEX with smart routing, live price impact, and slippage controls on LitVM." },
+    ],
+    links: [{ rel: "canonical", href: "https://orvexdex12.lovable.app/swap" }],
+  }),
   validateSearch: (s: Record<string, unknown>): SwapSearch => ({
     from: typeof s.from === "string" ? s.from : undefined,
     to: typeof s.to === "string" ? s.to : undefined,
