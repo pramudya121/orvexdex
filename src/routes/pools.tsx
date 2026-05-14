@@ -14,7 +14,18 @@ type Filter = "all" | "stable" | "blue" | "high" | "mine";
 
 export const Route = createFileRoute("/pools")({
   component: PoolsPage,
-  head: () => ({ meta: [{ title: "Pools — ORVEX" }] }),
+  head: () => ({
+    meta: [
+      { title: "Pools — ORVEX" },
+      { name: "description", content: "Explore liquidity pools on ORVEX. Filter by TVL, volume, and LP supply across LitVM AMM markets." },
+      { property: "og:title", content: "Pools — ORVEX" },
+      { property: "og:description", content: "Explore liquidity pools on ORVEX. Filter by TVL, volume, and LP supply across LitVM AMM markets." },
+      { property: "og:url", content: "https://orvexdex12.lovable.app/pools" },
+      { name: "twitter:title", content: "Pools — ORVEX" },
+      { name: "twitter:description", content: "Explore liquidity pools on ORVEX. Filter by TVL, volume, and LP supply across LitVM AMM markets." },
+    ],
+    links: [{ rel: "canonical", href: "https://orvexdex12.lovable.app/pools" }],
+  }),
 });
 
 function PoolsPage() {
