@@ -218,7 +218,7 @@ function TokenRow({ token, adminAddress, disabled }: { token: Token; adminAddres
   const [withdrawVal, setWithdrawVal] = useState("");
   const [withdrawTo, setWithdrawTo] = useState("");
   const [newAddr, setNewAddr] = useState("");
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(true);
 
   useEffect(() => {
     if (claimAmount !== undefined && claimVal === "") setClaimVal(formatUnits(claimAmount, dec));
