@@ -401,6 +401,42 @@ function ResetUserCard({ disabled }: { disabled?: boolean }) {
   });
   const lastTs = lastClaim.data ? new Date(Number(lastClaim.data as bigint) * 1000).toLocaleString() : "—";
 
+  // Snapshot across ALL tokens for CSV export
+  const allReads = useReadContracts({
+    contracts:
+      user && /^0x[a-fA-F0-9]{40}$/.test(user)
+        ? ADMIN_TOKENS.flatMap((t) => [
+            { address: ADDR.faucet, abi: faucetAbi, functionName: "userClaimCount", args: [user as `0x${string}`, t.faucetIndex!] } as const,
+            { address: ADDR.faucet, abi: faucetAbi, functionName: "lastClaimed", args: [user as `0x${string}`, t.faucetIndex!] } as const,
+          ])
+        : [],
+  });
+
+  const exportCsv = () => {
+    if (!user) return;
+    const rows = [["index", "symbol", "claimCount", "lastClaimedUnix", "lastClaimedISO"]];
+    ADMIN_TOKENS.forEach((t, i) => {
+      const cnt = allReads.data?.[i * 2]?.result as bigint | undefined;
+      const ts = allReads.data?.[i * 2 + 1]?.result as bigint | undefined;
+      const tsNum = ts ? Number(ts) : 0;
+      rows.push([
+        String(t.faucetIndex),
+        t.symbol,
+        cnt?.toString() ?? "0",
+        tsNum.toString(),
+        tsNum ? new Date(tsNum * 1000).toISOString() : "",
+      ]);
+    });
+    const csv = rows.map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `faucet-${user.slice(0, 10)}-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="glass rounded-2xl p-5">
       <h3 className="font-semibold mb-1">Reset user claim count</h3>
@@ -427,6 +463,175 @@ function ResetUserCard({ disabled }: { disabled?: boolean }) {
         className="mt-3 px-4 py-2 rounded-xl bg-gradient-brand text-primary-foreground font-semibold disabled:opacity-40">
         {isPending || isMining ? "Submitting…" : "Apply"}
       </button>
+      <button
+        type="button"
+        onClick={exportCsv}
+        disabled={!user || !/^0x[a-fA-F0-9]{40}$/.test(user)}
+        className="mt-3 ml-2 px-4 py-2 rounded-xl border border-border hover:border-primary text-sm font-semibold disabled:opacity-40"
+      >
+        Export CSV (all tokens)
+      </button>
+    </div>
+  );
+}
+
+// ─────────────────────── Bulk Config (claim/max) ───────────────────────
+// Set claimAmount and/or maxClaims for many tokens in one flow.
+function BulkConfigCard({ disabled }: { disabled?: boolean }) {
+  const toast = useToast();
+  const { writeContractAsync } = useWriteContract();
+  const [running, setRunning] = useState(false);
+  const [log, setLog] = useState<string[]>([]);
+  const [claim, setClaim] = useState<Record<number, string>>({});
+  const [max, setMax] = useState<Record<number, string>>({});
+
+  const reads = useReadContracts({
+    contracts: ADMIN_TOKENS.flatMap((t) => [
+      { address: ADDR.faucet, abi: faucetAbi, functionName: "claimAmounts", args: [BigInt(t.faucetIndex!)] } as const,
+      { address: ADDR.faucet, abi: faucetAbi, functionName: "maxClaims", args: [BigInt(t.faucetIndex!)] } as const,
+    ]),
+    query: { refetchInterval: 20_000 },
+  });
+
+  const append = (s: string) => setLog((l) => [...l, s]);
+
+  const applyAll = async () => {
+    setRunning(true);
+    setLog([]);
+    try {
+      for (let i = 0; i < ADMIN_TOKENS.length; i++) {
+        const t = ADMIN_TOKENS[i];
+        const curClaim = reads.data?.[i * 2]?.result as bigint | undefined;
+        const curMax = reads.data?.[i * 2 + 1]?.result as bigint | undefined;
+        const cRaw = claim[t.faucetIndex!];
+        const mRaw = max[t.faucetIndex!];
+        // setClaimAmount
+        if (cRaw) {
+          try {
+            const v = parseUnits(cRaw as `${number}`, t.decimals);
+            if (v !== curClaim) {
+              append(`→ ${t.symbol}: setClaimAmount ${cRaw}`);
+              const h = await writeContractAsync({ address: ADDR.faucet, abi: faucetAbi, functionName: "setClaimAmount", args: [t.faucetIndex!, v] });
+              append(`✓ ${t.symbol} claim (${h.slice(0, 10)}…)`);
+            }
+          } catch (e: any) {
+            append(`✗ ${t.symbol} claim: ${e?.shortMessage || e?.message || "failed"}`);
+          }
+        }
+        // setMaxClaims
+        if (mRaw) {
+          try {
+            const v = BigInt(mRaw);
+            if (v !== curMax) {
+              append(`→ ${t.symbol}: setMaxClaims ${mRaw}`);
+              const h = await writeContractAsync({ address: ADDR.faucet, abi: faucetAbi, functionName: "setMaxClaims", args: [t.faucetIndex!, v] });
+              append(`✓ ${t.symbol} max (${h.slice(0, 10)}…)`);
+            }
+          } catch (e: any) {
+            append(`✗ ${t.symbol} max: ${e?.shortMessage || e?.message || "failed"}`);
+          }
+        }
+      }
+      toast.push({ title: "Bulk config applied", type: "success" });
+      reads.refetch();
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const fillAllSame = (kind: "claim" | "max", v: string) => {
+    const next: Record<number, string> = {};
+    ADMIN_TOKENS.forEach((t) => (next[t.faucetIndex!] = v));
+    if (kind === "claim") setClaim(next);
+    else setMax(next);
+  };
+
+  return (
+    <div className="glass rounded-2xl p-5">
+      <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+        <div>
+          <h3 className="font-semibold">Bulk Config — Claim Amount & Max Claims</h3>
+          <p className="text-xs text-muted-foreground">Set per-token limits in one batch. Empty rows are skipped; unchanged values are skipped automatically.</p>
+        </div>
+        <button
+          onClick={applyAll}
+          disabled={disabled || running}
+          className="px-3 py-2 rounded-xl bg-gradient-brand text-primary-foreground text-sm font-semibold disabled:opacity-40"
+        >
+          {running ? "Applying…" : "Apply all"}
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-3 text-[11px]">
+        <span className="text-muted-foreground self-center">Quick fill all rows:</span>
+        <input
+          placeholder="claim amt"
+          onChange={(e) => fillAllSame("claim", e.target.value)}
+          className="w-28 bg-surface-2 rounded-lg px-2 py-1 outline-none border border-border focus:border-primary text-xs font-mono"
+        />
+        <input
+          placeholder="max claims"
+          onChange={(e) => fillAllSame("max", e.target.value)}
+          inputMode="numeric"
+          className="w-28 bg-surface-2 rounded-lg px-2 py-1 outline-none border border-border focus:border-primary text-xs font-mono"
+        />
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <th className="text-left py-1">Token</th>
+              <th className="text-right">Current claim</th>
+              <th className="text-right pl-2">New claim</th>
+              <th className="text-right">Current max</th>
+              <th className="text-right pl-2">New max</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ADMIN_TOKENS.map((t, i) => {
+              const curClaim = reads.data?.[i * 2]?.result as bigint | undefined;
+              const curMax = reads.data?.[i * 2 + 1]?.result as bigint | undefined;
+              return (
+                <tr key={t.address} className="border-t border-border/60">
+                  <td className="py-2">
+                    <div className="flex items-center gap-2">
+                      <img src={t.logo} alt={`${t.symbol} logo`} className="h-6 w-6 rounded-full" />
+                      <span className="font-semibold">{t.symbol}</span>
+                      <span className="text-[10px] text-muted-foreground">#{t.faucetIndex}</span>
+                    </div>
+                  </td>
+                  <td className="text-right font-mono">{fmt(curClaim, t.decimals)}</td>
+                  <td className="text-right pl-2">
+                    <input
+                      value={claim[t.faucetIndex!] ?? ""}
+                      onChange={(e) => setClaim((s) => ({ ...s, [t.faucetIndex!]: e.target.value }))}
+                      placeholder="—"
+                      className="w-24 bg-surface-2 rounded-lg px-2 py-1 outline-none border border-border focus:border-primary text-xs text-right font-mono"
+                    />
+                  </td>
+                  <td className="text-right font-mono">{curMax?.toString() ?? "—"}</td>
+                  <td className="text-right pl-2">
+                    <input
+                      value={max[t.faucetIndex!] ?? ""}
+                      onChange={(e) => setMax((s) => ({ ...s, [t.faucetIndex!]: e.target.value }))}
+                      placeholder="—"
+                      inputMode="numeric"
+                      className="w-20 bg-surface-2 rounded-lg px-2 py-1 outline-none border border-border focus:border-primary text-xs text-right font-mono"
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {log.length > 0 && (
+        <div className="mt-3 rounded-xl bg-surface-2 border border-border p-3 max-h-48 overflow-auto text-[11px] font-mono space-y-0.5">
+          {log.map((l, i) => <div key={i}>{l}</div>)}
+        </div>
+      )}
     </div>
   );
 }
