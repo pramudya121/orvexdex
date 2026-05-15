@@ -676,6 +676,7 @@ function BulkConfigCard({ disabled }: { disabled?: boolean }) {
 // the entire faucet balance per token to the admin's own address.
 function BulkOpsCard({ adminAddress, disabled }: { adminAddress?: string; disabled?: boolean }) {
   const toast = useToast();
+  const ensureLitvmChain = useEnsureLitvmChain();
   const { writeContractAsync } = useWriteContract();
   const [amounts, setAmounts] = useState<Record<number, string>>({});
   const [running, setRunning] = useState<null | "refill" | "withdraw">(null);
@@ -697,6 +698,8 @@ function BulkOpsCard({ adminAddress, disabled }: { adminAddress?: string; disabl
     setRunning("refill");
     setLog([]);
     try {
+      const ready = await ensureLitvmChain();
+      if (!ready) return;
       for (let i = 0; i < ADMIN_TOKENS.length; i++) {
         const t = ADMIN_TOKENS[i];
         const raw = amounts[t.faucetIndex!];
@@ -711,11 +714,11 @@ function BulkOpsCard({ adminAddress, disabled }: { adminAddress?: string; disabl
         try {
           if (allow < amt) {
             append(`→ ${t.symbol}: approving ${raw}…`);
-            const h = await writeContractAsync({ chainId: litvm.id, address: t.address, abi: erc20Abi, functionName: "approve", args: [ADDR.faucet, amt] });
+            const h = await writeContractAsync({ address: t.address, abi: erc20Abi, functionName: "approve", args: [ADDR.faucet, amt] });
             append(`  approve tx ${h.slice(0, 10)}…`);
           }
           append(`→ ${t.symbol}: refilling ${raw}…`);
-          const h = await writeContractAsync({ chainId: litvm.id, address: ADDR.faucet, abi: faucetAbi, functionName: "refill", args: [t.faucetIndex!, amt] });
+          const h = await writeContractAsync({ address: ADDR.faucet, abi: faucetAbi, functionName: "refill", args: [t.faucetIndex!, amt] });
           append(`✓ ${t.symbol} refilled (${h.slice(0, 10)}…)`);
         } catch (e: any) {
           append(`✗ ${t.symbol}: ${e?.shortMessage || e?.message || "failed"}`);
@@ -734,6 +737,8 @@ function BulkOpsCard({ adminAddress, disabled }: { adminAddress?: string; disabl
     setRunning("withdraw");
     setLog([]);
     try {
+      const ready = await ensureLitvmChain();
+      if (!ready) return;
       for (let i = 0; i < ADMIN_TOKENS.length; i++) {
         const t = ADMIN_TOKENS[i];
         const off = i * 3;
@@ -741,7 +746,7 @@ function BulkOpsCard({ adminAddress, disabled }: { adminAddress?: string; disabl
         if (bal === 0n) { append(`· ${t.symbol}: empty, skip`); continue; }
         try {
           append(`→ ${t.symbol}: withdraw ${fmt(bal, t.decimals)}…`);
-          const h = await writeContractAsync({ chainId: litvm.id, address: ADDR.faucet, abi: faucetAbi, functionName: "adminWithdraw", args: [t.faucetIndex!, bal, adminAddress as `0x${string}`] });
+          const h = await writeContractAsync({ address: ADDR.faucet, abi: faucetAbi, functionName: "adminWithdraw", args: [t.faucetIndex!, bal, adminAddress as `0x${string}`] });
           append(`✓ ${t.symbol} withdrawn (${h.slice(0, 10)}…)`);
         } catch (e: any) {
           append(`✗ ${t.symbol}: ${e?.shortMessage || e?.message || "failed"}`);
