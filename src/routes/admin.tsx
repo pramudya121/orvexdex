@@ -511,6 +511,7 @@ function ResetUserCard({ disabled }: { disabled?: boolean }) {
 // Set claimAmount and/or maxClaims for many tokens in one flow.
 function BulkConfigCard({ disabled }: { disabled?: boolean }) {
   const toast = useToast();
+  const ensureLitvmChain = useEnsureLitvmChain();
   const { writeContractAsync } = useWriteContract();
   const [running, setRunning] = useState(false);
   const [log, setLog] = useState<string[]>([]);
@@ -531,6 +532,8 @@ function BulkConfigCard({ disabled }: { disabled?: boolean }) {
     setRunning(true);
     setLog([]);
     try {
+      const ready = await ensureLitvmChain();
+      if (!ready) return;
       for (let i = 0; i < ADMIN_TOKENS.length; i++) {
         const t = ADMIN_TOKENS[i];
         const curClaim = reads.data?.[i * 2]?.result as bigint | undefined;
@@ -543,7 +546,7 @@ function BulkConfigCard({ disabled }: { disabled?: boolean }) {
             const v = parseUnits(cRaw as `${number}`, t.decimals);
             if (v !== curClaim) {
               append(`→ ${t.symbol}: setClaimAmount ${cRaw}`);
-              const h = await writeContractAsync({ chainId: litvm.id, address: ADDR.faucet, abi: faucetAbi, functionName: "setClaimAmount", args: [t.faucetIndex!, v] });
+              const h = await writeContractAsync({ address: ADDR.faucet, abi: faucetAbi, functionName: "setClaimAmount", args: [t.faucetIndex!, v] });
               append(`✓ ${t.symbol} claim (${h.slice(0, 10)}…)`);
             }
           } catch (e: any) {
@@ -556,7 +559,7 @@ function BulkConfigCard({ disabled }: { disabled?: boolean }) {
             const v = BigInt(mRaw);
             if (v !== curMax) {
               append(`→ ${t.symbol}: setMaxClaims ${mRaw}`);
-              const h = await writeContractAsync({ chainId: litvm.id, address: ADDR.faucet, abi: faucetAbi, functionName: "setMaxClaims", args: [t.faucetIndex!, v] });
+              const h = await writeContractAsync({ address: ADDR.faucet, abi: faucetAbi, functionName: "setMaxClaims", args: [t.faucetIndex!, v] });
               append(`✓ ${t.symbol} max (${h.slice(0, 10)}…)`);
             }
           } catch (e: any) {
