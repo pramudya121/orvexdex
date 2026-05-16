@@ -15,6 +15,12 @@ type Filter = "all" | "stable" | "blue" | "high" | "mine";
 
 export const Route = createFileRoute("/pools")({
   component: PoolsPage,
+  pendingComponent: () => (
+    <div className="max-w-7xl mx-auto px-4 py-10">
+      <PoolStatsSkeleton />
+      <PoolGridSkeleton count={8} />
+    </div>
+  ),
   head: () => ({
     meta: [
       { title: "Pools — ORVEX" },

@@ -10,11 +10,19 @@ import { useAllowance, useBestRoute, useBestRouteExactOut, useGetPair, usePairRe
 import { deadline, fmt, safeParse, slippageMin, slippageMax } from "@/lib/format";
 import { useToast } from "@/components/ui/toaster";
 import { explorerAddr } from "@/lib/chain";
+import { SwapCardSkeleton } from "@/components/skeletons";
 
 type SwapSearch = { from?: string; to?: string };
 
 export const Route = createFileRoute("/swap")({
   component: SwapPage,
+  pendingComponent: () => (
+    <div className="max-w-6xl mx-auto px-4 pt-12 pb-8 grid lg:grid-cols-[1fr_minmax(420px,460px)_1fr] gap-8 items-start">
+      <div className="hidden lg:block" />
+      <SwapCardSkeleton />
+      <div className="hidden lg:block" />
+    </div>
+  ),
   head: () => ({
     meta: [
       { title: "Swap — ORVEX" },

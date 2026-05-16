@@ -11,11 +11,19 @@ import { useAllowance, useGetPair, usePairReserves, useTokenBalance, MAX_UINT256
 import { deadline, fmt, safeParse, slippageMin } from "@/lib/format";
 import { formatUnits } from "viem";
 import { useToast } from "@/components/ui/toaster";
+import { LiquidityCardSkeleton } from "@/components/skeletons";
 
 type LiqSearch = { a?: string; b?: string; tab?: "add" | "remove" };
 
 export const Route = createFileRoute("/liquidity")({
   component: LiquidityPage,
+  pendingComponent: () => (
+    <div className="max-w-6xl mx-auto px-4 pt-12 pb-8 grid lg:grid-cols-[1fr_minmax(420px,460px)_1fr] gap-8 items-start">
+      <div className="hidden lg:block" />
+      <LiquidityCardSkeleton />
+      <div className="hidden lg:block" />
+    </div>
+  ),
   head: () => ({
     meta: [
       { title: "Liquidity — ORVEX" },
