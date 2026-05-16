@@ -156,14 +156,14 @@ function FaucetPage() {
     const tokenAddress = faucetTokenAddress(tokenListIndex);
     if (!tokenAddress || tokenAddress.toLowerCase() === ZERO_ADDRESS) {
       toast.push({
-        title: "Faucet token belum diset",
-        description: "Owner perlu menjalankan setToken untuk index token ini di halaman Admin.",
+        title: "Faucet token not set",
+        description: "The owner needs to run setToken for this token index in the Admin page.",
         type: "error",
       });
       return;
     }
     if (!captchaOk) {
-      toast.push({ title: "Verifikasi captcha terlebih dahulu", type: "error" });
+      toast.push({ title: "Please verify the captcha first", type: "error" });
       return;
     }
     try {
@@ -187,15 +187,15 @@ function FaucetPage() {
   const claimAll = async () => {
     if (!faucetReady) {
       toast.push({
-        title: "Faucet belum siap",
+        title: "Faucet not ready",
         description:
-          "Semua token index harus diset dulu lewat Admin sebelum Claim All bisa berhasil.",
+          "All token indexes must be set via Admin before Claim All can succeed.",
         type: "error",
       });
       return;
     }
     if (!captchaOk) {
-      toast.push({ title: "Verifikasi captcha terlebih dahulu", type: "error" });
+      toast.push({ title: "Please verify the captcha first", type: "error" });
       return;
     }
     try {
@@ -300,9 +300,9 @@ function FaucetPage() {
           </div>
           {!faucetReady && (
             <div className="rounded-2xl bg-destructive/10 border border-destructive/30 p-4 mb-5 text-sm text-destructive">
-              Faucet belum siap: {FAUCET_TOKENS.length - configuredTokenCount} token index masih
-              kosong di contract. Owner harus mengisi `setToken` di halaman Admin, lalu refill saldo
-              token faucet.
+              Faucet not ready: {FAUCET_TOKENS.length - configuredTokenCount} token index(es) are still
+              empty in the contract. The owner must call `setToken` in the Admin page, then refill the
+              faucet token balances.
             </div>
           )}
 
@@ -329,7 +329,7 @@ function FaucetPage() {
               <input
                 inputMode="numeric"
                 pattern="[0-9]*"
-                placeholder="Jawaban"
+                placeholder="Answer"
                 value={captchaInput}
                 onChange={(e) => {
                   setCaptchaInput(e.target.value.replace(/\D/g, ""));
@@ -344,25 +344,25 @@ function FaucetPage() {
                   else {
                     setVerified(false);
                     refreshCaptcha();
-                    toast.push({ title: "Captcha salah", type: "error" });
+                    toast.push({ title: "Wrong captcha", type: "error" });
                   }
                 }}
                 disabled={!captchaInput}
                 className="px-4 py-2 rounded-xl bg-surface-2 border border-border hover:border-primary/60 text-sm font-semibold transition disabled:opacity-40"
               >
-                Verifikasi
+                Verify
               </button>
               <button
                 onClick={refreshCaptcha}
                 className="ml-auto h-9 w-9 rounded-xl bg-surface border border-border hover:border-primary/60 transition"
                 aria-label="Refresh captcha"
-                title="Ganti soal"
+                title="New challenge"
               >
                 ↻
               </button>
             </div>
             <div className="text-[10px] text-muted-foreground mt-2">
-              Lindungi faucet dari bot — selesaikan soal sederhana untuk meng-claim.
+              Protects the faucet from bots — solve the simple challenge to claim.
             </div>
           </div>
 
@@ -376,9 +376,9 @@ function FaucetPage() {
               : isPending || hash
                 ? "Confirming…"
                 : !faucetReady
-                  ? "Faucet belum diset"
+                  ? "Faucet not set"
                   : !captchaOk
-                    ? "🔒 Verifikasi captcha"
+                    ? "🔒 Verify captcha"
                     : "💧 Claim All Now"}
           </button>
         </div>
@@ -465,11 +465,11 @@ function FaucetPage() {
                 {!address
                   ? "Connect wallet"
                   : !tokenReady
-                    ? "Token belum diset"
+                    ? "Token not set"
                     : !ready
                       ? `Wait ${wait}s`
                       : !captchaOk
-                        ? "Verifikasi captcha"
+                        ? "Verify captcha"
                         : "Claim"}
               </button>
             </div>
