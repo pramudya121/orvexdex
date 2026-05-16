@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
-import { TxIndicator } from "@/components/wallet/TxIndicator";
+
 import { BrandMark } from "@/components/brand/BrandMark";
 import { useAccount, useReadContract } from "wagmi";
 import { ADDR } from "@/lib/chain";
@@ -47,7 +47,6 @@ export function Header() {
           })}
         </nav>
         <div className="flex items-center gap-2">
-          <TxIndicator />
           <ConnectButton />
         </div>
       </div>
