@@ -27,11 +27,13 @@ function FaucetPage() {
   const { address } = useAccount();
   const toast = useToast();
   const cooldown = useReadContract({ address: ADDR.faucet, abi: faucetAbi, functionName: "cooldown", query: { refetchInterval: 30000 } });
+  const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
   const calls = useMemo(() => {
     const out: any[] = [];
     FAUCET_TOKENS.forEach((t) => {
       const idx = t.faucetIndex!;
+      out.push({ address: ADDR.faucet, abi: faucetAbi, functionName: "tokens", args: [BigInt(idx)] });
       out.push({ address: ADDR.faucet, abi: faucetAbi, functionName: "claimAmounts", args: [BigInt(idx)] });
       out.push({ address: ADDR.faucet, abi: faucetAbi, functionName: "maxClaims", args: [BigInt(idx)] });
       if (address) {
@@ -47,6 +49,14 @@ function FaucetPage() {
   const { writeContractAsync, isPending } = useWriteContract();
   const [hash, setHash] = useState<`0x${string}` | undefined>();
   const receipt = useWaitForTransactionReceipt({ hash });
+  const readsPerToken = address ? 5 : 3;
+  const faucetTokenAddress = (tokenListIndex: number) =>
+    reads.data?.[readsPerToken * tokenListIndex]?.result as string | undefined;
+  const configuredTokenCount = FAUCET_TOKENS.filter((_, i) => {
+    const tokenAddress = faucetTokenAddress(i);
+    return !!tokenAddress && tokenAddress.toLowerCase() !== ZERO_ADDRESS;
+  }).length;
+  const faucetReady = configuredTokenCount === FAUCET_TOKENS.length;
 
   // ───── Anti-bot captcha (client-only to avoid SSR hydration mismatch) ─────
   const [captcha, setCaptcha] = useState<{ a: number; b: number; answer: number } | null>(null);
@@ -73,6 +83,12 @@ function FaucetPage() {
   }, [receipt.isSuccess]);
 
   const claim = async (idx: number) => {
+    const tokenListIndex = FAUCET_TOKENS.findIndex((t) => t.faucetIndex === idx);
+    const tokenAddress = faucetTokenAddress(tokenListIndex);
+    if (!tokenAddress || tokenAddress.toLowerCase() === ZERO_ADDRESS) {
+      toast.push({ title: "Faucet token belum diset", description: "Owner perlu menjalankan setToken untuk index token ini di halaman Admin.", type: "error" });
+      return;
+    }
     if (!captchaOk) {
       toast.push({ title: "Verifikasi captcha terlebih dahulu", type: "error" });
       return;
@@ -86,6 +102,10 @@ function FaucetPage() {
   };
 
   const claimAll = async () => {
+    if (!faucetReady) {
+      toast.push({ title: "Faucet belum siap", description: "Semua token index harus diset dulu lewat Admin sebelum Claim All bisa berhasil.", type: "error" });
+      return;
+    }
     if (!captchaOk) {
       toast.push({ title: "Verifikasi captcha terlebih dahulu", type: "error" });
       return;
@@ -101,9 +121,9 @@ function FaucetPage() {
   const cd = (cooldown.data as bigint | undefined) ?? 0n;
 
   const totalDistributed = FAUCET_TOKENS.reduce((acc, _t, i) => {
-    const off = (address ? 4 : 2) * i;
-    const amt = (reads.data?.[off]?.result as bigint | undefined) ?? 0n;
-    const max = (reads.data?.[off + 1]?.result as bigint | undefined) ?? 0n;
+    const off = readsPerToken * i;
+    const amt = (reads.data?.[off + 1]?.result as bigint | undefined) ?? 0n;
+    const max = (reads.data?.[off + 2]?.result as bigint | undefined) ?? 0n;
     return acc + amt * max;
   }, 0n);
   const totalDistFmt = totalDistributed > 0n
