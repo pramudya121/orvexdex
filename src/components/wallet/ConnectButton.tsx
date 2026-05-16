@@ -226,8 +226,7 @@ function WalletPanel({ onClose, onConnected }: { onClose: () => void; onConnecte
                   active ? "bg-white/[0.07]" : "hover:bg-white/[0.05]"
                 }`}
               >
-                <img src={d.info.icon} alt="" className="h-9 w-9 rounded-lg bg-white/5 object-contain p-0.5"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }} />
+                <WalletAvatar src={d.info.icon} name={d.info.name} />
                 <div className="flex-1 text-left min-w-0">
                   <div className="text-sm font-semibold truncate">{d.info.name}</div>
                   {busy === d.info.uuid && <div className="text-[10px] text-muted-foreground">Waiting for confirmation…</div>}
