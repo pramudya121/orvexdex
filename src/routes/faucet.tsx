@@ -268,6 +268,7 @@ function FaucetPage() {
                 </div>
               </div>
               <div className="text-sm space-y-1 mb-4">
+                <div className="flex justify-between"><span className="text-muted-foreground">Contract token</span><span className={tokenReady ? "font-mono text-accent" : "font-mono text-destructive"}>{tokenReady ? "Set" : "Unset"}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Per claim</span><span className="font-mono">{fmt(amt, t.decimals)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Max claims</span><span className="font-mono">{max?.toString() ?? "—"}</span></div>
                 {address && (
@@ -279,10 +280,10 @@ function FaucetPage() {
               </div>
               <button
                 onClick={() => claim(t.faucetIndex!)}
-                disabled={!address || isPending || !!hash || !ready || !captchaOk}
+                disabled={!address || isPending || !!hash || !ready || !captchaOk || !tokenReady}
                 className="w-full py-3 rounded-xl bg-surface-2 hover:bg-gradient-brand hover:text-primary-foreground border border-border hover:border-transparent transition font-semibold disabled:opacity-40"
               >
-                {!address ? "Connect wallet" : !ready ? `Wait ${wait}s` : !captchaOk ? "Verifikasi captcha" : "Claim"}
+                {!address ? "Connect wallet" : !tokenReady ? "Token belum diset" : !ready ? `Wait ${wait}s` : !captchaOk ? "Verifikasi captcha" : "Claim"}
               </button>
             </div>
           );
