@@ -133,20 +133,22 @@ function Landing() {
 
   return (
     <div className="relative">
-      {/* Ambient backdrop */}
+      {/* Ambient backdrop — Glassmorphism Premium aurora */}
       <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1200px] h-[800px] rounded-full blur-3xl opacity-50 animate-aurora"
-          style={{ background: "radial-gradient(closest-side, oklch(0.65 0.27 295 / 0.55), transparent 70%)" }} />
-        <div className="absolute top-40 -left-32 w-[600px] h-[600px] rounded-full blur-3xl opacity-40 animate-aurora-2"
-          style={{ background: "radial-gradient(closest-side, oklch(0.78 0.18 220 / 0.5), transparent 70%)" }} />
-        <div className="absolute top-80 -right-32 w-[700px] h-[700px] rounded-full blur-3xl opacity-30 animate-aurora"
-          style={{ background: "radial-gradient(closest-side, oklch(0.84 0.16 85 / 0.35), transparent 70%)" }} />
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1400px] h-[900px] rounded-full blur-3xl opacity-70 animate-aurora"
+          style={{ background: "radial-gradient(closest-side, oklch(0.65 0.27 295 / 0.7), transparent 70%)" }} />
+        <div className="absolute top-40 -left-40 w-[700px] h-[700px] rounded-full blur-3xl opacity-55 animate-aurora-2"
+          style={{ background: "radial-gradient(closest-side, oklch(0.78 0.18 220 / 0.65), transparent 70%)" }} />
+        <div className="absolute top-80 -right-40 w-[800px] h-[800px] rounded-full blur-3xl opacity-45 animate-aurora"
+          style={{ background: "radial-gradient(closest-side, oklch(0.84 0.16 85 / 0.5), transparent 70%)" }} />
+        <div className="absolute bottom-0 left-1/3 w-[600px] h-[600px] rounded-full blur-3xl opacity-40 animate-aurora-2"
+          style={{ background: "radial-gradient(closest-side, oklch(0.7 0.22 330 / 0.55), transparent 70%)" }} />
       </div>
 
       <section className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-10 pb-16">
-        {/* Master frame */}
-        <div className="relative rounded-[2.25rem] glass-strong border-gold shadow-elegant noise-bg overflow-hidden animated-border">
-          <div className="absolute inset-0 grid-bg opacity-[0.10] pointer-events-none" />
+        {/* Master frame — premium glass */}
+        <div className="relative rounded-[2.25rem] glass-premium shadow-elegant noise-bg overflow-hidden">
+          <div className="absolute inset-0 grid-bg opacity-[0.06] pointer-events-none" />
 
           {/* HERO */}
           <div className="relative grid lg:grid-cols-12 gap-8 p-6 sm:p-10 lg:p-14">
@@ -170,7 +172,7 @@ function Landing() {
               </div>
 
               {/* Portfolio value card */}
-              <div className="mt-8 relative max-w-md rounded-2xl p-5 glass-strong border-gold shadow-neon animate-rise" style={{ animationDelay: "120ms" }}>
+              <div className="mt-8 relative max-w-md rounded-2xl p-5 glass-premium animate-rise" style={{ animationDelay: "120ms" }}>
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="text-[11px] tracking-[0.25em] uppercase text-muted-foreground">Total Portfolio Value</div>
@@ -236,14 +238,14 @@ function Landing() {
           <div className="relative grid lg:grid-cols-12 gap-6 px-6 sm:px-10 lg:px-14 pb-10">
             <h2 className="sr-only">Portfolio overview</h2>
             {/* Holdings */}
-            <div className="lg:col-span-7 rounded-2xl glass border-gold p-6 card-hover animate-rise" style={{ animationDelay: "240ms" }}>
+            <div className="lg:col-span-7 rounded-2xl glass-premium p-6 card-hover animate-rise" style={{ animationDelay: "240ms" }}>
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-xl font-bold">Holdings</h3>
                 <Link to="/portfolio" className="text-xs text-gradient-gold font-semibold tracking-[0.2em] uppercase hover:opacity-80">View all →</Link>
               </div>
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                 {holdings.slice(0, 5).map((h) => (
-                  <div key={h.token.symbol} className="rounded-xl p-3 glass-strong border-gold text-center card-hover">
+                  <div key={h.token.symbol} className="rounded-xl p-3 glass text-center card-hover">
                     <img src={h.token.logo} alt={`${h.token.symbol} token logo`} className="h-10 w-10 mx-auto rounded-full ring-2 ring-primary/40" />
                     <div className="mt-2 text-sm font-bold">{h.token.symbol}</div>
                     <div className="text-[10px] text-muted-foreground truncate">
@@ -260,10 +262,10 @@ function Landing() {
             </div>
 
             {/* Performance */}
-            <div className="lg:col-span-5 rounded-2xl glass border-gold p-6 card-hover animate-rise" style={{ animationDelay: "300ms" }}>
+            <div className="lg:col-span-5 rounded-2xl glass-premium p-6 card-hover animate-rise" style={{ animationDelay: "300ms" }}>
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-xl font-bold">Performance</h3>
-                <span className="text-[10px] tracking-[0.2em] uppercase px-2 py-1 rounded-full glass-strong border-gold">Daily</span>
+                <span className="text-[10px] tracking-[0.2em] uppercase px-2 py-1 rounded-full glass">Daily</span>
               </div>
               <Sparkline />
               <div className="mt-3 flex items-center justify-between text-[10px] text-muted-foreground">
@@ -281,7 +283,7 @@ function Landing() {
                   Aggregated directly from LitVM logs · refreshes every 60s
                 </p>
               </div>
-              <span className="text-[10px] tracking-[0.2em] uppercase px-2 py-1 rounded-full glass-strong border-gold">
+              <span className="text-[10px] tracking-[0.2em] uppercase px-2 py-1 rounded-full glass">
                 {dexLoading ? "Syncing…" : "Live"}
               </span>
             </div>
