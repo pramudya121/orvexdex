@@ -263,11 +263,11 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
     }
     // Guard: native balance must leave room for gas
     if (tokenA.isNative && balA !== undefined && amtAWei >= balA) {
-      toast.push({ title: "Sisakan zkLTC untuk gas", description: "Kurangi sedikit jumlah zkLTC (klik MAX kemudian kurangi ~0.01).", type: "error" });
+      toast.push({ title: "Leave some zkLTC for gas", description: "Reduce the zkLTC amount slightly (click MAX then subtract ~0.01).", type: "error" });
       return;
     }
     if (tokenB.isNative && balB !== undefined && amtBWei >= balB) {
-      toast.push({ title: "Sisakan zkLTC untuk gas", description: "Kurangi sedikit jumlah zkLTC (klik MAX kemudian kurangi ~0.01).", type: "error" });
+      toast.push({ title: "Leave some zkLTC for gas", description: "Reduce the zkLTC amount slightly (click MAX then subtract ~0.01).", type: "error" });
       return;
     }
     // Guard: balance must cover deposit on each side
