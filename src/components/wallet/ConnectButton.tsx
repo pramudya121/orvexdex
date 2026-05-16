@@ -149,6 +149,7 @@ function WalletPanel({ onClose, onConnected }: { onClose: () => void; onConnecte
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Cari dompet…"
+              aria-label="Cari dompet"
               className="flex-1 bg-transparent outline-none text-sm py-1"
             />
             {query && <button onClick={() => setQuery("")} className="text-[10px] text-muted-foreground hover:text-foreground">clear</button>}

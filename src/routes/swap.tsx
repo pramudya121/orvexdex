@@ -263,10 +263,10 @@ function SwapPage() {
           <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-2/70 border border-border text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" /> ORVEX · Atelier
           </span>
-          <h2 className="text-5xl font-bold leading-[1.05]">
+          <p className="text-5xl font-bold leading-[1.05]">
             Trade with <span className="text-gradient-brand">precision</span>.<br/>
             Settle with <span className="text-gradient-brand">grace</span>.
-          </h2>
+          </p>
           <p className="text-muted-foreground max-w-sm">
             Swap on LitVM LiteForge with smart routing through wzkLTC, transparent price impact, and atelier-grade execution.
           </p>
@@ -290,7 +290,7 @@ function SwapPage() {
         <div className="glass-strong rounded-3xl p-6 shadow-neon">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Swap</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Swap Tokens</h1>
             <div className="text-[11px] text-muted-foreground mt-0.5">Atelier execution · zero hidden fees</div>
           </div>
           <div className="flex items-center gap-2">
@@ -357,6 +357,8 @@ function SwapPage() {
         <div className="flex justify-center -my-2 relative z-10">
           <button
             onClick={flip}
+            aria-label="Flip input and output tokens"
+            title="Flip input and output tokens"
             className="h-10 w-10 rounded-xl bg-surface-2 border border-border hover:border-primary/60 hover:rotate-180 transition-transform duration-300"
           >
             ↓

@@ -65,7 +65,7 @@ function PortfolioPage() {
       </div>
       <div className="animate-rise">
         <div className="text-[11px] tracking-[0.3em] uppercase text-gradient-gold font-semibold mb-2">Atelier · Holdings</div>
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-gradient-luxe">Portfolio</h1>
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-gradient-luxe">Your Portfolio</h1>
         <p className="text-sm text-muted-foreground mt-1 mb-6 font-mono">
           {address ? `${address.slice(0, 10)}…${address.slice(-6)}` : "Connect wallet to view"}
         </p>
@@ -339,7 +339,11 @@ function UnderlyingCell({ amount, symbol, decimals, logo }: { amount: bigint; sy
     <div className="group/cell relative" title={tooltip}>
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
         Underlying {sym}
-        <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-border text-[8px] text-muted-foreground/80">i</span>
+        <span
+          role="img"
+          aria-label={`More info about underlying ${sym}`}
+          className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-border text-[8px] text-muted-foreground/80"
+        >i</span>
       </div>
       <div className="flex items-center gap-1.5 mt-0.5">
         {logo && <img src={logo} alt="" className="h-4 w-4 rounded-full" />}

@@ -66,10 +66,10 @@ function LiquidityPage() {
           <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-2/70 border border-border text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" /> ORVEX · Liquidity
           </span>
-          <h2 className="text-5xl font-bold leading-[1.05]">
+          <p className="text-5xl font-bold leading-[1.05]">
             Provide liquidity.<br/>
             <span className="text-gradient-brand">Earn fees</span> on every swap.
-          </h2>
+          </p>
           <p className="text-muted-foreground max-w-sm">
             Deposit a token pair, mint LP tokens, and collect 0.30% from every trade routed through your pool.
           </p>
@@ -84,7 +84,7 @@ function LiquidityPage() {
         <div className="glass-strong rounded-3xl p-6 shadow-neon">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Liquidity</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Add or Remove Liquidity</h1>
             <div className="text-[11px] text-muted-foreground mt-0.5">Mint or redeem LP positions</div>
           </div>
           <div className="flex gap-1 bg-surface-2 rounded-xl p-1">

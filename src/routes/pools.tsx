@@ -67,7 +67,7 @@ function PoolsPage() {
 
       <div className="mb-6 animate-rise">
         <div className="text-[11px] tracking-[0.3em] uppercase text-gradient-gold font-semibold mb-2">Atelier · Liquidity</div>
-        <h1 className="text-4xl md:text-5xl font-extrabold text-gradient-luxe tracking-tight">Pools</h1>
+        <h1 className="text-4xl md:text-5xl font-extrabold text-gradient-luxe tracking-tight">Liquidity Pools</h1>
         <p className="text-sm text-muted-foreground mt-1">All liquidity pairs on ORVEX • <span className="text-foreground/80 font-semibold">{total}</span> pools live</p>
       </div>
 

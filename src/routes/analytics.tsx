@@ -84,7 +84,7 @@ function AnalyticsPage() {
 
       <div className="animate-rise mb-6">
         <div className="text-[11px] tracking-[0.3em] uppercase text-gradient-gold font-semibold mb-2">Atelier · Insight</div>
-        <h1 className="text-4xl md:text-5xl font-extrabold text-gradient-luxe tracking-tight">Analytics</h1>
+        <h1 className="text-4xl md:text-5xl font-extrabold text-gradient-luxe tracking-tight">DEX Analytics</h1>
         <p className="text-sm text-muted-foreground mt-1">Live protocol metrics on LitVM · {total} pools</p>
       </div>
 
