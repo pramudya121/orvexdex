@@ -9,7 +9,9 @@ export const Route = createFileRoute("/brand")({
       { name: "description", content: "Official ORVEX brand kit: logo treatments, color tokens, typography, motion, and component patterns for the premium AMM DEX experience." },
       { property: "og:title", content: "ORVEX Brand & Style Guide" },
       { property: "og:description", content: "Logo treatments, color tokens, typography, and motion principles for the ORVEX premium AMM DEX." },
+      { property: "og:url", content: "https://orvexdex.lovable.app/brand" },
     ],
+    links: [{ rel: "canonical", href: "https://orvexdex.lovable.app/brand" }],
   }),
 });
 

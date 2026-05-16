@@ -27,6 +27,7 @@ export const Route = createFileRoute("/admin")({
       { property: "og:url", content: "https://orvexdex.lovable.app/admin" },
       { name: "robots", content: "noindex, nofollow" },
     ],
+    links: [{ rel: "canonical", href: "https://orvexdex.lovable.app/admin" }],
   }),
 });
 
