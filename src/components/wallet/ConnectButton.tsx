@@ -312,14 +312,19 @@ export function WalletModal({ open, onClose }: { open: boolean; onClose: () => v
 
 export function ConnectButton() {
   const [open, setOpen] = useState(false);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const accountRef = useRef<HTMLButtonElement>(null);
+  const switcherRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
+  const { connectAsync, connectors } = useConnect();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
   const detected = useEip6963Providers();
   const wrong = isConnected && chainId !== litvm.id;
+  const [switching, setSwitching] = useState<string | null>(null);
 
   const activeWallet = useMemo<Eip6963Detail | null>(() => {
     if (!isConnected || typeof window === "undefined") return null;
@@ -343,9 +348,44 @@ export function ConnectButton() {
     }
   }, [wrong, switchChain]);
 
+  useEffect(() => {
+    if (!switcherOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (switcherRef.current?.contains(t)) return;
+      if (accountRef.current?.contains(t)) return;
+      setSwitcherOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [switcherOpen]);
+
   const handleDisconnect = () => {
     try { localStorage.removeItem(ACTIVE_RDNS_KEY); } catch { /* noop */ }
     disconnect();
+    setSwitcherOpen(false);
+  };
+
+  const handleSwitchWallet = async (d: Eip6963Detail) => {
+    if (activeWallet && d.info.uuid === activeWallet.info.uuid) {
+      setSwitcherOpen(false);
+      return;
+    }
+    setSwitching(d.info.uuid);
+    try {
+      // Disconnect current first to avoid stale session
+      try { disconnect(); } catch { /* noop */ }
+      const injectedConn = connectors.find((c) => c.type === "injected" || c.id === "injected");
+      if (!injectedConn) throw new Error("No injected connector");
+      (injectedConn as any).getProvider = async () => d.provider;
+      await connectAsync({ connector: injectedConn });
+      try { localStorage.setItem(ACTIVE_RDNS_KEY, d.info.rdns); } catch { /* noop */ }
+      setSwitcherOpen(false);
+    } catch {
+      /* user rejected or wallet locked */
+    } finally {
+      setSwitching(null);
+    }
   };
 
   if (!isConnected) {
@@ -373,21 +413,83 @@ export function ConnectButton() {
           Switch to LitVM
         </button>
       )}
-      <button
-        onClick={handleDisconnect}
-        title={activeWallet ? `Disconnect ${activeWallet.info.name}` : "Disconnect"}
-        className="flex items-center gap-2 px-3 py-2 rounded-full glass text-sm font-mono hover:border-primary/60 transition"
-      >
-        {activeWallet?.info.icon && (
-          <img
-            src={activeWallet.info.icon}
-            alt={activeWallet.info.name}
-            className="h-5 w-5 rounded"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-          />
+      <div className="relative">
+        <button
+          ref={accountRef}
+          onClick={() => setSwitcherOpen((v) => !v)}
+          title={activeWallet ? `${activeWallet.info.name} · switch or disconnect` : "Wallet menu"}
+          className="flex items-center gap-2 px-3 py-2 rounded-full glass text-sm font-mono hover:border-primary/60 transition"
+        >
+          {activeWallet?.info.icon && (
+            <img
+              src={activeWallet.info.icon}
+              alt={activeWallet.info.name}
+              className="h-5 w-5 rounded"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+            />
+          )}
+          {address?.slice(0, 6)}…{address?.slice(-4)}
+          <span className="text-[10px] text-muted-foreground">▾</span>
+        </button>
+        {switcherOpen && (
+          <div
+            ref={switcherRef}
+            className="absolute right-0 top-full mt-2 w-[280px] z-50 rounded-2xl overflow-hidden border border-[oklch(0.65_0.27_295/0.35)] bg-[oklch(0.09_0.03_280/0.96)] backdrop-blur-2xl shadow-elegant animate-fade-in"
+          >
+            <div className="px-4 pt-3 pb-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              Switch wallet
+            </div>
+            <div className="px-2 pb-2 max-h-[260px] overflow-y-auto custom-scroll">
+              {detected.length === 0 && (
+                <div className="text-xs text-muted-foreground text-center py-4">
+                  Tidak ada wallet terdeteksi
+                </div>
+              )}
+              {detected.map((d) => {
+                const isActive = activeWallet?.info.uuid === d.info.uuid;
+                return (
+                  <button
+                    key={d.info.uuid}
+                    onClick={() => handleSwitchWallet(d)}
+                    disabled={switching !== null}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition disabled:opacity-50 ${
+                      isActive ? "bg-white/[0.07]" : "hover:bg-white/[0.05]"
+                    }`}
+                  >
+                    <img
+                      src={d.info.icon}
+                      alt=""
+                      className="h-8 w-8 rounded-lg bg-white/5 object-contain p-0.5"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
+                    />
+                    <div className="flex-1 text-left min-w-0">
+                      <div className="text-sm font-semibold truncate">{d.info.name}</div>
+                      {isActive && <div className="text-[10px] text-[oklch(0.78_0.18_220)]">Aktif</div>}
+                      {switching === d.info.uuid && <div className="text-[10px] text-muted-foreground">Menunggu konfirmasi…</div>}
+                    </div>
+                    {isActive && <span className="text-[10px] font-semibold text-emerald-400">●</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="border-t border-white/5 p-2 flex gap-2">
+              <button
+                onClick={() => { setSwitcherOpen(false); setOpen(true); }}
+                className="flex-1 px-3 py-2 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 transition"
+              >
+                + Hubungkan lain
+              </button>
+              <button
+                onClick={handleDisconnect}
+                className="flex-1 px-3 py-2 rounded-xl text-xs font-semibold bg-destructive/15 text-destructive hover:bg-destructive/25 transition"
+              >
+                Disconnect
+              </button>
+            </div>
+          </div>
         )}
-        {address?.slice(0, 6)}…{address?.slice(-4)}
-      </button>
+        <WalletDropdown open={open} onClose={() => setOpen(false)} anchorRef={accountRef} />
+      </div>
     </div>
   );
 }
