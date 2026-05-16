@@ -295,7 +295,7 @@ function WalletPanel({ onClose, onConnected }: { onClose: () => void; onConnecte
                   active ? "bg-white/[0.07]" : "hover:bg-white/[0.05]"
                 }`}
               >
-                <WalletAvatar src={d.info.icon} name={d.info.name} />
+                <WalletAvatar src={d.info.icon} name={d.info.name} domain={domainForRdns(d.info.rdns)} />
                 <div className="flex-1 text-left min-w-0">
                   <div className="text-sm font-semibold truncate">{d.info.name}</div>
                   {busy === d.info.uuid && <div className="text-[10px] text-muted-foreground">Waiting for confirmation…</div>}
@@ -317,7 +317,7 @@ function WalletPanel({ onClose, onConnected }: { onClose: () => void; onConnecte
                 active ? "bg-white/[0.07]" : "hover:bg-white/[0.05]"
               }`}
             >
-              <WalletAvatar src={s.icon} name={s.name} />
+              <WalletAvatar src={s.icon} name={s.name} wcId={s.wcId} domain={s.domain} />
               <div className="flex-1 text-left min-w-0">
                 <div className="text-sm font-semibold truncate">{s.name}</div>
               </div>
@@ -573,7 +573,7 @@ export function ConnectButton() {
                       isActive ? "bg-white/[0.07]" : "hover:bg-white/[0.05]"
                     }`}
                   >
-                    <WalletAvatar src={d.info.icon} name={d.info.name} size={32} />
+                    <WalletAvatar src={d.info.icon} name={d.info.name} size={32} domain={domainForRdns(d.info.rdns)} />
                     <div className="flex-1 text-left min-w-0">
                       <div className="text-sm font-semibold truncate">{d.info.name}</div>
                       {isActive && <div className="text-[10px] text-[oklch(0.78_0.18_220)]">Active</div>}
