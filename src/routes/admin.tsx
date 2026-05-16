@@ -218,6 +218,7 @@ function PresetBtn({ onClick, children }: { onClick: () => void; children: React
 function TokenRow({ token, adminAddress, disabled }: { token: Token; adminAddress?: string; disabled?: boolean }) {
   const idx = token.faucetIndex!;
   const dec = token.decimals;
+  const ZERO = "0x0000000000000000000000000000000000000000";
 
   const reads = useReadContracts({
     contracts: [
@@ -243,17 +244,25 @@ function TokenRow({ token, adminAddress, disabled }: { token: Token; adminAddres
   const allowance = reads.data?.[4]?.result as bigint | undefined;
   const myBal = reads.data?.[5]?.result as bigint | undefined;
 
-  const addrMismatch = onChainAddr && onChainAddr.toLowerCase() !== token.address.toLowerCase();
+  const tokenUnset = !onChainAddr || onChainAddr.toLowerCase() === ZERO;
+  const addrMismatch = !tokenUnset && onChainAddr!.toLowerCase() !== token.address.toLowerCase();
 
-  // Editable fields (controlled, default to current values when known)
+  // Editable fields
+  const [tokenAddrVal, setTokenAddrVal] = useState("");
   const [claimVal, setClaimVal] = useState("");
   const [maxVal, setMaxVal] = useState("");
   const [refillVal, setRefillVal] = useState("");
   const [withdrawVal, setWithdrawVal] = useState("");
   const [withdrawTo, setWithdrawTo] = useState("");
-  const [newAddr, setNewAddr] = useState("");
-  const [showAdvanced, setShowAdvanced] = useState(true);
+  const [resetUser, setResetUser] = useState("");
 
+  useEffect(() => {
+    if (tokenAddrVal === "") {
+      // Pre-fill with on-chain value if set, else config address
+      setTokenAddrVal(tokenUnset ? token.address : (onChainAddr as string));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onChainAddr]);
   useEffect(() => {
     if (claimAmount !== undefined && claimVal === "") setClaimVal(formatUnits(claimAmount, dec));
   }, [claimAmount, dec, claimVal]);
@@ -261,140 +270,213 @@ function TokenRow({ token, adminAddress, disabled }: { token: Token; adminAddres
     if (maxClaims !== undefined && maxVal === "") setMaxVal(maxClaims.toString());
   }, [maxClaims, maxVal]);
 
+  const setTokenAddr = useTxRunner(`${token.symbol} set token`);
   const setClaim = useTxRunner(`${token.symbol} claim amount`);
   const setMax = useTxRunner(`${token.symbol} max claims`);
   const refill = useTxRunner(`${token.symbol} refill`);
   const approve = useTxRunner(`${token.symbol} approve`);
   const withdraw = useTxRunner(`${token.symbol} withdraw`);
-  const setTokenAddr = useTxRunner(`${token.symbol} set address`);
+  const resetCount = useTxRunner(`${token.symbol} reset user`);
 
   const refillBig = useMemo(() => {
     try { return refillVal ? parseUnits(refillVal as `${number}`, dec) : 0n; } catch { return 0n; }
   }, [refillVal, dec]);
   const needsApprove = refillBig > 0n && (allowance ?? 0n) < refillBig;
 
-  // # claims fundable at current claim amount
-  const fundable = claimAmount && claimAmount > 0n && faucetBal !== undefined ? faucetBal / claimAmount : undefined;
+  const validAddr = (a: string) => /^0x[a-fA-F0-9]{40}$/.test(a);
 
   return (
-    <div className="glass rounded-2xl p-4 sm:p-5">
-      <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+    <div className="glass rounded-2xl p-4 sm:p-6">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-5">
         <div className="flex items-center gap-3">
           <img src={token.logo} alt={`${token.symbol} token logo`} className="h-10 w-10 rounded-full" />
           <div>
-            <div className="font-bold text-lg leading-none">{token.symbol}</div>
-            <div className="text-xs text-muted-foreground">{token.name} · #{idx}</div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-lg leading-none">{token.symbol}</span>
+              <span className="text-xs text-muted-foreground">slot #{idx}</span>
+            </div>
             <a
               href={explorerAddr(token.address)} target="_blank" rel="noreferrer"
-              className="text-[11px] font-mono text-primary hover:underline"
-            >{shortAddr(token.address)}</a>
+              className="text-[11px] font-mono text-muted-foreground hover:text-primary hover:underline"
+            >{token.address}</a>
           </div>
         </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-right text-sm flex-1 min-w-[260px]">
-          <Stat label="Faucet bal" value={fmt(faucetBal, dec)} />
-          <Stat label="Claim/req" value={fmt(claimAmount, dec)} />
-          <Stat label="Max/user" value={maxClaims?.toString() ?? "—"} />
-          <Stat label="Fundable" value={fundable !== undefined ? `${fundable}×` : "—"} />
+        <div className="text-right">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Pool</div>
+          <div className="font-mono font-bold text-lg">{fmt(faucetBal, dec)}</div>
         </div>
       </div>
 
       {addrMismatch && (
-        <div className="mb-3 text-xs px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/40 text-destructive">
+        <div className="mb-4 text-xs px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/40 text-destructive">
           ⚠ On-chain address (<span className="font-mono">{shortAddr(onChainAddr)}</span>) doesn't match config (<span className="font-mono">{shortAddr(token.address)}</span>).
         </div>
       )}
+      {tokenUnset && (
+        <div className="mb-4 text-xs px-3 py-2 rounded-lg bg-accent/10 border border-accent/40 text-accent">
+          ℹ Token belum diset on-chain. Klik <b>Set</b> di field Token Address di bawah untuk menginisialisasi slot ini.
+        </div>
+      )}
 
-      <div className="grid md:grid-cols-2 gap-3">
-        {/* Claim amount */}
-        <Field label="Claim amount per request">
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* TOKEN ADDRESS */}
+        <Field label="TOKEN ADDRESS">
           <div className="flex gap-2">
-            <input value={claimVal} onChange={(e) => setClaimVal(e.target.value)}
-              className="flex-1 bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-sm" />
+            <input
+              value={tokenAddrVal}
+              onChange={(e) => setTokenAddrVal(e.target.value)}
+              placeholder="0x…"
+              className="flex-1 font-mono bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-xs"
+            />
+            <button
+              disabled={disabled || setTokenAddr.isPending || setTokenAddr.isMining || !validAddr(tokenAddrVal)}
+              onClick={() => setTokenAddr.run({ address: ADDR.faucet, abi: faucetAbi, functionName: "setToken", args: [idx, tokenAddrVal as `0x${string}`] })}
+              className="px-4 py-2 rounded-xl bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 text-sm font-semibold disabled:opacity-40"
+            >
+              {setTokenAddr.isPending || setTokenAddr.isMining ? "…" : "Set"}
+            </button>
+          </div>
+        </Field>
+
+        {/* CLAIM AMOUNT */}
+        <Field label="CLAIM AMOUNT (PER CLAIM)">
+          <div className="flex gap-2">
+            <input
+              value={claimVal}
+              onChange={(e) => setClaimVal(e.target.value)}
+              placeholder="0.001"
+              className="flex-1 bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-sm"
+            />
             <button
               disabled={disabled || setClaim.isPending || setClaim.isMining || !claimVal}
               onClick={() => setClaim.run({ address: ADDR.faucet, abi: faucetAbi, functionName: "setClaimAmount", args: [idx, parseUnits(claimVal as `${number}`, dec)] })}
-              className="px-3 py-2 rounded-xl bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 text-sm font-semibold disabled:opacity-40">Save</button>
+              className="px-4 py-2 rounded-xl bg-accent/20 text-accent border border-accent/40 hover:bg-accent/30 text-sm font-semibold disabled:opacity-40"
+            >
+              {setClaim.isPending || setClaim.isMining ? "…" : "Set"}
+            </button>
           </div>
         </Field>
 
-        {/* Max claims */}
-        <Field label="Max claims per user">
+        {/* MAX CLAIMS */}
+        <Field label="MAX CLAIMS PER USER (0 = UNLIMITED)">
           <div className="flex gap-2">
-            <input value={maxVal} onChange={(e) => setMaxVal(e.target.value)} inputMode="numeric"
-              className="flex-1 bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-sm" />
+            <input
+              value={maxVal}
+              onChange={(e) => setMaxVal(e.target.value)}
+              inputMode="numeric"
+              placeholder="1000"
+              className="flex-1 bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-sm"
+            />
             <button
               disabled={disabled || setMax.isPending || setMax.isMining || !maxVal}
               onClick={() => setMax.run({ address: ADDR.faucet, abi: faucetAbi, functionName: "setMaxClaims", args: [idx, BigInt(maxVal)] })}
-              className="px-3 py-2 rounded-xl bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 text-sm font-semibold disabled:opacity-40">Save</button>
+              className="px-4 py-2 rounded-xl bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 text-sm font-semibold disabled:opacity-40"
+            >
+              {setMax.isPending || setMax.isMining ? "…" : "Set"}
+            </button>
           </div>
         </Field>
 
-        {/* Refill */}
-        <Field label={`Refill faucet (your bal: ${fmt(myBal, dec)})`}>
-          <div className="flex gap-2 flex-wrap">
-            <input value={refillVal} onChange={(e) => setRefillVal(e.target.value)} placeholder="0.0"
-              className="flex-1 min-w-[6rem] bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-sm" />
-            <button type="button" onClick={() => myBal !== undefined && setRefillVal(formatUnits(myBal, dec))}
-              className="px-2 py-2 text-xs rounded-xl border border-border hover:border-primary text-muted-foreground">MAX</button>
+        {/* DEPOSIT LIQUIDITY */}
+        <Field
+          label={
+            <div className="flex items-center justify-between">
+              <span>DEPOSIT LIQUIDITY</span>
+              <span className="text-[10px] normal-case tracking-normal text-muted-foreground">
+                Wallet: <span className="text-foreground font-mono">{fmt(myBal, dec)}</span>
+              </span>
+            </div>
+          }
+        >
+          <div className="flex gap-2">
+            <input
+              value={refillVal}
+              onChange={(e) => setRefillVal(e.target.value)}
+              placeholder={`Amount in ${token.symbol}`}
+              className="flex-1 bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-sm"
+            />
+            <button
+              type="button"
+              onClick={() => myBal !== undefined && setRefillVal(formatUnits(myBal, dec))}
+              className="px-3 py-2 text-xs rounded-xl border border-border hover:border-primary text-muted-foreground"
+            >
+              Max
+            </button>
             {needsApprove ? (
               <button
                 disabled={disabled || approve.isPending || approve.isMining || refillBig === 0n}
                 onClick={() => approve.run({ address: token.address, abi: erc20Abi, functionName: "approve", args: [ADDR.faucet, refillBig] })}
-                className="px-3 py-2 rounded-xl bg-accent/20 text-accent border border-accent/40 hover:bg-accent/30 text-sm font-semibold disabled:opacity-40">
-                Approve
+                className="px-4 py-2 rounded-xl bg-accent/20 text-accent border border-accent/40 hover:bg-accent/30 text-sm font-semibold disabled:opacity-40"
+              >
+                {approve.isPending || approve.isMining ? "…" : "Approve"}
               </button>
             ) : (
               <button
                 disabled={disabled || refill.isPending || refill.isMining || refillBig === 0n}
                 onClick={() => refill.run({ address: ADDR.faucet, abi: faucetAbi, functionName: "refill", args: [idx, refillBig] })}
-                className="px-3 py-2 rounded-xl bg-gradient-brand text-primary-foreground text-sm font-semibold disabled:opacity-40">
-                Refill
+                className="px-4 py-2 rounded-xl bg-accent text-accent-foreground text-sm font-semibold disabled:opacity-40"
+              >
+                {refill.isPending || refill.isMining ? "…" : "Refill"}
               </button>
             )}
           </div>
-          <div className="text-[10px] text-muted-foreground mt-1">
-            Allowance: {fmt(allowance, dec)} {needsApprove && refillBig > 0n && <span className="text-accent">→ approve required</span>}
-          </div>
+          <p className="text-[10px] text-muted-foreground mt-1.5">
+            Auto-checks balance, approves &amp; transfers tokens into the faucet pool.
+          </p>
         </Field>
 
-        {/* Withdraw */}
-        <Field label="Withdraw from faucet">
-          <div className="flex gap-2 flex-wrap">
-            <input value={withdrawVal} onChange={(e) => setWithdrawVal(e.target.value)} placeholder="amount"
-              className="w-24 bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-sm" />
-            <input value={withdrawTo} onChange={(e) => setWithdrawTo(e.target.value)} placeholder={adminAddress ?? "to 0x…"}
-              className="flex-1 min-w-[8rem] font-mono bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-xs" />
-            <button type="button" onClick={() => adminAddress && setWithdrawTo(adminAddress)}
-              className="px-2 py-2 text-xs rounded-xl border border-border hover:border-primary text-muted-foreground">SELF</button>
-            <button
-              disabled={disabled || withdraw.isPending || withdraw.isMining || !withdrawVal || !withdrawTo}
-              onClick={() => withdraw.run({ address: ADDR.faucet, abi: faucetAbi, functionName: "adminWithdraw", args: [idx, parseUnits(withdrawVal as `${number}`, dec), withdrawTo as `0x${string}`] })}
-              className="px-3 py-2 rounded-xl bg-destructive/15 text-destructive border border-destructive/30 hover:bg-destructive/25 text-sm font-semibold disabled:opacity-40">Withdraw</button>
+        {/* ADMIN WITHDRAW */}
+        <Field label="ADMIN WITHDRAW">
+          <div className="space-y-2">
+            <input
+              value={withdrawTo}
+              onChange={(e) => setWithdrawTo(e.target.value)}
+              placeholder="Recipient 0x…"
+              className="w-full font-mono bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-xs"
+            />
+            <div className="flex gap-2">
+              <input
+                value={withdrawVal}
+                onChange={(e) => setWithdrawVal(e.target.value)}
+                placeholder={`Max ${fmt(faucetBal, dec)}`}
+                className="flex-1 bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-sm"
+              />
+              <button
+                disabled={disabled || withdraw.isPending || withdraw.isMining || !withdrawVal || !validAddr(withdrawTo)}
+                onClick={() => withdraw.run({ address: ADDR.faucet, abi: faucetAbi, functionName: "adminWithdraw", args: [idx, parseUnits(withdrawVal as `${number}`, dec), withdrawTo as `0x${string}`] })}
+                className="px-4 py-2 rounded-xl bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 text-sm font-semibold disabled:opacity-40"
+              >
+                {withdraw.isPending || withdraw.isMining ? "…" : "Withdraw"}
+              </button>
+            </div>
           </div>
         </Field>
       </div>
 
-      <button
-        onClick={() => setShowAdvanced((s) => !s)}
-        className="mt-3 text-xs text-muted-foreground hover:text-foreground"
-      >
-        {showAdvanced ? "▾ Hide advanced" : "▸ Advanced (change token address)"}
-      </button>
-      {showAdvanced && (
-        <div className="mt-3 pt-3 border-t border-border">
-          <Field label={`Replace token #${idx} address (current: ${shortAddr(onChainAddr)})`}>
-            <div className="flex gap-2 flex-wrap">
-              <input value={newAddr} onChange={(e) => setNewAddr(e.target.value)} placeholder="new 0x…"
-                className="flex-1 min-w-[10rem] font-mono bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-xs" />
-              <button
-                disabled={disabled || setTokenAddr.isPending || setTokenAddr.isMining || !newAddr}
-                onClick={() => setTokenAddr.run({ address: ADDR.faucet, abi: faucetAbi, functionName: "setToken", args: [idx, newAddr as `0x${string}`] })}
-                className="px-3 py-2 rounded-xl bg-destructive/15 text-destructive border border-destructive/30 hover:bg-destructive/25 text-sm font-semibold disabled:opacity-40">Replace</button>
-            </div>
-          </Field>
-        </div>
-      )}
+      {/* RESET USER CLAIM COUNT */}
+      <div className="mt-4 pt-4 border-t border-border">
+        <Field label="RESET USER CLAIM COUNT">
+          <div className="flex gap-2">
+            <input
+              value={resetUser}
+              onChange={(e) => setResetUser(e.target.value)}
+              placeholder="User 0x…"
+              className="flex-1 font-mono bg-surface-2 rounded-xl px-3 py-2 outline-none border border-border focus:border-primary text-xs"
+            />
+            <button
+              disabled={disabled || resetCount.isPending || resetCount.isMining || !validAddr(resetUser)}
+              onClick={() => resetCount.run({ address: ADDR.faucet, abi: faucetAbi, functionName: "setUserClaimCount", args: [resetUser as `0x${string}`, idx, 0n] })}
+              className="px-4 py-2 rounded-xl bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 text-sm font-semibold disabled:opacity-40"
+            >
+              {resetCount.isPending || resetCount.isMining ? "…" : "Reset to 0"}
+            </button>
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-1.5">
+            Sets the user's claim counter back to 0 for this token (lets them claim again after hitting max).
+          </p>
+        </Field>
+      </div>
     </div>
   );
 }
