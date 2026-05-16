@@ -16,16 +16,19 @@ import { BrandMark } from "@/components/brand/BrandMark";
 export const Route = createFileRoute("/")({
   component: Landing,
   head: () => ({
+    links: [
+      { rel: "preload", as: "image", href: heroNeon, fetchpriority: "high" } as any,
+      { rel: "canonical", href: "https://orvexdex.lovable.app/" },
+    ],
     meta: [
       { title: "ORVEX — Premium AMM DEX on LitVM LiteForge" },
       { name: "description", content: "ORVEX is a premium AMM DEX on LitVM LiteForge Testnet. Swap, provide liquidity, and earn — fully on-chain." },
       { property: "og:title", content: "ORVEX — Premium AMM DEX on LitVM LiteForge" },
       { property: "og:description", content: "Swap, provide liquidity, and track your portfolio live on the ORVEX AMM DEX." },
-      { property: "og:url", content: "https://orvexdex12.lovable.app/" },
+      { property: "og:url", content: "https://orvexdex.lovable.app/" },
       { name: "twitter:title", content: "ORVEX — Premium AMM DEX on LitVM LiteForge" },
       { name: "twitter:description", content: "Swap, provide liquidity, and track your portfolio live on the ORVEX AMM DEX." },
     ],
-    links: [{ rel: "canonical", href: "https://orvexdex12.lovable.app/" }],
   }),
 });
 
@@ -212,7 +215,15 @@ function Landing() {
                 <div className="absolute inset-0 rounded-[2.5rem] blur-3xl opacity-70 animate-pulse-glow"
                   style={{ background: "radial-gradient(closest-side, oklch(0.65 0.27 295 / 0.7), transparent 70%)" }} />
                 <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden shadow-elegant border-gold animated-border">
-                  <img src={heroNeon} alt="ORVEX neon emblem" className="w-full h-full object-cover" />
+                  <img
+                    src={heroNeon}
+                    alt="ORVEX neon emblem"
+                    width={1024}
+                    height={1024}
+                    fetchPriority="high"
+                    decoding="async"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-gradient-gold text-[10px] font-bold tracking-[0.3em] uppercase text-black shadow-gold">
                   Premium AMM · LitVM
