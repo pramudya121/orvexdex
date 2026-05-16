@@ -22,6 +22,13 @@ const getErrorMessage = (error: unknown) => {
   return undefined;
 };
 
+type FaucetReadCall = {
+  address: typeof ADDR.faucet;
+  abi: typeof faucetAbi;
+  functionName: "tokens" | "claimAmounts" | "maxClaims" | "lastClaimed" | "userClaimCount";
+  args: readonly [bigint] | readonly [`0x${string}`, number];
+};
+
 export const Route = createFileRoute("/faucet")({
   component: FaucetPage,
   head: () => ({
@@ -62,7 +69,7 @@ function FaucetPage() {
   const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
   const calls = useMemo(() => {
-    const out: NonNullable<Parameters<typeof useReadContracts>[0]>["contracts"] = [];
+    const out: FaucetReadCall[] = [];
     FAUCET_TOKENS.forEach((t) => {
       const idx = t.faucetIndex!;
       out.push({
