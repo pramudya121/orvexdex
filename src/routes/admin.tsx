@@ -490,10 +490,10 @@ function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <div>
-      <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
+      <label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-1.5 block font-semibold">{label}</label>
       {children}
     </div>
   );
