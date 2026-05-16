@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { TxIndicator } from "@/components/wallet/TxIndicator";
-import logo from "@/assets/orvex-logo.png";
+import { BrandMark } from "@/components/brand/BrandMark";
 import { useAccount, useReadContract } from "wagmi";
 import { ADDR } from "@/lib/chain";
 import { faucetAbi } from "@/lib/abis/faucet";
@@ -26,12 +26,8 @@ export function Header() {
     <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/60 border-b border-border">
       <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-luxe opacity-50" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        <Link to="/" className="flex items-center gap-2.5 group">
-          <img src={logo} alt="ORVEX" className="h-9 w-9 animate-pulse-glow" />
-          <div className="flex flex-col leading-none">
-            <span className="font-bold text-lg tracking-[0.2em] text-gradient-luxe">ORVEX</span>
-            <span className="text-[8px] tracking-[0.3em] uppercase text-muted-foreground">Atelier · DEX</span>
-          </div>
+        <Link to="/" className="group" aria-label="ORVEX home">
+          <BrandMark size="md" />
         </Link>
         <nav className="hidden md:flex items-center gap-1 glass rounded-full px-2 py-1.5">
           {nav.map((n) => {

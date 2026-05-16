@@ -2,7 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useAccount, useBalance, useReadContract, useReadContracts } from "wagmi";
 import { formatUnits } from "viem";
-import logo from "@/assets/orvex-logo.png";
 import heroNeon from "@/assets/orvex-hero-neon.jpg";
 import { ADDR } from "@/lib/chain";
 import { factoryAbi } from "@/lib/abis/factory";
@@ -11,6 +10,7 @@ import { TOKENS } from "@/lib/tokens";
 import { WalletModal } from "@/components/wallet/ConnectButton";
 import { findToken } from "@/lib/tokens";
 import { usePoolStats, fmtWzk, type PoolMeta } from "@/lib/poolStats";
+import { BrandMark } from "@/components/brand/BrandMark";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -145,10 +145,7 @@ function Landing() {
           {/* HERO */}
           <div className="relative grid lg:grid-cols-12 gap-8 p-6 sm:p-10 lg:p-14">
             <div className="lg:col-span-7 relative z-10 animate-rise">
-              <div className="flex items-center gap-3 mb-7">
-                <img src={logo} alt="ORVEX" className="h-10 w-10 animate-pulse-glow" />
-                <span className="font-bold text-2xl tracking-[0.3em] text-gradient-luxe">ORVEX</span>
-              </div>
+              <BrandMark size="lg" className="mb-7" />
 
               <h1 className="text-4xl sm:text-5xl lg:text-[3.75rem] font-extrabold leading-[1.05] tracking-tight">
                 Mastering Crypto & Web3
