@@ -179,6 +179,12 @@ function FaucetPage() {
             <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-2">Recipient address</div>
             <div className="font-mono text-sm break-all">{address ?? "Connect a wallet to receive tokens…"}</div>
           </div>
+          {!faucetReady && (
+            <div className="rounded-2xl bg-destructive/10 border border-destructive/30 p-4 mb-5 text-sm text-destructive">
+              Faucet belum siap: {FAUCET_TOKENS.length - configuredTokenCount} token index masih kosong di contract.
+              Owner harus mengisi `setToken` di halaman Admin, lalu refill saldo token faucet.
+            </div>
+          )}
 
           {/* Captcha */}
           <div className="rounded-2xl bg-surface-2 border border-border p-4 mb-5">
@@ -223,10 +229,10 @@ function FaucetPage() {
 
           <button
             onClick={claimAll}
-            disabled={!address || isPending || !!hash || !captchaOk}
+            disabled={!address || isPending || !!hash || !captchaOk || !faucetReady}
             className="w-full py-4 rounded-2xl bg-gradient-luxe text-primary-foreground font-bold text-lg shadow-neon hover:shadow-gold hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:translate-y-0"
           >
-            {!address ? "Connect Wallet" : isPending || hash ? "Confirming…" : !captchaOk ? "🔒 Verifikasi captcha" : "💧 Claim All Now"}
+            {!address ? "Connect Wallet" : isPending || hash ? "Confirming…" : !faucetReady ? "Faucet belum diset" : !captchaOk ? "🔒 Verifikasi captcha" : "💧 Claim All Now"}
           </button>
         </div>
       </div>
@@ -238,11 +244,13 @@ function FaucetPage() {
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {FAUCET_TOKENS.map((t, i) => {
-          const off = (address ? 4 : 2) * i;
-          const amt = reads.data?.[off]?.result as bigint | undefined;
-          const max = reads.data?.[off + 1]?.result as bigint | undefined;
-          const last = address ? (reads.data?.[off + 2]?.result as bigint | undefined) : undefined;
-          const userCnt = address ? (reads.data?.[off + 3]?.result as bigint | undefined) : undefined;
+          const off = readsPerToken * i;
+          const contractToken = reads.data?.[off]?.result as string | undefined;
+          const tokenReady = !!contractToken && contractToken.toLowerCase() !== ZERO_ADDRESS;
+          const amt = reads.data?.[off + 1]?.result as bigint | undefined;
+          const max = reads.data?.[off + 2]?.result as bigint | undefined;
+          const last = address ? (reads.data?.[off + 3]?.result as bigint | undefined) : undefined;
+          const userCnt = address ? (reads.data?.[off + 4]?.result as bigint | undefined) : undefined;
           const now = BigInt(Math.floor(Date.now() / 1000));
           const ready = !last || now >= last + cd;
           const wait = ready ? 0 : Number((last! + cd) - now);
