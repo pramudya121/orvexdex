@@ -29,11 +29,11 @@ export const Route = createFileRoute("/swap")({
       { name: "description", content: "Trade tokens instantly on ORVEX with smart routing, live price impact, and slippage controls on LitVM." },
       { property: "og:title", content: "Swap — ORVEX" },
       { property: "og:description", content: "Trade tokens instantly on ORVEX with smart routing, live price impact, and slippage controls on LitVM." },
-      { property: "og:url", content: "https://orvexdex12.lovable.app/swap" },
+      { property: "og:url", content: "https://orvexdex.lovable.app/swap" },
       { name: "twitter:title", content: "Swap — ORVEX" },
       { name: "twitter:description", content: "Trade tokens instantly on ORVEX with smart routing, live price impact, and slippage controls on LitVM." },
     ],
-    links: [{ rel: "canonical", href: "https://orvexdex12.lovable.app/swap" }],
+    links: [{ rel: "canonical", href: "https://orvexdex.lovable.app/swap" }],
   }),
   validateSearch: (s: Record<string, unknown>): SwapSearch => ({
     from: typeof s.from === "string" ? s.from : undefined,

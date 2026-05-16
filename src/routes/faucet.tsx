@@ -15,11 +15,11 @@ export const Route = createFileRoute("/faucet")({
       { name: "description", content: "Claim free LitVM testnet tokens to try ORVEX. Captcha-protected, one claim per cycle." },
       { property: "og:title", content: "Faucet — ORVEX" },
       { property: "og:description", content: "Claim free LitVM testnet tokens to try ORVEX. Captcha-protected, one claim per cycle." },
-      { property: "og:url", content: "https://orvexdex12.lovable.app/faucet" },
+      { property: "og:url", content: "https://orvexdex.lovable.app/faucet" },
       { name: "twitter:title", content: "Faucet — ORVEX" },
       { name: "twitter:description", content: "Claim free LitVM testnet tokens to try ORVEX. Captcha-protected, one claim per cycle." },
     ],
-    links: [{ rel: "canonical", href: "https://orvexdex12.lovable.app/faucet" }],
+    links: [{ rel: "canonical", href: "https://orvexdex.lovable.app/faucet" }],
   }),
 });
 

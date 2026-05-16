@@ -30,11 +30,11 @@ export const Route = createFileRoute("/liquidity")({
       { name: "description", content: "Add or remove liquidity on ORVEX AMM pools. Earn LP fees from every swap on LitVM LiteForge." },
       { property: "og:title", content: "Liquidity — ORVEX" },
       { property: "og:description", content: "Add or remove liquidity on ORVEX AMM pools. Earn LP fees from every swap on LitVM LiteForge." },
-      { property: "og:url", content: "https://orvexdex12.lovable.app/liquidity" },
+      { property: "og:url", content: "https://orvexdex.lovable.app/liquidity" },
       { name: "twitter:title", content: "Liquidity — ORVEX" },
       { name: "twitter:description", content: "Add or remove liquidity on ORVEX AMM pools. Earn LP fees from every swap on LitVM LiteForge." },
     ],
-    links: [{ rel: "canonical", href: "https://orvexdex12.lovable.app/liquidity" }],
+    links: [{ rel: "canonical", href: "https://orvexdex.lovable.app/liquidity" }],
   }),
   validateSearch: (s: Record<string, unknown>): LiqSearch => ({
     a: typeof s.a === "string" ? s.a : undefined,
