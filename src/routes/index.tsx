@@ -238,14 +238,14 @@ function Landing() {
           <div className="relative grid lg:grid-cols-12 gap-6 px-6 sm:px-10 lg:px-14 pb-10">
             <h2 className="sr-only">Portfolio overview</h2>
             {/* Holdings */}
-            <div className="lg:col-span-7 rounded-2xl glass border-gold p-6 card-hover animate-rise" style={{ animationDelay: "240ms" }}>
+            <div className="lg:col-span-7 rounded-2xl glass-premium p-6 card-hover animate-rise" style={{ animationDelay: "240ms" }}>
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-xl font-bold">Holdings</h3>
                 <Link to="/portfolio" className="text-xs text-gradient-gold font-semibold tracking-[0.2em] uppercase hover:opacity-80">View all →</Link>
               </div>
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                 {holdings.slice(0, 5).map((h) => (
-                  <div key={h.token.symbol} className="rounded-xl p-3 glass-strong border-gold text-center card-hover">
+                  <div key={h.token.symbol} className="rounded-xl p-3 glass text-center card-hover">
                     <img src={h.token.logo} alt={`${h.token.symbol} token logo`} className="h-10 w-10 mx-auto rounded-full ring-2 ring-primary/40" />
                     <div className="mt-2 text-sm font-bold">{h.token.symbol}</div>
                     <div className="text-[10px] text-muted-foreground truncate">
