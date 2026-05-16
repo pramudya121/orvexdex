@@ -20,7 +20,19 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const { address } = useAccount();
   const push = useCallback((t: Omit<Toast, "id">) => {
     const id = Date.now() + Math.random();
-    setItems((s) => [...s, { ...t, id }]);
+    setItems((s) => {
+      // If a toast with the same hash already exists, replace it in place
+      // so we only ever show one notification per transaction.
+      if (t.hash) {
+        const idx = s.findIndex((x) => x.hash && x.hash.toLowerCase() === t.hash!.toLowerCase());
+        if (idx >= 0) {
+          const next = s.slice();
+          next[idx] = { ...t, id };
+          return next;
+        }
+      }
+      return [...s, { ...t, id }];
+    });
     setTimeout(() => setItems((s) => s.filter((x) => x.id !== id)), 7000);
     if (t.hash && address) {
       addTx({ hash: t.hash, title: t.title, account: address });
