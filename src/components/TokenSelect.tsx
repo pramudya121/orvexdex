@@ -79,6 +79,7 @@ export function TokenSelect({
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Search name, symbol, or paste address"
+                aria-label="Search tokens by name, symbol, or contract address"
                 className="w-full bg-surface-2 border border-border rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none focus:border-primary placeholder:text-muted-foreground/60"
               />
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">⌕</span>

@@ -443,6 +443,7 @@ function Field({ label, token, onChange, amount, setAmount, balance, exclude }: 
       </div>
       <div className="flex items-center gap-3">
         <input inputMode="decimal" placeholder="0.0" value={amount} onChange={(e) => setAmount(e.target.value)}
+          aria-label={`${label} amount in ${token.symbol}`}
           className="flex-1 min-w-0 w-full bg-transparent text-2xl font-bold outline-none" />
         <TokenSelect value={token} onChange={onChange} exclude={exclude} />
       </div>
@@ -574,6 +575,7 @@ function RemoveLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?:
         </div>
         <div className="text-4xl font-bold mb-3 text-gradient-brand">{pct}%</div>
         <input type="range" min={0} max={100} value={pct} onChange={(e) => setPct(+e.target.value)}
+          aria-label="Percentage of LP tokens to remove"
           className="w-full accent-[oklch(0.65_0.27_295)]" />
         <div className="flex gap-2 mt-3">
           {[25, 50, 75, 100].map((v) => (
