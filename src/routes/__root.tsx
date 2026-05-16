@@ -107,8 +107,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           name: "ORVEX",
           url: "https://orvexdex.lovable.app",
           logo: "https://orvexdex.lovable.app/favicon.ico",
-          sameAs: [],
-          description: "ORVEX — premium AMM DEX on LitVM LiteForge Testnet.",
+          sameAs: ["https://x.com/ORVEX_LitVM"],
+          description: "ORVEX — connoisseur-grade decentralized exchange on LitVM LiteForge.",
         }),
       },
       {
