@@ -397,7 +397,7 @@ export function ConnectButton() {
           onClick={() => setOpen((v) => !v)}
           className="px-4 py-2 rounded-full bg-gradient-to-r from-[oklch(0.65_0.28_320)] to-[oklch(0.65_0.27_295)] text-white font-semibold shadow-neon hover:brightness-110 transition"
         >
-          Hubungkan
+          Connect
         </button>
         <WalletDropdown open={open} onClose={() => setOpen(false)} anchorRef={btnRef} />
       </div>
