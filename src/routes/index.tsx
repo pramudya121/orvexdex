@@ -172,7 +172,7 @@ function Landing() {
               </div>
 
               {/* Portfolio value card */}
-              <div className="mt-8 relative max-w-md rounded-2xl p-5 glass-strong border-gold shadow-neon animate-rise" style={{ animationDelay: "120ms" }}>
+              <div className="mt-8 relative max-w-md rounded-2xl p-5 glass-premium animate-rise" style={{ animationDelay: "120ms" }}>
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="text-[11px] tracking-[0.25em] uppercase text-muted-foreground">Total Portfolio Value</div>
