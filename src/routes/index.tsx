@@ -153,20 +153,28 @@ function Landing() {
             <div className="lg:col-span-7 relative z-10 animate-rise">
               <BrandMark size="lg" className="mb-7" />
 
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-strong border-gold text-[10px] tracking-[0.3em] uppercase text-gradient-gold font-semibold mb-5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live on LitVM LiteForge · Chain 4441
+              </div>
+
               <h1 className="text-4xl sm:text-5xl lg:text-[3.75rem] font-extrabold leading-[1.05] tracking-tight">
-                Mastering Crypto & Web3
+                The Connoisseur's
                 <br />
-                <span className="text-gradient-luxe">Building the Future of</span>
+                <span className="text-gradient-luxe">Decentralized Exchange</span>
                 <br />
-                Decentralized Wealth
+                Refined for LitVM.
               </h1>
 
-              <div className="mt-5 flex items-center gap-2 text-sm">
-                <span className="text-gradient-brand font-semibold tracking-wider">Portfolio</span>
-                <span className="text-muted-foreground">•</span>
-                <span className="text-gradient-brand font-semibold tracking-wider">DeFi</span>
-                <span className="text-muted-foreground">•</span>
-                <span className="text-gradient-brand font-semibold tracking-wider">Innovation</span>
+              <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
+                ORVEX is an institutional-grade AMM crafted for the LitVM era — deep liquidity, smart multi-hop routing, transparent on-chain analytics and atomic settlement. No custodians. No middlemen. <span className="text-foreground/90 font-semibold">Just precision liquidity, on your terms.</span>
+              </p>
+
+              <div className="mt-5 flex flex-wrap items-center gap-2 text-[11px] tracking-wider">
+                <span className="px-2.5 py-1 rounded-full glass border-gold text-gradient-gold font-semibold">SMART ROUTING</span>
+                <span className="px-2.5 py-1 rounded-full glass border-gold text-gradient-gold font-semibold">DEEP LIQUIDITY</span>
+                <span className="px-2.5 py-1 rounded-full glass border-gold text-gradient-gold font-semibold">ATOMIC SETTLEMENT</span>
+                <span className="px-2.5 py-1 rounded-full glass border-gold text-gradient-gold font-semibold">SELF-CUSTODY</span>
               </div>
 
               {/* Portfolio value card */}
