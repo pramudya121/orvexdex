@@ -94,11 +94,11 @@ function WalletPanel({ onClose, onConnected }: { onClose: () => void; onConnecte
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img src={logo} alt="ORVEX" className="h-6 w-6" />
-            <h3 className="text-[15px] font-semibold tracking-tight">Hubungkan dompet</h3>
+            <h3 className="text-[15px] font-semibold tracking-tight">Connect a wallet</h3>
           </div>
           <button
             onClick={onClose}
-            aria-label="Tutup"
+            aria-label="Close"
             className="h-7 w-7 rounded-full bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-foreground transition flex items-center justify-center text-[13px]"
           >✕</button>
         </div>
@@ -110,8 +110,8 @@ function WalletPanel({ onClose, onConnected }: { onClose: () => void; onConnecte
           <FeaturedCard
             tone="violet"
             icon={featured.info.icon}
-            title={`Lanjutkan dengan ${featured.info.name}`}
-            subtitle="Wallet terdeteksi di browser Anda"
+            title={`Continue with ${featured.info.name}`}
+            subtitle="Wallet detected in your browser"
             badge="DETECTED"
             onClick={() => handleConnect(featured)}
             busy={busy === featured.info.uuid}
@@ -120,8 +120,8 @@ function WalletPanel({ onClose, onConnected }: { onClose: () => void; onConnecte
           <FeaturedCard
             tone="violet"
             icon={logo}
-            title="Buat ORVEX Smart Wallet"
-            subtitle="Tersedia di iOS, Android, dan Chrome"
+            title="Create ORVEX Smart Wallet"
+            subtitle="Available on iOS, Android, and Chrome"
             href="https://metamask.io/download/"
           />
         )}
@@ -129,7 +129,7 @@ function WalletPanel({ onClose, onConnected }: { onClose: () => void; onConnecte
           tone="dark"
           icon={logo}
           title="ORVEX Mobile"
-          subtitle="Pindai kode QR untuk terhubung"
+          subtitle="Scan a QR code to connect"
           comingSoon
         />
       </div>
@@ -137,7 +137,7 @@ function WalletPanel({ onClose, onConnected }: { onClose: () => void; onConnecte
       {/* Section divider with search toggle */}
       <div className="px-5 mt-5 mb-2 flex items-center gap-2">
         <div className="h-px flex-1 bg-border/60" />
-        <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Dompet lainnya</span>
+        <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Other wallets</span>
         <div className="h-px flex-1 bg-border/60" />
       </div>
 
@@ -148,8 +148,8 @@ function WalletPanel({ onClose, onConnected }: { onClose: () => void; onConnecte
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cari dompet…"
-              aria-label="Cari dompet"
+              placeholder="Search wallets…"
+              aria-label="Search wallets"
               className="flex-1 bg-transparent outline-none text-sm py-1"
             />
             {query && <button onClick={() => setQuery("")} className="text-[10px] text-muted-foreground hover:text-foreground">clear</button>}
@@ -160,7 +160,7 @@ function WalletPanel({ onClose, onConnected }: { onClose: () => void; onConnecte
       {/* Wallet list */}
       <div ref={listRef} className="px-3 pb-2 max-h-[340px] overflow-y-auto custom-scroll">
         {rows.length === 0 && (
-          <div className="text-xs text-muted-foreground text-center py-6">Tidak ada wallet yang cocok.</div>
+          <div className="text-xs text-muted-foreground text-center py-6">No matching wallets.</div>
         )}
         {rows.map((row, idx) => {
           const active = cursor === idx;
@@ -181,9 +181,9 @@ function WalletPanel({ onClose, onConnected }: { onClose: () => void; onConnecte
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }} />
                 <div className="flex-1 text-left min-w-0">
                   <div className="text-sm font-semibold truncate">{d.info.name}</div>
-                  {busy === d.info.uuid && <div className="text-[10px] text-muted-foreground">Menunggu konfirmasi…</div>}
+                  {busy === d.info.uuid && <div className="text-[10px] text-muted-foreground">Waiting for confirmation…</div>}
                 </div>
-                <span className="text-[10px] font-semibold tracking-wider text-[oklch(0.78_0.18_220)]">Terdeteksi</span>
+                <span className="text-[10px] font-semibold tracking-wider text-[oklch(0.78_0.18_220)]">Detected</span>
               </button>
             );
           }
@@ -207,7 +207,7 @@ function WalletPanel({ onClose, onConnected }: { onClose: () => void; onConnecte
               </div>
               {s.tag && (
                 <span className={`text-[10px] font-semibold tracking-wider ${s.tag === "Latest" ? "text-[oklch(0.85_0.2_330)]" : "text-muted-foreground"}`}>
-                  {s.tag === "Latest" ? "Terkini" : "Populer"}
+                  {s.tag === "Latest" ? "Latest" : "Popular"}
                 </span>
               )}
             </a>
@@ -222,7 +222,7 @@ function WalletPanel({ onClose, onConnected }: { onClose: () => void; onConnecte
       )}
 
       <div className="px-5 py-3 border-t border-white/5 text-[10.5px] leading-relaxed text-muted-foreground/80 text-center">
-        Dengan menghubungkan dompet, Anda menyetujui <span className="text-foreground/80">Ketentuan Layanan ORVEX</span> dan menyetujui <span className="text-foreground/80">Kebijakan Privasi</span>.
+        By connecting a wallet, you agree to <span className="text-foreground/80">ORVEX Terms of Service</span> and acknowledge the <span className="text-foreground/80">Privacy Policy</span>.
       </div>
     </div>
   );
@@ -254,7 +254,7 @@ function FeaturedCard({
       <div className="flex-1 min-w-0">
         <div className="text-[14px] font-semibold truncate">{title}</div>
         <div className={`text-[11px] truncate ${tone === "violet" ? "text-white/85" : "text-muted-foreground"}`}>
-          {busy ? "Menunggu konfirmasi…" : subtitle}
+          {busy ? "Waiting for confirmation…" : subtitle}
         </div>
       </div>
       {badge && (
@@ -397,7 +397,7 @@ export function ConnectButton() {
           onClick={() => setOpen((v) => !v)}
           className="px-4 py-2 rounded-full bg-gradient-to-r from-[oklch(0.65_0.28_320)] to-[oklch(0.65_0.27_295)] text-white font-semibold shadow-neon hover:brightness-110 transition"
         >
-          Hubungkan
+          Connect
         </button>
         <WalletDropdown open={open} onClose={() => setOpen(false)} anchorRef={btnRef} />
       </div>
@@ -443,7 +443,7 @@ export function ConnectButton() {
             <div className="px-2 pb-2 max-h-[260px] overflow-y-auto custom-scroll">
               {detected.length === 0 && (
                 <div className="text-xs text-muted-foreground text-center py-4">
-                  Tidak ada wallet terdeteksi
+                  No wallets detected
                 </div>
               )}
               {detected.map((d) => {
@@ -465,8 +465,8 @@ export function ConnectButton() {
                     />
                     <div className="flex-1 text-left min-w-0">
                       <div className="text-sm font-semibold truncate">{d.info.name}</div>
-                      {isActive && <div className="text-[10px] text-[oklch(0.78_0.18_220)]">Aktif</div>}
-                      {switching === d.info.uuid && <div className="text-[10px] text-muted-foreground">Menunggu konfirmasi…</div>}
+                      {isActive && <div className="text-[10px] text-[oklch(0.78_0.18_220)]">Active</div>}
+                      {switching === d.info.uuid && <div className="text-[10px] text-muted-foreground">Waiting for confirmation…</div>}
                     </div>
                     {isActive && <span className="text-[10px] font-semibold text-emerald-400">●</span>}
                   </button>
@@ -478,7 +478,7 @@ export function ConnectButton() {
                 onClick={() => { setSwitcherOpen(false); setOpen(true); }}
                 className="flex-1 px-3 py-2 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 transition"
               >
-                + Hubungkan lain
+                + Connect another
               </button>
               <button
                 onClick={handleDisconnect}

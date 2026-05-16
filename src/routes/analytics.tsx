@@ -12,12 +12,12 @@ export const Route = createFileRoute("/analytics")({
   head: () => ({
     meta: [
       { title: "Analytics — ORVEX" },
-      { name: "description", content: "Statistik global ORVEX: TVL, volume 24h, top pools, dan distribusi likuiditas." },
+      { name: "description", content: "Global ORVEX stats: TVL, 24h volume, top pools, and liquidity distribution across LitVM AMM markets." },
       { property: "og:title", content: "Analytics — ORVEX" },
-      { property: "og:description", content: "Statistik global ORVEX: TVL, volume 24h, top pools, dan distribusi likuiditas across LitVM AMM markets." },
+      { property: "og:description", content: "Global ORVEX stats: TVL, 24h volume, top pools, and liquidity distribution across LitVM AMM markets." },
       { property: "og:url", content: "https://orvexdex.lovable.app/analytics" },
       { name: "twitter:title", content: "Analytics — ORVEX" },
-      { name: "twitter:description", content: "Statistik global ORVEX: TVL, volume 24h, top pools, dan distribusi likuiditas across LitVM AMM markets." },
+      { name: "twitter:description", content: "Global ORVEX stats: TVL, 24h volume, top pools, and liquidity distribution across LitVM AMM markets." },
     ],
     links: [{ rel: "canonical", href: "https://orvexdex.lovable.app/analytics" }],
   }),

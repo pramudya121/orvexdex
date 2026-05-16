@@ -315,7 +315,7 @@ function TokenRow({ token, adminAddress, disabled }: { token: Token; adminAddres
       )}
       {tokenUnset && (
         <div className="mb-4 text-xs px-3 py-2 rounded-lg bg-accent/10 border border-accent/40 text-accent">
-          ℹ Token belum diset on-chain. Klik <b>Set</b> di field Token Address di bawah untuk menginisialisasi slot ini.
+          ℹ Token is not set on-chain. Click <b>Set</b> in the Token Address field below to initialize this slot.
         </div>
       )}
 

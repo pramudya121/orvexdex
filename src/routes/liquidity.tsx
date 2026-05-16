@@ -258,32 +258,32 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
     if (!address || amtAWei <= 0n || amtBWei <= 0n) return;
     // Decimal sanity: token metadata must be in valid ERC20 range.
     if (tokenA.decimals < 0 || tokenA.decimals > 36 || tokenB.decimals < 0 || tokenB.decimals > 36) {
-      toast.push({ title: "Token decimals tidak valid", type: "error" });
+      toast.push({ title: "Invalid token decimals", type: "error" });
       return;
     }
     // Guard: native balance must leave room for gas
     if (tokenA.isNative && balA !== undefined && amtAWei >= balA) {
-      toast.push({ title: "Sisakan zkLTC untuk gas", description: "Kurangi sedikit jumlah zkLTC (klik MAX kemudian kurangi ~0.01).", type: "error" });
+      toast.push({ title: "Leave some zkLTC for gas", description: "Reduce the zkLTC amount slightly (click MAX then subtract ~0.01).", type: "error" });
       return;
     }
     if (tokenB.isNative && balB !== undefined && amtBWei >= balB) {
-      toast.push({ title: "Sisakan zkLTC untuk gas", description: "Kurangi sedikit jumlah zkLTC (klik MAX kemudian kurangi ~0.01).", type: "error" });
+      toast.push({ title: "Leave some zkLTC for gas", description: "Reduce the zkLTC amount slightly (click MAX then subtract ~0.01).", type: "error" });
       return;
     }
     // Guard: balance must cover deposit on each side
     if (balA !== undefined && amtAWei > balA) {
-      toast.push({ title: `Saldo ${tokenA.symbol} tidak cukup`, type: "error" });
+      toast.push({ title: `Insufficient ${tokenA.symbol} balance`, type: "error" });
       return;
     }
     if (balB !== undefined && amtBWei > balB) {
-      toast.push({ title: `Saldo ${tokenB.symbol} tidak cukup`, type: "error" });
+      toast.push({ title: `Insufficient ${tokenB.symbol} balance`, type: "error" });
       return;
     }
     // Guard: deposit ratio must match pool ratio within slippage tolerance.
     if (pairExists && ratioOff) {
       toast.push({
-        title: "Rasio tidak sesuai pool",
-        description: `Selisih ${(ratioOffBps / 100).toFixed(2)}% > slippage ${(slipBps / 100).toFixed(2)}%. Edit salah satu sisi untuk auto-quote ulang, atau naikkan slippage.`,
+        title: "Ratio doesn't match the pool",
+        description: `Difference ${(ratioOffBps / 100).toFixed(2)}% > slippage ${(slipBps / 100).toFixed(2)}%. Edit one side to auto-quote again, or raise slippage.`,
         type: "error",
       });
       return;
@@ -292,7 +292,7 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
     if (belowMinLiquidity) {
       toast.push({
         title: "Initial liquidity terlalu kecil",
-        description: "Pool baru butuh sqrt(amountA × amountB) > 1000 wei. Naikkan jumlah deposit.",
+        description: "A new pool requires sqrt(amountA × amountB) > 1000 wei. Increase the deposit amount.",
         type: "error",
       });
       return;
@@ -353,7 +353,7 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
 
   const label = allowanceLoading
     ? "Checking allowance…"
-    : ratioOff ? "Rasio tidak sesuai pool"
+    : ratioOff ? "Ratio doesn't match the pool"
     : belowMinLiquidity ? "Initial liquidity terlalu kecil"
     : needA ? `Approve ${tokenA.symbol}` : needB ? `Approve ${tokenB.symbol}`
     : autoContinue ? "Continuing…"
