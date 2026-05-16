@@ -8,6 +8,7 @@ import { fmt } from "@/lib/format";
 import { useEffect, useMemo, useState } from "react";
 import { usePoolStats, fmtWzk, type PoolMeta } from "@/lib/poolStats";
 import { useToast } from "@/components/ui/toaster";
+import { PoolGridSkeleton, PoolStatsSkeleton } from "@/components/skeletons";
 
 type SortKey = "tvl" | "supply" | "new" | "vol";
 type Filter = "all" | "stable" | "blue" | "high" | "mine";
@@ -73,6 +74,7 @@ function PoolsPage() {
         setSort={setSort}
         setFilter={setFilter}
         total={total}
+        isLoading={len.isLoading || pairs.isLoading}
       />
 
       <CreatePairCard />
@@ -81,10 +83,11 @@ function PoolsPage() {
 }
 
 function PoolList({
-  pairAddrs, q, sort, filter, setQ, setSort, setFilter, total,
+  pairAddrs, q, sort, filter, setQ, setSort, setFilter, total, isLoading,
 }: {
   pairAddrs: `0x${string}`[]; q: string; sort: SortKey; filter: Filter;
   setQ: (v: string) => void; setSort: (s: SortKey) => void; setFilter: (f: Filter) => void; total: number;
+  isLoading?: boolean;
 }) {
   const { address } = useAccount();
 
