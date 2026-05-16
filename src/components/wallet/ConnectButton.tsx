@@ -9,11 +9,60 @@ const ACTIVE_RDNS_KEY = "orvex.activeWalletRdns";
 type WalletSuggestion = { name: string; rdns: string; icon: string; installUrl: string; tag?: "Latest" | "Popular" };
 const SUGGESTIONS: WalletSuggestion[] = [
   { name: "MetaMask", rdns: "io.metamask", icon: "https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/SVG_MetaMask_Icon_Color.svg", installUrl: "https://metamask.io/download/", tag: "Popular" },
-  { name: "OKX Wallet", rdns: "com.okex.wallet", icon: "https://www.okx.com/cdn/assets/imgs/221/65DD4F3FA68419D2.png", installUrl: "https://www.okx.com/web3" },
+  { name: "OKX Wallet", rdns: "com.okex.wallet", icon: "https://www.okx.com/cdn/assets/imgs/239/4ABAC4FD8DE1471D.png", installUrl: "https://www.okx.com/web3" },
   { name: "Rabby Wallet", rdns: "io.rabby", icon: "https://rabby.io/assets/images/logo-128.png", installUrl: "https://rabby.io/", tag: "Latest" },
   { name: "Bitget Wallet", rdns: "com.bitget.web3", icon: "https://web3.bitget.com/favicon.ico", installUrl: "https://web3.bitget.com/" },
   { name: "Coinbase Wallet", rdns: "com.coinbase.wallet", icon: "https://avatars.githubusercontent.com/u/18060234?s=200&v=4", installUrl: "https://www.coinbase.com/wallet" },
+  { name: "Trust Wallet", rdns: "com.trustwallet.app", icon: "https://trustwallet.com/assets/images/media/assets/TWT.png", installUrl: "https://trustwallet.com/download" },
+  { name: "Phantom", rdns: "app.phantom", icon: "https://187760183-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-MVOiF6Zqit57q_hxJYp%2Fuploads%2FHEjleywo9QOnfYebBPCZ%2FPhantom_SVG_Icon.svg?alt=media&token=71b80a0a-def7-4f98-ae70-5e0843fdaaec", installUrl: "https://phantom.app/download" },
+  { name: "Zerion", rdns: "io.zerion.wallet", icon: "https://s2-coinmarketcap.zerion.io/favicon.ico", installUrl: "https://zerion.io/download" },
+  { name: "Uniswap Wallet", rdns: "org.uniswap", icon: "https://app.uniswap.org/favicon.png", installUrl: "https://wallet.uniswap.org/" },
+  { name: "Frame", rdns: "sh.frame", icon: "https://frame.sh/icons/icon-256x256.png", installUrl: "https://frame.sh/" },
+  { name: "Brave Wallet", rdns: "com.brave.wallet", icon: "https://brave.com/static-assets/images/brave-logo-no-shadow.png", installUrl: "https://brave.com/wallet/" },
+  { name: "Safe", rdns: "global.safe", icon: "https://app.safe.global/favicon.ico", installUrl: "https://app.safe.global/" },
+  { name: "Ledger", rdns: "com.ledger", icon: "https://www.ledger.com/favicon.ico", installUrl: "https://www.ledger.com/ledger-live" },
+  { name: "TokenPocket", rdns: "pro.tokenpocket", icon: "https://www.tokenpocket.pro/favicon.ico", installUrl: "https://www.tokenpocket.pro/en/download/app" },
 ];
+
+function gradientFromString(s: string) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  const a = h % 360;
+  const b = (a + 60) % 360;
+  return `linear-gradient(135deg, hsl(${a} 75% 55%), hsl(${b} 75% 45%))`;
+}
+
+function WalletAvatar({ src, name, size = 36 }: { src?: string; name: string; size?: number }) {
+  const [errored, setErrored] = useState(false);
+  const initials = name
+    .split(/\s+/)
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  if (!src || errored) {
+    return (
+      <div
+        aria-hidden="true"
+        className="rounded-lg flex items-center justify-center text-[11px] font-bold text-white shadow-inner"
+        style={{ width: size, height: size, background: gradientFromString(name) }}
+      >
+        {initials}
+      </div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      style={{ width: size, height: size }}
+      className="rounded-lg bg-white/5 object-contain p-0.5"
+      onError={() => setErrored(true)}
+    />
+  );
+}
 
 type Row =
   | { kind: "detected"; detail: Eip6963Detail }
@@ -177,8 +226,7 @@ function WalletPanel({ onClose, onConnected }: { onClose: () => void; onConnecte
                   active ? "bg-white/[0.07]" : "hover:bg-white/[0.05]"
                 }`}
               >
-                <img src={d.info.icon} alt="" className="h-9 w-9 rounded-lg bg-white/5 object-contain p-0.5"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }} />
+                <WalletAvatar src={d.info.icon} name={d.info.name} />
                 <div className="flex-1 text-left min-w-0">
                   <div className="text-sm font-semibold truncate">{d.info.name}</div>
                   {busy === d.info.uuid && <div className="text-[10px] text-muted-foreground">Waiting for confirmation…</div>}
@@ -200,8 +248,7 @@ function WalletPanel({ onClose, onConnected }: { onClose: () => void; onConnecte
                 active ? "bg-white/[0.07]" : "hover:bg-white/[0.05]"
               }`}
             >
-              <img src={s.icon} alt="" className="h-9 w-9 rounded-lg bg-white/5 object-contain p-0.5"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }} />
+              <WalletAvatar src={s.icon} name={s.name} />
               <div className="flex-1 text-left min-w-0">
                 <div className="text-sm font-semibold truncate">{s.name}</div>
               </div>
@@ -457,12 +504,7 @@ export function ConnectButton() {
                       isActive ? "bg-white/[0.07]" : "hover:bg-white/[0.05]"
                     }`}
                   >
-                    <img
-                      src={d.info.icon}
-                      alt=""
-                      className="h-8 w-8 rounded-lg bg-white/5 object-contain p-0.5"
-                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
-                    />
+                    <WalletAvatar src={d.info.icon} name={d.info.name} size={32} />
                     <div className="flex-1 text-left min-w-0">
                       <div className="text-sm font-semibold truncate">{d.info.name}</div>
                       {isActive && <div className="text-[10px] text-[oklch(0.78_0.18_220)]">Active</div>}

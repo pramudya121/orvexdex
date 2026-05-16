@@ -33,6 +33,20 @@ export function Footer() {
             <li><a href="https://liteforge.rpc.caldera.xyz/http" target="_blank" rel="noreferrer" className="hover:text-foreground transition">RPC ↗</a></li>
             <li><Link to="/admin" className="hover:text-foreground transition">Admin</Link></li>
           </ul>
+          <div className="mt-5 flex items-center gap-2">
+            <a
+              href="https://x.com/ORVEX_LitVM"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="ORVEX on X (Twitter)"
+              className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-2/60 border border-border hover:border-primary/60 hover:bg-surface-2 transition"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3.5 w-3.5 fill-foreground group-hover:fill-primary transition">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+              <span className="text-xs font-medium">@ORVEX_LitVM</span>
+            </a>
+          </div>
         </div>
       </div>
       <div className="border-t border-border/60">
