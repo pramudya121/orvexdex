@@ -283,7 +283,7 @@ function Landing() {
                   Aggregated directly from LitVM logs · refreshes every 60s
                 </p>
               </div>
-              <span className="text-[10px] tracking-[0.2em] uppercase px-2 py-1 rounded-full glass-strong border-gold">
+              <span className="text-[10px] tracking-[0.2em] uppercase px-2 py-1 rounded-full glass">
                 {dexLoading ? "Syncing…" : "Live"}
               </span>
             </div>
