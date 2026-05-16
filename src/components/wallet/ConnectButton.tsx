@@ -6,7 +6,7 @@ import logo from "@/assets/orvex-logo.png";
 
 const ACTIVE_RDNS_KEY = "orvex.activeWalletRdns";
 
-type WalletSuggestion = { name: string; rdns: string; icon: string; installUrl: string; tag?: "Latest" | "Popular" };
+
 type WalletSuggestion = {
   name: string;
   rdns: string;
