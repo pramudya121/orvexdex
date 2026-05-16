@@ -316,6 +316,7 @@ function SwapPage() {
                   onChange={(e) => setSlippageBps(Math.max(1, Math.min(5000, Math.round(+e.target.value * 100))))}
                   className="w-20 px-2 py-1.5 rounded-lg bg-surface border border-border text-xs outline-none focus:border-primary"
                   placeholder="custom"
+                  aria-label="Custom slippage tolerance (percent)"
                 />
               </div>
               {slippageBps > 300 && <div className="text-[11px] text-amber-400 mt-1.5">High slippage — your trade may be front-run.</div>}
@@ -328,6 +329,7 @@ function SwapPage() {
               <input type="number" min={1} max={120} value={deadlineMin}
                 onChange={(e) => setDeadlineMin(Math.max(1, Math.min(120, +e.target.value || 20)))}
                 className="w-full px-3 py-1.5 rounded-lg bg-surface border border-border text-xs outline-none focus:border-primary"
+                aria-label="Transaction deadline in minutes"
               />
             </div>
           </div>
@@ -488,6 +490,7 @@ function TokenPanel({
           value={amount}
           onChange={(e) => onAmountChange?.(e.target.value)}
           className="flex-1 min-w-0 w-full bg-transparent text-3xl font-bold outline-none placeholder:text-muted-foreground/40"
+          aria-label={`${label} amount in ${token.symbol}`}
         />
         <TokenSelect value={token} onChange={onTokenChange} exclude={excludeFor} />
       </div>

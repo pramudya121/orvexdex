@@ -21,7 +21,10 @@ export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
       { title: "Admin — ORVEX" },
-      { name: "description", content: "Internal admin panel for ORVEX faucet operators." },
+      { name: "description", content: "Internal admin panel for ORVEX faucet operators on LitVM LiteForge — configure claim amounts, cooldowns, refills, and per-token controls." },
+      { property: "og:title", content: "Admin — ORVEX" },
+      { property: "og:description", content: "Internal admin panel for ORVEX faucet operators on LitVM LiteForge — configure claim amounts, cooldowns, refills, and per-token controls." },
+      { property: "og:url", content: "https://orvex-liteforge-exchange.lovable.app/admin" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),

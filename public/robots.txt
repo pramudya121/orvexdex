@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+
+Sitemap: https://orvex-liteforge-exchange.lovable.app/sitemap.xml

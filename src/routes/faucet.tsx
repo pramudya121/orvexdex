@@ -181,6 +181,7 @@ function FaucetPage() {
                 value={captchaInput}
                 onChange={(e) => { setCaptchaInput(e.target.value.replace(/\D/g, "")); setVerified(false); }}
                 className="w-28 px-3 py-2 rounded-xl bg-surface border border-border outline-none focus:border-primary text-center font-mono"
+                aria-label="Captcha answer"
               />
               <button
                 onClick={() => {

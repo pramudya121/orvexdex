@@ -13,7 +13,13 @@ export const Route = createFileRoute("/analytics")({
     meta: [
       { title: "Analytics — ORVEX" },
       { name: "description", content: "Statistik global ORVEX: TVL, volume 24h, top pools, dan distribusi likuiditas." },
+      { property: "og:title", content: "Analytics — ORVEX" },
+      { property: "og:description", content: "Statistik global ORVEX: TVL, volume 24h, top pools, dan distribusi likuiditas across LitVM AMM markets." },
+      { property: "og:url", content: "https://orvex-liteforge-exchange.lovable.app/analytics" },
+      { name: "twitter:title", content: "Analytics — ORVEX" },
+      { name: "twitter:description", content: "Statistik global ORVEX: TVL, volume 24h, top pools, dan distribusi likuiditas across LitVM AMM markets." },
     ],
+    links: [{ rel: "canonical", href: "https://orvex-liteforge-exchange.lovable.app/analytics" }],
   }),
 });
 

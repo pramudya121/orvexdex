@@ -1,0 +1,14 @@
+# ORVEX
+
+> Premium AMM decentralized exchange on LitVM LiteForge Testnet — swap tokens, provide liquidity, and track positions fully on-chain.
+
+## Pages
+
+- [Home](/): Landing page introducing ORVEX, featured pools, and how the DEX works.
+- [Swap](/swap): Trade tokens with smart routing through wzkLTC, live price impact, and slippage controls.
+- [Liquidity](/liquidity): Add or remove liquidity to AMM pools and earn 0.30% LP fees.
+- [Pools](/pools): Browse every liquidity pool with TVL, reserves, and 24h volume.
+- [Analytics](/analytics): Global ORVEX statistics — TVL, volume 24h, top pools, liquidity distribution.
+- [Portfolio](/portfolio): Your live token balances, LP positions, and recent on-chain activity.
+- [Faucet](/faucet): Claim free LitVM testnet tokens (captcha-protected, one claim per cooldown cycle).
+- [History](/history): Your ORVEX transaction history with on-chain explorer links.
