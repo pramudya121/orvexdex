@@ -62,7 +62,7 @@ function FaucetPage() {
   const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
   const calls = useMemo(() => {
-    const out: Parameters<typeof useReadContracts>[0]["contracts"] = [];
+    const out: NonNullable<Parameters<typeof useReadContracts>[0]>["contracts"] = [];
     FAUCET_TOKENS.forEach((t) => {
       const idx = t.faucetIndex!;
       out.push({
