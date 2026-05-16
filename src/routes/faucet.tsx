@@ -13,6 +13,15 @@ import { FAUCET_TOKENS } from "@/lib/tokens";
 import { fmt } from "@/lib/format";
 import { useToast } from "@/components/ui/toaster";
 
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null) {
+    const maybeError = error as { shortMessage?: string; message?: string };
+    return maybeError.shortMessage || maybeError.message;
+  }
+  return undefined;
+};
+
 export const Route = createFileRoute("/faucet")({
   component: FaucetPage,
   head: () => ({
@@ -53,7 +62,7 @@ function FaucetPage() {
   const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
   const calls = useMemo(() => {
-    const out: any[] = [];
+    const out: Parameters<typeof useReadContracts>[0]["contracts"] = [];
     FAUCET_TOKENS.forEach((t) => {
       const idx = t.faucetIndex!;
       out.push({
@@ -159,10 +168,10 @@ function FaucetPage() {
       });
       setHash(h);
       toast.push({ title: "Claiming…", hash: h });
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.push({
         title: "Claim failed",
-        description: e?.shortMessage || e?.message,
+        description: getErrorMessage(e),
         type: "error",
       });
     }
@@ -190,8 +199,8 @@ function FaucetPage() {
       });
       setHash(h);
       toast.push({ title: "Claiming all…", hash: h });
-    } catch (e: any) {
-      toast.push({ title: "Failed", description: e?.shortMessage || e?.message, type: "error" });
+    } catch (e: unknown) {
+      toast.push({ title: "Failed", description: getErrorMessage(e), type: "error" });
     }
   };
 
