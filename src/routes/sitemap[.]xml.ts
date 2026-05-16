@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 
-const BASE_URL = "https://orvex-liteforge-exchange.lovable.app";
+const BASE_URL = "https://orvexdex.lovable.app";
 
 interface SitemapEntry {
   path: string;
@@ -21,6 +21,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/analytics", changefreq: "daily", priority: "0.7" },
           { path: "/portfolio", changefreq: "weekly", priority: "0.6" },
           { path: "/faucet", changefreq: "weekly", priority: "0.6" },
+          { path: "/brand", changefreq: "monthly", priority: "0.4" },
         ];
 
         const urls = entries.map((e) =>

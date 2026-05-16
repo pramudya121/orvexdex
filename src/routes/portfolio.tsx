@@ -145,7 +145,7 @@ function TokenCard({ logo, symbol, name, balance, decimals, address }: { logo: s
   return (
     <div className="glass rounded-2xl p-4 flex items-center justify-between card-hover animate-rise">
       <div className="flex items-center gap-3">
-        <img src={logo} alt={symbol} className="h-10 w-10 rounded-full ring-2 ring-white/5" />
+        <img src={logo} alt={`${symbol} token logo`} className="h-10 w-10 rounded-full ring-2 ring-white/5" />
         <div>
           <div className="font-semibold">{symbol}</div>
           <div className="text-xs text-muted-foreground">{name}</div>

@@ -294,8 +294,8 @@ function PoolList({
                 className="flex items-center gap-3 p-3 rounded-xl bg-surface-2/50 hover:bg-surface-2 border border-border hover:border-primary/40 transition"
               >
                 <div className="flex -space-x-2 shrink-0">
-                  {p.tk0 && <img src={p.tk0.logo} alt={p.tk0.symbol} className="h-7 w-7 rounded-full ring-2 ring-background" />}
-                  {p.tk1 && <img src={p.tk1.logo} alt={p.tk1.symbol} className="h-7 w-7 rounded-full ring-2 ring-background" />}
+                  {p.tk0 && <img src={p.tk0.logo} alt={`${p.tk0.symbol} token logo`} className="h-7 w-7 rounded-full ring-2 ring-background" />}
+                  {p.tk1 && <img src={p.tk1.logo} alt={`${p.tk1.symbol} token logo`} className="h-7 w-7 rounded-full ring-2 ring-background" />}
                 </div>
                 <div className="font-semibold text-sm flex-1 truncate">{p.tk0?.symbol ?? "?"}-{p.tk1?.symbol ?? "?"}</div>
                 <div className="font-mono text-xs text-gradient-gold tabular-nums">{fmtWzk(p.vol)}</div>
@@ -332,8 +332,8 @@ function PoolCard({ p, idx }: { p: any; idx: number }) {
                 <div className="relative">
                   <div className="absolute inset-0 rounded-full blur-xl opacity-50" style={{ background: "var(--gradient-luxe)" }} />
                   <div className="relative flex -space-x-3">
-                    {p.tk0 && <img src={p.tk0.logo} alt={p.tk0.symbol} className="h-14 w-14 rounded-full ring-4 ring-background" />}
-                    {p.tk1 && <img src={p.tk1.logo} alt={p.tk1.symbol} className="h-14 w-14 rounded-full ring-4 ring-background" />}
+                    {p.tk0 && <img src={p.tk0.logo} alt={`${p.tk0.symbol} token logo`} className="h-14 w-14 rounded-full ring-4 ring-background" />}
+                    {p.tk1 && <img src={p.tk1.logo} alt={`${p.tk1.symbol} token logo`} className="h-14 w-14 rounded-full ring-4 ring-background" />}
                   </div>
                 </div>
               </div>

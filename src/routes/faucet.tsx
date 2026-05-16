@@ -150,7 +150,7 @@ function FaucetPage() {
           <div className="flex flex-wrap gap-2 mb-5">
             {FAUCET_TOKENS.map((t) => (
               <div key={t.address} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-2 border border-border text-sm">
-                <img src={t.logo} alt={t.symbol} className="h-5 w-5 rounded-full" />
+                <img src={t.logo} alt={`${t.symbol} token logo`} className="h-5 w-5 rounded-full" />
                 <span className="font-semibold">{t.symbol}</span>
               </div>
             ))}
@@ -232,7 +232,7 @@ function FaucetPage() {
               <div className="flex items-center gap-3 mb-3">
                 <div className="relative">
                   <div className="absolute inset-0 rounded-full blur-md opacity-60" style={{ background: "var(--gradient-brand)" }} />
-                  <img src={t.logo} alt={t.symbol} className="relative h-12 w-12 rounded-full ring-2 ring-background" />
+                  <img src={t.logo} alt={`${t.symbol} token logo`} className="relative h-12 w-12 rounded-full ring-2 ring-background" />
                 </div>
                 <div>
                   <div className="font-bold text-lg">{t.symbol}</div>

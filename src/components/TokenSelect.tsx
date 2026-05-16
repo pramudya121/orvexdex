@@ -62,7 +62,7 @@ export function TokenSelect({
         onClick={() => { setOpen(true); setQ(""); }}
         className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-2 hover:border-primary/60 border border-border transition shrink-0"
       >
-        <img src={value.logo} alt={value.symbol} className="h-6 w-6 rounded-full" />
+        <img src={value.logo} alt={`${value.symbol} token logo`} className="h-6 w-6 rounded-full" />
         <span className="font-semibold">{value.symbol}</span>
         <span className="text-xs text-muted-foreground">▾</span>
       </button>
@@ -94,7 +94,7 @@ export function TokenSelect({
               {importInfo.token && !filtered.some((t) => t.address.toLowerCase() === importInfo.token!.address.toLowerCase()) && (
                 <div className="p-3 rounded-xl border border-accent/40 bg-accent/5 mb-2">
                   <div className="flex items-center gap-3 mb-2">
-                    <img src={importInfo.token.logo} alt={importInfo.token.symbol} className="h-8 w-8 rounded-full" />
+                    <img src={importInfo.token.logo} alt={`${importInfo.token.symbol} token logo`} className="h-8 w-8 rounded-full" />
                     <div className="flex-1 min-w-0">
                       <div className="font-medium truncate">{importInfo.token.symbol} <span className="text-[10px] text-muted-foreground">unverified</span></div>
                       <div className="text-xs text-muted-foreground truncate">{importInfo.token.name}</div>
@@ -113,7 +113,7 @@ export function TokenSelect({
                   onClick={() => { onChange(t); setOpen(false); }}
                   className={`w-full flex items-center gap-3 p-3 rounded-xl transition ${value.address === t.address && value.symbol === t.symbol ? "bg-primary/10 border border-primary/40" : "hover:bg-surface-2 border border-transparent"}`}
                 >
-                  <img src={t.logo} alt={t.symbol} className="h-8 w-8 rounded-full" />
+                  <img src={t.logo} alt={`${t.symbol} token logo`} className="h-8 w-8 rounded-full" />
                   <div className="text-left flex-1 min-w-0">
                     <div className="font-medium truncate">{t.symbol}</div>
                     <div className="text-xs text-muted-foreground truncate">{t.name}</div>

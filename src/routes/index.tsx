@@ -230,7 +230,7 @@ function Landing() {
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                 {holdings.slice(0, 5).map((h) => (
                   <div key={h.token.symbol} className="rounded-xl p-3 glass-strong border-gold text-center card-hover">
-                    <img src={h.token.logo} alt={h.token.symbol} className="h-10 w-10 mx-auto rounded-full ring-2 ring-primary/40" />
+                    <img src={h.token.logo} alt={`${h.token.symbol} token logo`} className="h-10 w-10 mx-auto rounded-full ring-2 ring-primary/40" />
                     <div className="mt-2 text-sm font-bold">{h.token.symbol}</div>
                     <div className="text-[10px] text-muted-foreground truncate">
                       {isConnected
@@ -295,7 +295,7 @@ function Landing() {
           {[...Array(2)].flatMap((_, j) =>
             TOKENS.map((t) => (
               <div key={`${j}-${t.symbol}`} className="flex items-center gap-3 text-sm">
-                <img src={t.logo} alt={t.symbol} className="h-6 w-6 rounded-full" />
+                <img src={t.logo} alt={`${t.symbol} token logo`} className="h-6 w-6 rounded-full" />
                 <span className="font-semibold tracking-wider">{t.symbol}</span>
                 <span className="text-muted-foreground text-xs">{t.name}</span>
               </div>
@@ -349,7 +349,7 @@ function FeaturedCard({ title, subtitle, cta, to, accent, delay }: { title: stri
       <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full blur-3xl opacity-50 bg-white/20" />
       <div className="relative">
         <div className="text-[10px] tracking-[0.3em] uppercase text-white/70 mb-2">Featured</div>
-        <h4 className="text-2xl font-bold text-white">{title}</h4>
+        <h3 className="text-2xl font-bold text-white">{title}</h3>
         <p className="mt-1 text-sm text-white/80">{subtitle}</p>
         <Link
           to={to as any}
