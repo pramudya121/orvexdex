@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import logo from "@/assets/orvex-logo.png";
+import { BrandMark } from "@/components/brand/BrandMark";
 
 export function Footer() {
   return (
@@ -7,10 +7,7 @@ export function Footer() {
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-luxe opacity-60" />
       <div className="max-w-7xl mx-auto px-6 py-14 grid md:grid-cols-4 gap-10">
         <div className="md:col-span-2">
-          <div className="flex items-center gap-2 mb-3">
-            <img src={logo} alt="ORVEX" className="h-9 w-9" />
-            <span className="font-bold text-lg tracking-[0.25em] text-gradient-luxe">ORVEX</span>
-          </div>
+          <BrandMark size="md" className="mb-3" />
           <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
             A connoisseur-grade decentralized exchange on LitVM LiteForge. Liquidity refined, settlements final, experience uncompromised.
           </p>
