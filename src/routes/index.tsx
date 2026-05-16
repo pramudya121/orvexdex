@@ -262,10 +262,10 @@ function Landing() {
             </div>
 
             {/* Performance */}
-            <div className="lg:col-span-5 rounded-2xl glass border-gold p-6 card-hover animate-rise" style={{ animationDelay: "300ms" }}>
+            <div className="lg:col-span-5 rounded-2xl glass-premium p-6 card-hover animate-rise" style={{ animationDelay: "300ms" }}>
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-xl font-bold">Performance</h3>
-                <span className="text-[10px] tracking-[0.2em] uppercase px-2 py-1 rounded-full glass-strong border-gold">Daily</span>
+                <span className="text-[10px] tracking-[0.2em] uppercase px-2 py-1 rounded-full glass">Daily</span>
               </div>
               <Sparkline />
               <div className="mt-3 flex items-center justify-between text-[10px] text-muted-foreground">
