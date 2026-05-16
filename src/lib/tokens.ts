@@ -31,6 +31,7 @@ export const WZKLTC: Token = {
   decimals: 18,
   logo: LTC_LOGO,
   isWrapped: true,
+  faucetIndex: 0,
 };
 
 // faucetIndex aligns with Faucet.tokens(uint8) ordering.
@@ -46,10 +47,9 @@ export const TOKENS: Token[] = [
   { address: ADDR.ORVX, symbol: "ORVX", name: "Orvex", decimals: 18, logo: orvxLogo, faucetIndex: 6 },
 ];
 
-// Faucet token list (matches contract index ordering, excludes wzkLTC).
-// Users get native zkLTC from the network bridge, so the wrapper isn't shown.
+// Faucet token list (matches contract index ordering).
 export const FAUCET_TOKENS: Token[] = TOKENS
-  .filter((t) => t.faucetIndex !== undefined && t.faucetIndex !== 0)
+  .filter((t) => t.faucetIndex !== undefined)
   .sort((a, b) => (a.faucetIndex ?? 0) - (b.faucetIndex ?? 0));
 
 export const findToken = (addr: string) =>
