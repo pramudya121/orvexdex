@@ -6,22 +6,41 @@ import logo from "@/assets/orvex-logo.png";
 
 const ACTIVE_RDNS_KEY = "orvex.activeWalletRdns";
 
-type WalletSuggestion = { name: string; rdns: string; icon: string; installUrl: string; tag?: "Latest" | "Popular" };
+
+type WalletSuggestion = {
+  name: string;
+  rdns: string;
+  /** WalletConnect Cloud Explorer image id (lg). */
+  wcId?: string;
+  /** Direct brand asset URL (used as primary if WC fails or returns 401). */
+  icon?: string;
+  /** Domain used for favicon fallback (e.g. "metamask.io"). */
+  domain: string;
+  installUrl: string;
+  tag?: "Latest" | "Popular";
+};
+
+// WalletConnect Cloud public demo projectId — used solely to serve wallet logos
+// from explorer-api.walletconnect.com. Same id is shipped in WalletConnect's docs.
+const WC_PID = "2f05a7cde2bb14e94c5648e7e95c8fe0";
+const wc = (id: string) =>
+  `https://explorer-api.walletconnect.com/v3/logo/lg/${id}?projectId=${WC_PID}`;
+
 const SUGGESTIONS: WalletSuggestion[] = [
-  { name: "MetaMask", rdns: "io.metamask", icon: "https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/SVG_MetaMask_Icon_Color.svg", installUrl: "https://metamask.io/download/", tag: "Popular" },
-  { name: "OKX Wallet", rdns: "com.okex.wallet", icon: "https://www.okx.com/cdn/assets/imgs/239/4ABAC4FD8DE1471D.png", installUrl: "https://www.okx.com/web3" },
-  { name: "Rabby Wallet", rdns: "io.rabby", icon: "https://rabby.io/assets/images/logo-128.png", installUrl: "https://rabby.io/", tag: "Latest" },
-  { name: "Bitget Wallet", rdns: "com.bitget.web3", icon: "https://web3.bitget.com/favicon.ico", installUrl: "https://web3.bitget.com/" },
-  { name: "Coinbase Wallet", rdns: "com.coinbase.wallet", icon: "https://avatars.githubusercontent.com/u/18060234?s=200&v=4", installUrl: "https://www.coinbase.com/wallet" },
-  { name: "Trust Wallet", rdns: "com.trustwallet.app", icon: "https://trustwallet.com/assets/images/media/assets/TWT.png", installUrl: "https://trustwallet.com/download" },
-  { name: "Phantom", rdns: "app.phantom", icon: "https://187760183-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-MVOiF6Zqit57q_hxJYp%2Fuploads%2FHEjleywo9QOnfYebBPCZ%2FPhantom_SVG_Icon.svg?alt=media&token=71b80a0a-def7-4f98-ae70-5e0843fdaaec", installUrl: "https://phantom.app/download" },
-  { name: "Zerion", rdns: "io.zerion.wallet", icon: "https://s2-coinmarketcap.zerion.io/favicon.ico", installUrl: "https://zerion.io/download" },
-  { name: "Uniswap Wallet", rdns: "org.uniswap", icon: "https://app.uniswap.org/favicon.png", installUrl: "https://wallet.uniswap.org/" },
-  { name: "Frame", rdns: "sh.frame", icon: "https://frame.sh/icons/icon-256x256.png", installUrl: "https://frame.sh/" },
-  { name: "Brave Wallet", rdns: "com.brave.wallet", icon: "https://brave.com/static-assets/images/brave-logo-no-shadow.png", installUrl: "https://brave.com/wallet/" },
-  { name: "Safe", rdns: "global.safe", icon: "https://app.safe.global/favicon.ico", installUrl: "https://app.safe.global/" },
-  { name: "Ledger", rdns: "com.ledger", icon: "https://www.ledger.com/favicon.ico", installUrl: "https://www.ledger.com/ledger-live" },
-  { name: "TokenPocket", rdns: "pro.tokenpocket", icon: "https://www.tokenpocket.pro/favicon.ico", installUrl: "https://www.tokenpocket.pro/en/download/app" },
+  { name: "MetaMask",       rdns: "io.metamask",          domain: "metamask.io",    installUrl: "https://metamask.io/download/",     tag: "Popular", wcId: "c02f053e-7c69-4c10-9c61-c5dab17b3700", icon: "https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/SVG_MetaMask_Icon_Color.svg" },
+  { name: "OKX Wallet",     rdns: "com.okex.wallet",      domain: "okx.com",        installUrl: "https://www.okx.com/web3",                          wcId: "45f2f08e-fc0c-4d62-3e63-404e72170500" },
+  { name: "Rabby Wallet",   rdns: "io.rabby",             domain: "rabby.io",       installUrl: "https://rabby.io/",                 tag: "Latest",  wcId: "7897cf72-39ea-4a55-c976-088a8dbf2900", icon: "https://rabby.io/assets/images/logo-128.png" },
+  { name: "Bitget Wallet",  rdns: "com.bitget.web3",      domain: "bitget.com",     installUrl: "https://web3.bitget.com/",                          wcId: "35cb8e07-7e3e-43a6-fc16-09e0bcfa5b00" },
+  { name: "Coinbase Wallet",rdns: "com.coinbase.wallet",  domain: "coinbase.com",   installUrl: "https://www.coinbase.com/wallet",                   wcId: "a5ebc364-8f91-4200-fcc6-be81310a0000", icon: "https://avatars.githubusercontent.com/u/18060234?s=200&v=4" },
+  { name: "Trust Wallet",   rdns: "com.trustwallet.app",  domain: "trustwallet.com",installUrl: "https://trustwallet.com/download",                  wcId: "0528ee7e-16d1-4089-21e3-bbfb41933100" },
+  { name: "Phantom",        rdns: "app.phantom",          domain: "phantom.app",    installUrl: "https://phantom.app/download",                      wcId: "0e0db94b-be9b-4ec7-3cb2-c0a16ce63300" },
+  { name: "Zerion",         rdns: "io.zerion.wallet",     domain: "zerion.io",      installUrl: "https://zerion.io/download",                        wcId: "73f6f52f-7862-49e7-bb85-ba93ab72cc00" },
+  { name: "Uniswap Wallet", rdns: "org.uniswap",          domain: "uniswap.org",    installUrl: "https://wallet.uniswap.org/",                       wcId: "bff9cf1f-df19-42ce-f62a-87f04df13c00" },
+  { name: "Safe",           rdns: "global.safe",          domain: "safe.global",    installUrl: "https://app.safe.global/",                          wcId: "0b415a73-c0c0-4cd4-d2d4-d62a2eb37200" },
+  { name: "Ledger Live",    rdns: "com.ledger",           domain: "ledger.com",     installUrl: "https://www.ledger.com/ledger-live",                wcId: "35cb16e3-eafa-4d92-b066-c0bdf86c5200" },
+  { name: "Brave Wallet",   rdns: "com.brave.wallet",     domain: "brave.com",      installUrl: "https://brave.com/wallet/",                         wcId: "2db64aff-a8eb-4dd0-31cb-cda8e7ab0a00" },
+  { name: "TokenPocket",    rdns: "pro.tokenpocket",      domain: "tokenpocket.pro",installUrl: "https://www.tokenpocket.pro/en/download/app",       wcId: "f3119826-4ef5-4d31-4789-d4ae5c18e400" },
+  { name: "Frame",          rdns: "sh.frame",             domain: "frame.sh",       installUrl: "https://frame.sh/" },
 ];
 
 function gradientFromString(s: string) {
@@ -32,15 +51,38 @@ function gradientFromString(s: string) {
   return `linear-gradient(135deg, hsl(${a} 75% 55%), hsl(${b} 75% 45%))`;
 }
 
-function WalletAvatar({ src, name, size = 36 }: { src?: string; name: string; size?: number }) {
-  const [errored, setErrored] = useState(false);
-  const initials = name
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-  if (!src || errored) {
+/** Renders a wallet logo with a multi-stage fallback chain:
+ *  1) WalletConnect Cloud Explorer logo (true brand asset)
+ *  2) Optional direct brand asset URL
+ *  3) Google favicon proxy for the wallet's domain
+ *  4) Gradient initials avatar
+ */
+function WalletAvatar({
+  name,
+  size = 36,
+  src,
+  wcId,
+  domain,
+}: {
+  name: string;
+  size?: number;
+  src?: string;
+  wcId?: string;
+  domain?: string;
+}) {
+  const chain = useMemo(() => {
+    const out: string[] = [];
+    if (wcId) out.push(`https://explorer-api.walletconnect.com/v3/logo/lg/${wcId}?projectId=${WC_PID}`);
+    if (src) out.push(src);
+    if (domain) out.push(`https://www.google.com/s2/favicons?domain=${domain}&sz=128`);
+    return out;
+  }, [wcId, src, domain]);
+
+  const [idx, setIdx] = useState(0);
+  const url = chain[idx];
+
+  if (!url) {
+    const initials = name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
     return (
       <div
         aria-hidden="true"
@@ -53,15 +95,42 @@ function WalletAvatar({ src, name, size = 36 }: { src?: string; name: string; si
   }
   return (
     <img
-      src={src}
+      key={url}
+      src={url}
       alt=""
       loading="lazy"
       decoding="async"
       style={{ width: size, height: size }}
       className="rounded-lg bg-white/5 object-contain p-0.5"
-      onError={() => setErrored(true)}
+      onError={() => setIdx((i) => i + 1)}
     />
   );
+}
+
+// Best-effort rdns → domain map for detected wallets (used for favicon fallback).
+const RDNS_DOMAIN: Record<string, string> = {
+  "io.metamask": "metamask.io",
+  "com.okex.wallet": "okx.com",
+  "io.rabby": "rabby.io",
+  "com.bitget.web3": "bitget.com",
+  "com.coinbase.wallet": "coinbase.com",
+  "com.trustwallet.app": "trustwallet.com",
+  "app.phantom": "phantom.app",
+  "io.zerion.wallet": "zerion.io",
+  "org.uniswap": "uniswap.org",
+  "sh.frame": "frame.sh",
+  "com.brave.wallet": "brave.com",
+  "global.safe": "safe.global",
+  "com.ledger": "ledger.com",
+  "pro.tokenpocket": "tokenpocket.pro",
+};
+function domainForRdns(rdns: string): string | undefined {
+  const direct = RDNS_DOMAIN[rdns.toLowerCase()];
+  if (direct) return direct;
+  // Heuristic: reverse a reverse-DNS rdns ("io.metamask" → "metamask.io").
+  const parts = rdns.split(".");
+  if (parts.length >= 2) return [parts[1], parts[0]].join(".");
+  return undefined;
 }
 
 type Row =
@@ -226,7 +295,7 @@ function WalletPanel({ onClose, onConnected }: { onClose: () => void; onConnecte
                   active ? "bg-white/[0.07]" : "hover:bg-white/[0.05]"
                 }`}
               >
-                <WalletAvatar src={d.info.icon} name={d.info.name} />
+                <WalletAvatar src={d.info.icon} name={d.info.name} domain={domainForRdns(d.info.rdns)} />
                 <div className="flex-1 text-left min-w-0">
                   <div className="text-sm font-semibold truncate">{d.info.name}</div>
                   {busy === d.info.uuid && <div className="text-[10px] text-muted-foreground">Waiting for confirmation…</div>}
@@ -248,7 +317,7 @@ function WalletPanel({ onClose, onConnected }: { onClose: () => void; onConnecte
                 active ? "bg-white/[0.07]" : "hover:bg-white/[0.05]"
               }`}
             >
-              <WalletAvatar src={s.icon} name={s.name} />
+              <WalletAvatar src={s.icon} name={s.name} wcId={s.wcId} domain={s.domain} />
               <div className="flex-1 text-left min-w-0">
                 <div className="text-sm font-semibold truncate">{s.name}</div>
               </div>
@@ -504,7 +573,7 @@ export function ConnectButton() {
                       isActive ? "bg-white/[0.07]" : "hover:bg-white/[0.05]"
                     }`}
                   >
-                    <WalletAvatar src={d.info.icon} name={d.info.name} size={32} />
+                    <WalletAvatar src={d.info.icon} name={d.info.name} size={32} domain={domainForRdns(d.info.rdns)} />
                     <div className="flex-1 text-left min-w-0">
                       <div className="text-sm font-semibold truncate">{d.info.name}</div>
                       {isActive && <div className="text-[10px] text-[oklch(0.78_0.18_220)]">Active</div>}

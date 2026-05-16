@@ -21,13 +21,13 @@ export const Route = createFileRoute("/")({
       { rel: "canonical", href: "https://orvexdex.lovable.app/" },
     ],
     meta: [
-      { title: "ORVEX — Premium AMM DEX on LitVM LiteForge" },
-      { name: "description", content: "ORVEX is a premium AMM DEX on LitVM LiteForge Testnet. Swap, provide liquidity, and earn — fully on-chain." },
-      { property: "og:title", content: "ORVEX — Premium AMM DEX on LitVM LiteForge" },
-      { property: "og:description", content: "Swap, provide liquidity, and track your portfolio live on the ORVEX AMM DEX." },
+      { title: "ORVEX — The Connoisseur's DEX on LitVM LiteForge" },
+      { name: "description", content: "ORVEX is a connoisseur-grade decentralized exchange on LitVM LiteForge. Trade with institutional precision, deep liquidity, smart routing and atomic on-chain settlement — no custodians, no compromises." },
+      { property: "og:title", content: "ORVEX — The Connoisseur's DEX on LitVM LiteForge" },
+      { property: "og:description", content: "Institutional-grade swaps, deep liquidity, and live on-chain analytics on the LitVM AMM. Refined for traders who demand more." },
       { property: "og:url", content: "https://orvexdex.lovable.app/" },
-      { name: "twitter:title", content: "ORVEX — Premium AMM DEX on LitVM LiteForge" },
-      { name: "twitter:description", content: "Swap, provide liquidity, and track your portfolio live on the ORVEX AMM DEX." },
+      { name: "twitter:title", content: "ORVEX — The Connoisseur's DEX on LitVM LiteForge" },
+      { name: "twitter:description", content: "Institutional-grade swaps, deep liquidity, and live on-chain analytics on the LitVM AMM. Refined for traders who demand more." },
     ],
   }),
 });
@@ -153,20 +153,28 @@ function Landing() {
             <div className="lg:col-span-7 relative z-10 animate-rise">
               <BrandMark size="lg" className="mb-7" />
 
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-strong border-gold text-[10px] tracking-[0.3em] uppercase text-gradient-gold font-semibold mb-5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live on LitVM LiteForge · Chain 4441
+              </div>
+
               <h1 className="text-4xl sm:text-5xl lg:text-[3.75rem] font-extrabold leading-[1.05] tracking-tight">
-                Mastering Crypto & Web3
+                The Connoisseur's
                 <br />
-                <span className="text-gradient-luxe">Building the Future of</span>
+                <span className="text-gradient-luxe">Decentralized Exchange</span>
                 <br />
-                Decentralized Wealth
+                Refined for LitVM.
               </h1>
 
-              <div className="mt-5 flex items-center gap-2 text-sm">
-                <span className="text-gradient-brand font-semibold tracking-wider">Portfolio</span>
-                <span className="text-muted-foreground">•</span>
-                <span className="text-gradient-brand font-semibold tracking-wider">DeFi</span>
-                <span className="text-muted-foreground">•</span>
-                <span className="text-gradient-brand font-semibold tracking-wider">Innovation</span>
+              <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
+                ORVEX is an institutional-grade AMM crafted for the LitVM era — deep liquidity, smart multi-hop routing, transparent on-chain analytics and atomic settlement. No custodians. No middlemen. <span className="text-foreground/90 font-semibold">Just precision liquidity, on your terms.</span>
+              </p>
+
+              <div className="mt-5 flex flex-wrap items-center gap-2 text-[11px] tracking-wider">
+                <span className="px-2.5 py-1 rounded-full glass border-gold text-gradient-gold font-semibold">SMART ROUTING</span>
+                <span className="px-2.5 py-1 rounded-full glass border-gold text-gradient-gold font-semibold">DEEP LIQUIDITY</span>
+                <span className="px-2.5 py-1 rounded-full glass border-gold text-gradient-gold font-semibold">ATOMIC SETTLEMENT</span>
+                <span className="px-2.5 py-1 rounded-full glass border-gold text-gradient-gold font-semibold">SELF-CUSTODY</span>
               </div>
 
               {/* Portfolio value card */}
