@@ -70,8 +70,9 @@ export function Header() {
               <Link
                 key={n.to}
                 to={n.to}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
-                  active ? "bg-gradient-brand text-primary-foreground" : "text-muted-foreground"
+                preload="intent"
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 ${
+                  active ? "bg-gradient-brand text-primary-foreground shadow-neon" : "text-muted-foreground"
                 }`}
               >
                 {n.label}
