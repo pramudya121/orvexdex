@@ -12,6 +12,7 @@ import { findToken } from "@/lib/tokens";
 import { usePoolStats, fmtWzk, type PoolMeta } from "@/lib/poolStats";
 import { useDexStats } from "@/lib/dexStats";
 import { BrandMark } from "@/components/brand/BrandMark";
+import { HeroParallax, Tilt, CountUp } from "@/components/landing/HeroFx";
 
 export const Route = createFileRoute("/")({
   component: Landing,
