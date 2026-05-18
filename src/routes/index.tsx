@@ -12,6 +12,7 @@ import { findToken } from "@/lib/tokens";
 import { usePoolStats, fmtWzk, type PoolMeta } from "@/lib/poolStats";
 import { useDexStats } from "@/lib/dexStats";
 import { BrandMark } from "@/components/brand/BrandMark";
+import { HeroParallax, Tilt, CountUp } from "@/components/landing/HeroFx";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -132,15 +133,16 @@ function Landing() {
   const totalValueWzk: bigint = holdings.reduce<bigint>((s, h) => s + h.valueWzk, 0n);
 
   return (
-    <div className="relative">
+    <div className="relative" id="hero-root">
+      <HeroParallax targetSelector="#hero-root" />
       {/* Ambient backdrop */}
       <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1200px] h-[800px] rounded-full blur-3xl opacity-50 animate-aurora"
-          style={{ background: "radial-gradient(closest-side, oklch(0.65 0.27 295 / 0.55), transparent 70%)" }} />
+          style={{ background: "radial-gradient(closest-side, oklch(0.65 0.27 295 / 0.55), transparent 70%)", transform: "translate3d(calc(var(--mx,0) * 24px), calc(var(--my,0) * 18px), 0)" }} />
         <div className="absolute top-40 -left-32 w-[600px] h-[600px] rounded-full blur-3xl opacity-40 animate-aurora-2"
-          style={{ background: "radial-gradient(closest-side, oklch(0.78 0.18 220 / 0.5), transparent 70%)" }} />
+          style={{ background: "radial-gradient(closest-side, oklch(0.78 0.18 220 / 0.5), transparent 70%)", transform: "translate3d(calc(var(--mx,0) * -30px), calc(var(--my,0) * 22px), 0)" }} />
         <div className="absolute top-80 -right-32 w-[700px] h-[700px] rounded-full blur-3xl opacity-30 animate-aurora"
-          style={{ background: "radial-gradient(closest-side, oklch(0.84 0.16 85 / 0.35), transparent 70%)" }} />
+          style={{ background: "radial-gradient(closest-side, oklch(0.84 0.16 85 / 0.35), transparent 70%)", transform: "translate3d(calc(var(--mx,0) * 36px), calc(var(--my,0) * -20px), 0)" }} />
       </div>
 
       <section className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-10 pb-16">
@@ -161,7 +163,7 @@ function Landing() {
               <h1 className="text-4xl sm:text-5xl lg:text-[3.75rem] font-extrabold leading-[1.05] tracking-tight">
                 The Connoisseur's
                 <br />
-                <span className="text-gradient-luxe">Decentralized Exchange</span>
+                <span className="text-gradient-luxe-anim">Decentralized Exchange</span>
                 <br />
                 Refined for LitVM.
               </h1>
@@ -182,13 +184,18 @@ function Landing() {
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="text-[11px] tracking-[0.25em] uppercase text-muted-foreground">Total Portfolio Value</div>
-                    <div className="mt-1 text-4xl sm:text-5xl font-extrabold text-gradient-luxe">
+                    <div className="mt-1 text-4xl sm:text-5xl font-extrabold text-gradient-luxe-anim">
                       {isConnected ? (
                         <>
                           {fmtWzk(totalValueWzk, 4)}{" "}
                           <span className="text-2xl text-muted-foreground font-bold">wzkLTC</span>
                         </>
-                      ) : "1.28M wzkLTC"}
+                      ) : (
+                        <>
+                          <CountUp to={1.28} decimals={2} suffix="M" />{" "}
+                          <span className="text-2xl text-muted-foreground font-bold">wzkLTC</span>
+                        </>
+                      )}
                     </div>
                     <div className="text-[11px] text-muted-foreground mt-1">
                       {isConnected ? "Priced via on-chain wzkLTC pools" : "Demo · connect to view live"}
@@ -204,11 +211,12 @@ function Landing() {
               <div className="mt-8 flex flex-wrap gap-3 animate-rise" style={{ animationDelay: "200ms" }}>
                 <button
                   onClick={() => { if (isConnected) navigate({ to: "/swap" }); else setWalletOpen(true); }}
-                  className="px-6 py-3 rounded-xl bg-gradient-luxe text-primary-foreground font-bold shadow-neon hover:-translate-y-0.5 transition-all"
+                  className="group relative overflow-hidden px-6 py-3 rounded-xl bg-gradient-luxe text-primary-foreground font-bold shadow-neon hover:-translate-y-0.5 transition-all press"
                 >
-                  {isConnected ? "Open Trading Desk →" : "Connect Wallet"}
+                  <span className="relative z-10">{isConnected ? "Open Trading Desk →" : "Connect Wallet"}</span>
+                  <span aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-[1100ms] ease-out bg-gradient-to-r from-transparent via-white/40 to-transparent" />
                 </button>
-                <Link to="/pools" className="px-6 py-3 rounded-xl glass border-gold font-semibold hover:bg-surface-2 transition">
+                <Link to="/pools" className="px-6 py-3 rounded-xl glass border-gold font-semibold hover:bg-surface-2 transition press">
                   Explore Pools
                 </Link>
                 <Link to="/faucet" className="px-6 py-3 rounded-xl text-sm text-muted-foreground hover:text-foreground transition">
@@ -219,7 +227,7 @@ function Landing() {
 
             {/* Hero visual */}
             <div className="lg:col-span-5 relative">
-              <div className="relative aspect-square w-full max-w-lg mx-auto animate-rise" style={{ animationDelay: "120ms" }}>
+              <Tilt className="relative aspect-square w-full max-w-lg mx-auto animate-rise">
                 <div className="absolute inset-0 rounded-[2.5rem] blur-3xl opacity-70 animate-pulse-glow"
                   style={{ background: "radial-gradient(closest-side, oklch(0.65 0.27 295 / 0.7), transparent 70%)" }} />
                 <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden shadow-elegant border-gold animated-border">
@@ -232,11 +240,13 @@ function Landing() {
                     decoding="async"
                     className="w-full h-full object-cover"
                   />
+                  <div aria-hidden className="pointer-events-none absolute inset-0"
+                    style={{ background: "radial-gradient(600px circle at calc(50% + var(--mx,0) * 120px) calc(50% + var(--my,0) * 120px), oklch(1 0 0 / 0.12), transparent 55%)" }} />
                 </div>
                 <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-gradient-gold text-[10px] font-bold tracking-[0.3em] uppercase text-black shadow-gold">
                   Premium AMM · LitVM
                 </div>
-              </div>
+              </Tilt>
             </div>
           </div>
 
