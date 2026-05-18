@@ -163,7 +163,7 @@ function Landing() {
               <h1 className="text-4xl sm:text-5xl lg:text-[3.75rem] font-extrabold leading-[1.05] tracking-tight">
                 The Connoisseur's
                 <br />
-                <span className="text-gradient-luxe">Decentralized Exchange</span>
+                <span className="text-gradient-luxe-anim">Decentralized Exchange</span>
                 <br />
                 Refined for LitVM.
               </h1>
