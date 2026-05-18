@@ -211,11 +211,12 @@ function Landing() {
               <div className="mt-8 flex flex-wrap gap-3 animate-rise" style={{ animationDelay: "200ms" }}>
                 <button
                   onClick={() => { if (isConnected) navigate({ to: "/swap" }); else setWalletOpen(true); }}
-                  className="px-6 py-3 rounded-xl bg-gradient-luxe text-primary-foreground font-bold shadow-neon hover:-translate-y-0.5 transition-all"
+                  className="group relative overflow-hidden px-6 py-3 rounded-xl bg-gradient-luxe text-primary-foreground font-bold shadow-neon hover:-translate-y-0.5 transition-all press"
                 >
-                  {isConnected ? "Open Trading Desk →" : "Connect Wallet"}
+                  <span className="relative z-10">{isConnected ? "Open Trading Desk →" : "Connect Wallet"}</span>
+                  <span aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-[1100ms] ease-out bg-gradient-to-r from-transparent via-white/40 to-transparent" />
                 </button>
-                <Link to="/pools" className="px-6 py-3 rounded-xl glass border-gold font-semibold hover:bg-surface-2 transition">
+                <Link to="/pools" className="px-6 py-3 rounded-xl glass border-gold font-semibold hover:bg-surface-2 transition press">
                   Explore Pools
                 </Link>
                 <Link to="/faucet" className="px-6 py-3 rounded-xl text-sm text-muted-foreground hover:text-foreground transition">
@@ -226,7 +227,8 @@ function Landing() {
 
             {/* Hero visual */}
             <div className="lg:col-span-5 relative">
-              <div className="relative aspect-square w-full max-w-lg mx-auto animate-rise" style={{ animationDelay: "120ms" }}>
+              <Tilt className="relative aspect-square w-full max-w-lg mx-auto animate-rise" /* @ts-expect-error style merged via inline */>
+                <div style={{ animationDelay: "120ms" }} className="absolute inset-0">
                 <div className="absolute inset-0 rounded-[2.5rem] blur-3xl opacity-70 animate-pulse-glow"
                   style={{ background: "radial-gradient(closest-side, oklch(0.65 0.27 295 / 0.7), transparent 70%)" }} />
                 <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden shadow-elegant border-gold animated-border">
