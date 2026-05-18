@@ -247,6 +247,7 @@ function Landing() {
                   Premium AMM · LitVM
                 </div>
               </Tilt>
+            </div>
           </div>
 
           {/* DASHBOARD ROW */}
