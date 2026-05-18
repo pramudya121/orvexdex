@@ -12,6 +12,8 @@ import { wagmiConfig } from "@/lib/wagmi";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ToastProvider } from "@/components/ui/toaster";
+import { RouteProgress } from "@/components/layout/RouteProgress";
+import { ScrollToTop } from "@/components/layout/ScrollToTop";
 
 import appCss from "../styles.css?url";
 
@@ -154,6 +156,8 @@ function RootComponent() {
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <ToastProvider>
+          <RouteProgress />
+          <ScrollToTop />
           <div className="min-h-screen flex flex-col">
             <Header />
             <main className="flex-1">

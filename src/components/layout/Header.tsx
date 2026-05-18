@@ -35,10 +35,11 @@ export function Header() {
               <Link
                 key={n.to}
                 to={n.to}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
+                preload="intent"
+                className={`relative px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-300 ${
                   active
                     ? "bg-gradient-brand text-primary-foreground shadow-neon"
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                 }`}
               >
                 {n.label}
@@ -69,8 +70,9 @@ export function Header() {
               <Link
                 key={n.to}
                 to={n.to}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
-                  active ? "bg-gradient-brand text-primary-foreground" : "text-muted-foreground"
+                preload="intent"
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 ${
+                  active ? "bg-gradient-brand text-primary-foreground shadow-neon" : "text-muted-foreground"
                 }`}
               >
                 {n.label}
