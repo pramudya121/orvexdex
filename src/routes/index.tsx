@@ -184,13 +184,18 @@ function Landing() {
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="text-[11px] tracking-[0.25em] uppercase text-muted-foreground">Total Portfolio Value</div>
-                    <div className="mt-1 text-4xl sm:text-5xl font-extrabold text-gradient-luxe">
+                    <div className="mt-1 text-4xl sm:text-5xl font-extrabold text-gradient-luxe-anim">
                       {isConnected ? (
                         <>
                           {fmtWzk(totalValueWzk, 4)}{" "}
                           <span className="text-2xl text-muted-foreground font-bold">wzkLTC</span>
                         </>
-                      ) : "1.28M wzkLTC"}
+                      ) : (
+                        <>
+                          <CountUp to={1.28} decimals={2} suffix="M" />{" "}
+                          <span className="text-2xl text-muted-foreground font-bold">wzkLTC</span>
+                        </>
+                      )}
                     </div>
                     <div className="text-[11px] text-muted-foreground mt-1">
                       {isConnected ? "Priced via on-chain wzkLTC pools" : "Demo · connect to view live"}
