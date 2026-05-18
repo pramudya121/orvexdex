@@ -227,8 +227,7 @@ function Landing() {
 
             {/* Hero visual */}
             <div className="lg:col-span-5 relative">
-              <Tilt className="relative aspect-square w-full max-w-lg mx-auto animate-rise" /* @ts-expect-error style merged via inline */>
-                <div style={{ animationDelay: "120ms" }} className="absolute inset-0">
+              <Tilt className="relative aspect-square w-full max-w-lg mx-auto animate-rise">
                 <div className="absolute inset-0 rounded-[2.5rem] blur-3xl opacity-70 animate-pulse-glow"
                   style={{ background: "radial-gradient(closest-side, oklch(0.65 0.27 295 / 0.7), transparent 70%)" }} />
                 <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden shadow-elegant border-gold animated-border">
@@ -241,12 +240,13 @@ function Landing() {
                     decoding="async"
                     className="w-full h-full object-cover"
                   />
+                  <div aria-hidden className="pointer-events-none absolute inset-0"
+                    style={{ background: "radial-gradient(600px circle at calc(50% + var(--mx,0) * 120px) calc(50% + var(--my,0) * 120px), oklch(1 0 0 / 0.12), transparent 55%)" }} />
                 </div>
                 <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-gradient-gold text-[10px] font-bold tracking-[0.3em] uppercase text-black shadow-gold">
                   Premium AMM · LitVM
                 </div>
-              </div>
-            </div>
+              </Tilt>
           </div>
 
           {/* DASHBOARD ROW */}
