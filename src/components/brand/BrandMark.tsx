@@ -51,7 +51,7 @@ export function BrandMark({
       </span>
       {showWordmark && (
         <span className="flex flex-col leading-none">
-          <span className={`font-bold ${s.title} text-gradient-luxe`}>{wordmark}</span>
+          <span className={`font-bold ${s.title} text-gradient-luxe-anim`}>{wordmark}</span>
           {showTagline && (
             <span className={`uppercase ${s.sub} text-muted-foreground mt-1`}>{tagline}</span>
           )}
