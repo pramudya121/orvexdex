@@ -133,15 +133,16 @@ function Landing() {
   const totalValueWzk: bigint = holdings.reduce<bigint>((s, h) => s + h.valueWzk, 0n);
 
   return (
-    <div className="relative">
+    <div className="relative" id="hero-root">
+      <HeroParallax targetSelector="#hero-root" />
       {/* Ambient backdrop */}
       <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1200px] h-[800px] rounded-full blur-3xl opacity-50 animate-aurora"
-          style={{ background: "radial-gradient(closest-side, oklch(0.65 0.27 295 / 0.55), transparent 70%)" }} />
+          style={{ background: "radial-gradient(closest-side, oklch(0.65 0.27 295 / 0.55), transparent 70%)", transform: "translate3d(calc(var(--mx,0) * 24px), calc(var(--my,0) * 18px), 0)" }} />
         <div className="absolute top-40 -left-32 w-[600px] h-[600px] rounded-full blur-3xl opacity-40 animate-aurora-2"
-          style={{ background: "radial-gradient(closest-side, oklch(0.78 0.18 220 / 0.5), transparent 70%)" }} />
+          style={{ background: "radial-gradient(closest-side, oklch(0.78 0.18 220 / 0.5), transparent 70%)", transform: "translate3d(calc(var(--mx,0) * -30px), calc(var(--my,0) * 22px), 0)" }} />
         <div className="absolute top-80 -right-32 w-[700px] h-[700px] rounded-full blur-3xl opacity-30 animate-aurora"
-          style={{ background: "radial-gradient(closest-side, oklch(0.84 0.16 85 / 0.35), transparent 70%)" }} />
+          style={{ background: "radial-gradient(closest-side, oklch(0.84 0.16 85 / 0.35), transparent 70%)", transform: "translate3d(calc(var(--mx,0) * 36px), calc(var(--my,0) * -20px), 0)" }} />
       </div>
 
       <section className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-10 pb-16">
