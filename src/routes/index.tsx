@@ -344,6 +344,61 @@ function Landing() {
         </div>
       </section>
 
+      {/* WHY ORVEX */}
+      <section className="relative max-w-7xl mx-auto px-4 sm:px-6 pb-12">
+        <div className="text-center mb-10 animate-rise">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-strong border-gold text-[10px] tracking-[0.3em] uppercase text-gradient-gold font-semibold mb-3">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+            Why ORVEX
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            Built for traders who <span className="text-gradient-luxe-anim">demand more</span>.
+          </h2>
+          <p className="mt-3 text-sm text-muted-foreground max-w-2xl mx-auto">
+            Every basis point matters. ORVEX is engineered for precision execution, transparent economics, and an experience that feels effortless.
+          </p>
+        </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { icon: "⚡", title: "Sub-second routing", body: "Multi-hop pathfinder evaluates every wzkLTC bridge in real-time for best execution.", delay: 0 },
+            { icon: "🛡", title: "Self-custodial", body: "Your keys, your coins. ORVEX never touches funds — settlement is atomic on-chain.", delay: 80 },
+            { icon: "📊", title: "Transparent metrics", body: "TVL, volume, swaps and unique wallets streamed directly from LitVM logs.", delay: 160 },
+            { icon: "✨", title: "Atelier-grade UX", body: "Crafted micro-interactions, instant feedback, and a zero-friction trade flow.", delay: 240 },
+          ].map((f) => (
+            <div
+              key={f.title}
+              className="group relative rounded-2xl p-5 glass-strong border-gold card-hover animate-rise overflow-hidden"
+              style={{ animationDelay: `${f.delay}ms` }}
+            >
+              <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-60 bg-primary/40 transition-opacity duration-500" />
+              <div className="relative">
+                <div className="text-3xl mb-3">{f.icon}</div>
+                <div className="text-base font-bold">{f.title}</div>
+                <p className="mt-1.5 text-[13px] text-muted-foreground leading-relaxed">{f.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Trust strip */}
+        <div className="mt-10 rounded-2xl glass border-gold p-5 flex flex-wrap items-center justify-around gap-4 animate-rise">
+          {[
+            { k: "Network", v: "LitVM · 4441" },
+            { k: "Settlement", v: "Atomic on-chain" },
+            { k: "Custody", v: "Non-custodial" },
+            { k: "Routing", v: "Smart 2-hop" },
+            { k: "Open source", v: "Verifiable" },
+          ].map((t) => (
+            <div key={t.k} className="text-center">
+              <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">{t.k}</div>
+              <div className="mt-0.5 text-sm font-bold text-gradient-gold">{t.v}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+
+
       {/* TICKER */}
       <section className="relative border-y border-border/60 bg-surface-2/30 backdrop-blur overflow-hidden">
         <div className="flex gap-12 py-4 whitespace-nowrap animate-ticker">
