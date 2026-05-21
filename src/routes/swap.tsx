@@ -359,9 +359,9 @@ function SwapPage() {
             onClick={flip}
             aria-label="Flip input and output tokens"
             title="Flip input and output tokens"
-            className="h-10 w-10 rounded-xl bg-surface-2 border border-border hover:border-primary/60 hover:rotate-180 transition-transform duration-300"
+            className="press group h-10 w-10 rounded-xl bg-surface-2 border border-border hover:border-primary/60 hover:shadow-neon transition-all duration-300"
           >
-            ↓
+            <span className="inline-block transition-transform duration-500 group-hover:rotate-180 group-active:rotate-[360deg]">↓</span>
           </button>
         </div>
 
@@ -430,9 +430,15 @@ function SwapPage() {
         <button
           onClick={handleAction}
           disabled={disabled}
-          className="mt-5 w-full py-4 rounded-xl bg-gradient-brand text-primary-foreground font-bold text-lg shadow-neon hover:opacity-95 transition disabled:opacity-40 disabled:cursor-not-allowed"
+          className="press relative mt-5 w-full py-4 rounded-xl bg-gradient-brand text-primary-foreground font-bold text-lg shadow-neon overflow-hidden hover:opacity-95 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
         >
-          {!address ? "Connect wallet" : isPending || pendingHash ? "Confirming…" : buttonLabel}
+          <span className="relative z-10 inline-flex items-center justify-center gap-2">
+            {(isPending || pendingHash) && <span className="h-4 w-4 rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin" />}
+            {!address ? "Connect wallet" : isPending || pendingHash ? "Confirming…" : buttonLabel}
+          </span>
+          {!disabled && (
+            <span aria-hidden className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-12 animate-[shimmer-sweep_2.6s_ease-in-out_infinite]" />
+          )}
         </button>
         </div>
         </div>
@@ -478,18 +484,17 @@ function TokenPanel({
   balance?: bigint;
   readOnly?: boolean;
 }) {
+  const setPct = (pct: number) => {
+    if (!balance || balance === 0n || !onAmountChange) return;
+    const v = (balance * BigInt(pct)) / 100n;
+    onAmountChange(fmt(v, token.decimals, 18));
+  };
   return (
-    <div className="bg-surface-2/50 rounded-2xl p-4 border border-border overflow-hidden">
+    <div className="bg-surface-2/50 rounded-2xl p-4 border border-border hover:border-primary/40 transition-colors overflow-hidden">
       <div className="flex justify-between text-xs text-muted-foreground mb-2 gap-2">
         <span className="shrink-0">{label}</span>
         <span className="truncate text-right">
-          Balance: {fmt(balance, token.decimals)}{" "}
-          {!readOnly && balance !== undefined && balance > 0n && (
-            <button
-              onClick={() => onAmountChange?.(fmt(balance, token.decimals, 18))}
-              className="text-accent hover:underline ml-1"
-            >MAX</button>
-          )}
+          Balance: {fmt(balance, token.decimals)}
         </span>
       </div>
       <div className="flex items-center gap-3">
@@ -499,11 +504,22 @@ function TokenPanel({
           readOnly={readOnly}
           value={amount}
           onChange={(e) => onAmountChange?.(e.target.value)}
-          className="flex-1 min-w-0 w-full bg-transparent text-3xl font-bold outline-none placeholder:text-muted-foreground/40"
+          className="flex-1 min-w-0 w-full bg-transparent text-3xl font-bold outline-none placeholder:text-muted-foreground/40 transition-colors focus:text-primary"
           aria-label={`${label} amount in ${token.symbol}`}
         />
         <TokenSelect value={token} onChange={onTokenChange} exclude={excludeFor} />
       </div>
+      {!readOnly && balance !== undefined && balance > 0n && (
+        <div className="mt-3 flex gap-1.5">
+          {[25, 50, 75, 100].map((p) => (
+            <button
+              key={p}
+              onClick={() => setPct(p)}
+              className="press flex-1 text-[11px] font-semibold py-1.5 rounded-lg bg-surface border border-border hover:border-primary/60 hover:bg-primary/10 hover:text-accent transition"
+            >{p === 100 ? "MAX" : `${p}%`}</button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
