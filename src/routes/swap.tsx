@@ -430,9 +430,15 @@ function SwapPage() {
         <button
           onClick={handleAction}
           disabled={disabled}
-          className="mt-5 w-full py-4 rounded-xl bg-gradient-brand text-primary-foreground font-bold text-lg shadow-neon hover:opacity-95 transition disabled:opacity-40 disabled:cursor-not-allowed"
+          className="press relative mt-5 w-full py-4 rounded-xl bg-gradient-brand text-primary-foreground font-bold text-lg shadow-neon overflow-hidden hover:opacity-95 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
         >
-          {!address ? "Connect wallet" : isPending || pendingHash ? "Confirming…" : buttonLabel}
+          <span className="relative z-10 inline-flex items-center justify-center gap-2">
+            {(isPending || pendingHash) && <span className="h-4 w-4 rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin" />}
+            {!address ? "Connect wallet" : isPending || pendingHash ? "Confirming…" : buttonLabel}
+          </span>
+          {!disabled && (
+            <span aria-hidden className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-12 animate-[shimmer-sweep_2.6s_ease-in-out_infinite]" />
+          )}
         </button>
         </div>
         </div>
