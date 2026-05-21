@@ -359,9 +359,9 @@ function SwapPage() {
             onClick={flip}
             aria-label="Flip input and output tokens"
             title="Flip input and output tokens"
-            className="h-10 w-10 rounded-xl bg-surface-2 border border-border hover:border-primary/60 hover:rotate-180 transition-transform duration-300"
+            className="press group h-10 w-10 rounded-xl bg-surface-2 border border-border hover:border-primary/60 hover:shadow-neon transition-all duration-300"
           >
-            ↓
+            <span className="inline-block transition-transform duration-500 group-hover:rotate-180 group-active:rotate-[360deg]">↓</span>
           </button>
         </div>
 
