@@ -398,6 +398,72 @@ function Landing() {
       </section>
 
 
+      {/* FAQ */}
+      <section className="relative max-w-5xl mx-auto px-4 sm:px-6 pb-16">
+        <div className="text-center mb-8 animate-rise">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-strong border-gold text-[10px] tracking-[0.3em] uppercase text-gradient-gold font-semibold mb-3">
+            FAQ
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            Questions, <span className="text-gradient-luxe-anim">answered</span>.
+          </h2>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3">
+          {[
+            { q: "Do I need to create an account?", a: "Never. ORVEX is fully self-custodial — connect any EVM wallet and trade. No emails, no KYC, no custody." },
+            { q: "Which network does ORVEX use?", a: "LitVM LiteForge (Chain ID 4441). Your wallet is auto-prompted to add it the first time you connect." },
+            { q: "What are the fees?", a: "Standard UniswapV2-style 0.30% LP fee per swap — paid to liquidity providers. ORVEX takes no protocol fee on top." },
+            { q: "Is the code audited?", a: "ORVEX is a clean UniswapV2 fork. Contracts are verified on-chain and the source is open for inspection." },
+            { q: "How do I get test tokens?", a: "Use the in-app Faucet to claim zkLTC and sample assets like TRX, XRP, ADA, ZEC, XMR with cooldowns." },
+            { q: "Can I add my own pool?", a: "Yes — head to Liquidity, pick any two ERC-20s, approve once and deposit. New pairs deploy automatically via the Factory." },
+          ].map((f, i) => (
+            <details
+              key={f.q}
+              className="group rounded-2xl glass-strong border-gold p-4 cursor-pointer animate-rise hover:border-primary/40 transition-colors"
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <summary className="flex items-center justify-between gap-3 list-none">
+                <span className="text-sm font-semibold">{f.q}</span>
+                <span className="h-6 w-6 grid place-items-center rounded-full glass border-gold text-xs text-gradient-gold transition-transform group-open:rotate-45">+</span>
+              </summary>
+              <p className="mt-3 text-[13px] text-muted-foreground leading-relaxed">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      {/* FINAL CTA BAND */}
+      <section className="relative max-w-7xl mx-auto px-4 sm:px-6 pb-16">
+        <div className="relative overflow-hidden rounded-3xl border-gold glass-strong p-8 sm:p-12 animate-rise">
+          <div className="absolute -top-20 -left-20 w-72 h-72 rounded-full blur-3xl bg-primary/30 animate-pulse-glow" />
+          <div className="absolute -bottom-20 -right-20 w-72 h-72 rounded-full blur-3xl bg-accent/20 animate-pulse-glow" />
+          <div className="relative flex flex-col lg:flex-row items-center justify-between gap-6 text-center lg:text-left">
+            <div>
+              <div className="text-[10px] tracking-[0.3em] uppercase text-gradient-gold font-bold mb-2">Ready when you are</div>
+              <h3 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+                Trade like a <span className="text-gradient-luxe-anim">connoisseur</span>.
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground max-w-xl">
+                Connect your wallet, claim test assets, and execute your first swap in under thirty seconds.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 justify-center">
+              <Link
+                to="/swap"
+                className="press inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-primary via-primary to-accent text-primary-foreground text-sm font-bold shadow-neon hover:opacity-95 transition"
+              >
+                Launch Swap →
+              </Link>
+              <Link
+                to="/faucet"
+                className="press inline-flex items-center gap-2 px-6 py-3 rounded-2xl glass border-gold text-sm font-bold hover:border-primary/50 transition"
+              >
+                Get Test Tokens
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* TICKER */}
       <section className="relative border-y border-border/60 bg-surface-2/30 backdrop-blur overflow-hidden">
