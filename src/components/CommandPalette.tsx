@@ -53,9 +53,9 @@ export function CommandPalette() {
     return () => window.removeEventListener("orvex:open-palette" as any, onOpen);
   }, []);
 
-  const go = (path: string, search?: Record<string, string>) => {
+  const go = (path: string) => {
     setOpen(false);
-    navigate({ to: path, search: search as any });
+    navigate({ to: path as any });
   };
 
   return (
