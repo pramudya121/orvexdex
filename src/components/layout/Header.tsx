@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { TxIndicator } from "@/components/wallet/TxIndicator";
+import { openPalette } from "@/components/CommandPalette";
 
 import { BrandMark } from "@/components/brand/BrandMark";
 import { useAccount, useReadContract } from "wagmi";
