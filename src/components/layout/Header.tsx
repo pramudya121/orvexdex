@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { TxIndicator } from "@/components/wallet/TxIndicator";
+import { openPalette } from "@/components/CommandPalette";
 
 import { BrandMark } from "@/components/brand/BrandMark";
 import { useAccount, useReadContract } from "wagmi";
@@ -49,6 +50,20 @@ export function Header() {
           })}
         </nav>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={openPalette}
+            aria-label="Open command palette"
+            title="Search (⌘K)"
+            className="hidden md:inline-flex items-center gap-2 h-9 px-3 rounded-full glass hover:border-primary/60 transition text-xs text-muted-foreground"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3.5 w-3.5 fill-none stroke-current" strokeWidth="2">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" strokeLinecap="round" />
+            </svg>
+            <span>Search</span>
+            <kbd className="ml-1 px-1.5 py-0.5 rounded bg-white/5 border border-border text-[10px] font-mono">⌘K</kbd>
+          </button>
           <a
             href="https://x.com/ORVEX_LitVM"
             target="_blank"
