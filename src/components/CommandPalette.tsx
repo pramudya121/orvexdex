@@ -77,7 +77,7 @@ export function CommandPalette() {
             <CommandItem
               key={t.address}
               value={`swap ${t.symbol} ${t.name}`}
-              onSelect={() => go("/swap", { tokenOut: t.address })}
+              onSelect={() => go("/swap")}
             >
               <img src={t.logo} alt="" className="h-4 w-4 rounded-full" />
               <span className="font-medium">{t.symbol}</span>
