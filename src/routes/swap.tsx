@@ -58,8 +58,8 @@ function SwapPage() {
   const [amountIn, setAmountIn] = useState("");
   const [amountOut, setAmountOut] = useState("");
   const [tradeMode, setTradeMode] = useState<"exactIn" | "exactOut">("exactIn");
-  const [slippageBps, setSlippageBps] = useState(50); // 0.50% default
-  const [deadlineMin, setDeadlineMin] = useState(20);
+  const [slippageBps, setSlippageBps] = useLocalStorage<number>("orvex.slippageBps", 50); // 0.50% default
+  const [deadlineMin, setDeadlineMin] = useLocalStorage<number>("orvex.deadlineMin", 20);
   const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
