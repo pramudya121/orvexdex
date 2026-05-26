@@ -11,6 +11,7 @@ import { deadline, fmt, safeParse, slippageMin, slippageMax } from "@/lib/format
 import { useToast } from "@/components/ui/toaster";
 import { explorerAddr } from "@/lib/chain";
 import { SwapCardSkeleton } from "@/components/skeletons";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 type SwapSearch = { from?: string; to?: string };
 
@@ -58,8 +59,8 @@ function SwapPage() {
   const [amountIn, setAmountIn] = useState("");
   const [amountOut, setAmountOut] = useState("");
   const [tradeMode, setTradeMode] = useState<"exactIn" | "exactOut">("exactIn");
-  const [slippageBps, setSlippageBps] = useState(50); // 0.50% default
-  const [deadlineMin, setDeadlineMin] = useState(20);
+  const [slippageBps, setSlippageBps] = useLocalStorage<number>("orvex.slippageBps", 50); // 0.50% default
+  const [deadlineMin, setDeadlineMin] = useLocalStorage<number>("orvex.deadlineMin", 20);
   const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {

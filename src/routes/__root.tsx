@@ -94,12 +94,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:description", content: "ORVEX is a connoisseur-grade decentralized exchange on LitVM LiteForge — institutional precision, deep liquidity, smart routing, and atomic on-chain settlement." },
       { name: "twitter:site", content: "@ORVEX_LitVM" },
       { name: "twitter:creator", content: "@ORVEX_LitVM" },
+      { name: "theme-color", content: "#7A5CFF" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "ORVEX" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/icon-512.png" },
     ],
     scripts: [
       {

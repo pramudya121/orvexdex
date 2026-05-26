@@ -12,6 +12,7 @@ import { deadline, fmt, safeParse, slippageMin } from "@/lib/format";
 import { formatUnits } from "viem";
 import { useToast } from "@/components/ui/toaster";
 import { LiquidityCardSkeleton } from "@/components/skeletons";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 type LiqSearch = { a?: string; b?: string; tab?: "add" | "remove" };
 
@@ -128,7 +129,7 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
   const [amountA, setAmountA] = useState("");
   const [amountB, setAmountB] = useState("");
   const [lastEdited, setLastEdited] = useState<"A" | "B">("A");
-  const [slipBps, setSlipBps] = useState(100);
+  const [slipBps, setSlipBps] = useLocalStorage<number>("orvex.liq.slipBps", 100);
   // When user clicks submit, keep going through approveA → approveB → add
   // automatically as each on-chain step confirms and allowance refetches.
   const [autoContinue, setAutoContinue] = useState(false);
@@ -466,7 +467,7 @@ function RemoveLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?:
   const [tokenA, setTokenA] = useState<Token>(() => findTokenByAddr(prefillA) ?? WZKLTC);
   const [tokenB, setTokenB] = useState<Token>(() => findTokenByAddr(prefillB) ?? TOKENS.find((t) => t.symbol === "ORVX")!);
   const [pct, setPct] = useState(50);
-  const [slipBps, setSlipBps] = useState(50);
+  const [slipBps, setSlipBps] = useLocalStorage<number>("orvex.liq.removeSlipBps", 50);
   useEffect(() => {
     const a = findTokenByAddr(prefillA); const b = findTokenByAddr(prefillB);
     if (a) setTokenA(a); if (b) setTokenB(b);
