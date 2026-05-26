@@ -467,7 +467,7 @@ function RemoveLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?:
   const [tokenA, setTokenA] = useState<Token>(() => findTokenByAddr(prefillA) ?? WZKLTC);
   const [tokenB, setTokenB] = useState<Token>(() => findTokenByAddr(prefillB) ?? TOKENS.find((t) => t.symbol === "ORVX")!);
   const [pct, setPct] = useState(50);
-  const [slipBps, setSlipBps] = useState(50);
+  const [slipBps, setSlipBps] = useLocalStorage<number>("orvex.liq.removeSlipBps", 50);
   useEffect(() => {
     const a = findTokenByAddr(prefillA); const b = findTokenByAddr(prefillB);
     if (a) setTokenA(a); if (b) setTokenB(b);
