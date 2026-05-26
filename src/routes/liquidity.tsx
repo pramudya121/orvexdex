@@ -129,7 +129,7 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
   const [amountA, setAmountA] = useState("");
   const [amountB, setAmountB] = useState("");
   const [lastEdited, setLastEdited] = useState<"A" | "B">("A");
-  const [slipBps, setSlipBps] = useState(100);
+  const [slipBps, setSlipBps] = useLocalStorage<number>("orvex.liq.slipBps", 100);
   // When user clicks submit, keep going through approveA → approveB → add
   // automatically as each on-chain step confirms and allowance refetches.
   const [autoContinue, setAutoContinue] = useState(false);
