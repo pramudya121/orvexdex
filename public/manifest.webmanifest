@@ -1,0 +1,17 @@
+{
+  "name": "ORVEX — The Connoisseur's DEX on LitVM",
+  "short_name": "ORVEX",
+  "description": "Connoisseur-grade decentralized exchange on LitVM LiteForge.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#050508",
+  "theme_color": "#7A5CFF",
+  "orientation": "portrait-primary",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }
+  ]
+}
