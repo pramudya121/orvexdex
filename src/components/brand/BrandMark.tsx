@@ -1,4 +1,4 @@
-import logo from "@/assets/orvex-logo.png";
+import { OrvexMonogram } from "@/components/brand/OrvexMonogram";
 
 type Size = "sm" | "md" | "lg" | "xl";
 
