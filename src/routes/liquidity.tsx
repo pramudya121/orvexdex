@@ -12,6 +12,7 @@ import { deadline, fmt, safeParse, slippageMin } from "@/lib/format";
 import { formatUnits } from "viem";
 import { useToast } from "@/components/ui/toaster";
 import { LiquidityCardSkeleton } from "@/components/skeletons";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 type LiqSearch = { a?: string; b?: string; tab?: "add" | "remove" };
 
