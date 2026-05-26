@@ -11,6 +11,7 @@ import { deadline, fmt, safeParse, slippageMin, slippageMax } from "@/lib/format
 import { useToast } from "@/components/ui/toaster";
 import { explorerAddr } from "@/lib/chain";
 import { SwapCardSkeleton } from "@/components/skeletons";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 type SwapSearch = { from?: string; to?: string };
 
