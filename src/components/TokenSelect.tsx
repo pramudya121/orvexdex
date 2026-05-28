@@ -4,6 +4,8 @@ import { useAllTokens, useCustomTokens, useImportToken } from "@/lib/customToken
 import { useAccount, useBalance, useReadContracts } from "wagmi";
 import { erc20Abi } from "@/lib/abis/wzkltc";
 import { fmt } from "@/lib/format";
+import { pushRecentToken, useRecentTokens } from "@/lib/recentTokens";
+
 
 export function TokenSelect({
   value,
