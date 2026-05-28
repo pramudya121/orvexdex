@@ -87,6 +87,30 @@ export function TokenSelect({
               />
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">⌕</span>
             </div>
+            {!q && recentAddrs.length > 0 && (() => {
+              const recentTokens = recentAddrs
+                .map((a) => allTokens.find((t) => t.address.toLowerCase() === a))
+                .filter((t): t is Token => !!t && (!exclude || t.address.toLowerCase() !== exclude.address.toLowerCase()))
+                .slice(0, 6);
+              if (recentTokens.length === 0) return null;
+              return (
+                <div className="mb-3">
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Recent</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {recentTokens.map((t) => (
+                      <button
+                        key={"recent-" + t.address + t.symbol}
+                        onClick={() => { pushRecentToken(t.address); onChange(t); setOpen(false); }}
+                        className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-surface-2 hover:border-primary/60 border border-border text-xs transition"
+                      >
+                        <img src={t.logo} alt="" className="h-4 w-4 rounded-full" />
+                        <span className="font-medium">{t.symbol}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
             <div className="space-y-1 max-h-[55vh] overflow-y-auto pr-1">
               {filtered.length === 0 && !importInfo.token && !importInfo.isLoading && (
                 <div className="text-center text-sm text-muted-foreground py-8">No tokens match "{q}"</div>
@@ -113,7 +137,7 @@ export function TokenSelect({
               {filtered.map((t) => (
                 <button
                   key={t.address + t.symbol}
-                  onClick={() => { onChange(t); setOpen(false); }}
+                  onClick={() => { pushRecentToken(t.address); onChange(t); setOpen(false); }}
                   className={`w-full flex items-center gap-3 p-3 rounded-xl transition ${value.address === t.address && value.symbol === t.symbol ? "bg-primary/10 border border-primary/40" : "hover:bg-surface-2 border border-transparent"}`}
                 >
                   <img src={t.logo} alt={`${t.symbol} token logo`} className="h-8 w-8 rounded-full" />
