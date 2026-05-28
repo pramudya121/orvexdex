@@ -15,6 +15,7 @@ import { ToastProvider } from "@/components/ui/toaster";
 import { RouteProgress } from "@/components/layout/RouteProgress";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { CommandPalette } from "@/components/CommandPalette";
+import { WrongNetworkBanner } from "@/components/layout/WrongNetworkBanner";
 
 import appCss from "../styles.css?url";
 
@@ -165,6 +166,7 @@ function RootComponent() {
           <CommandPalette />
           <div className="min-h-screen flex flex-col">
             <Header />
+            <WrongNetworkBanner />
             <main className="flex-1">
               <Outlet />
             </main>
