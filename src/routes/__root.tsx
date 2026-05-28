@@ -16,6 +16,7 @@ import { RouteProgress } from "@/components/layout/RouteProgress";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { CommandPalette } from "@/components/CommandPalette";
 import { WrongNetworkBanner } from "@/components/layout/WrongNetworkBanner";
+import { PwaRegister } from "@/components/layout/PwaRegister";
 
 import appCss from "../styles.css?url";
 
@@ -164,6 +165,7 @@ function RootComponent() {
           <RouteProgress />
           <ScrollToTop />
           <CommandPalette />
+          <PwaRegister />
           <div className="min-h-screen flex flex-col">
             <Header />
             <WrongNetworkBanner />
