@@ -1,4 +1,4 @@
-import { OrvexMonogram } from "@/components/brand/OrvexMonogram";
+import logo from "@/assets/orvex-logo.png";
 
 type Size = "sm" | "md" | "lg" | "xl";
 
@@ -46,7 +46,7 @@ export function BrandMark({
         <span
           className={`relative ${s.box} rounded-xl bg-background/80 backdrop-blur-md inline-flex items-center justify-center animated-border shadow-neon`}
         >
-          <OrvexMonogram className={`${s.img} animate-pulse-glow`} withHalo={false} title={`${wordmark} logo`} />
+          <img src={logo} alt={`${wordmark} logo`} className={`${s.img} animate-pulse-glow`} loading="eager" decoding="async" />
         </span>
       </span>
       {showWordmark && (
