@@ -21,6 +21,7 @@ export function TokenSelect({
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const allTokens = useAllTokens();
+  const recentAddrs = useRecentTokens();
   const { remove: removeCustom, add: addCustom, list: customList } = useCustomTokens();
   const customSet = useMemo(() => new Set(customList.map((t) => t.address.toLowerCase())), [customList]);
   const importInfo = useImportToken(q.trim().startsWith("0x") ? q.trim() : undefined);
