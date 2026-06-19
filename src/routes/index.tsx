@@ -534,15 +534,24 @@ function Landing() {
 
       {/* TICKER */}
       <section className="relative border-y border-border/60 bg-surface-2/30 backdrop-blur overflow-hidden">
-        <div className="flex gap-12 py-4 whitespace-nowrap animate-ticker">
+        <div aria-hidden className="absolute inset-y-0 left-0 w-24 z-10 bg-gradient-to-r from-background to-transparent pointer-events-none" />
+        <div aria-hidden className="absolute inset-y-0 right-0 w-24 z-10 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+        <div className="flex gap-10 py-4 whitespace-nowrap animate-ticker">
           {[...Array(2)].flatMap((_, j) =>
-            TOKENS.map((t) => (
-              <div key={`${j}-${t.symbol}`} className="flex items-center gap-3 text-sm">
-                <img src={t.logo} alt={`${t.symbol} token logo`} className="h-6 w-6 rounded-full" />
-                <span className="font-semibold tracking-wider">{t.symbol}</span>
-                <span className="text-muted-foreground text-xs">{t.name}</span>
-              </div>
-            )),
+            TOKENS.map((t) => {
+              const px = prices?.get(t.address.toLowerCase());
+              const isWzk = t.address.toLowerCase() === wzkAddr;
+              return (
+                <div key={`${j}-${t.symbol}`} className="flex items-center gap-3 text-sm">
+                  <img src={t.logo} alt={`${t.symbol} token logo`} className="h-6 w-6 rounded-full ring-1 ring-primary/30" />
+                  <span className="font-semibold tracking-wider">{t.symbol}</span>
+                  <span className="text-[11px] font-mono text-gradient-gold">
+                    {px ? `${fmtWzk(px, 4)} wzk` : isWzk ? "1.0000 wzk" : "—"}
+                  </span>
+                  <span className="h-1 w-1 rounded-full bg-emerald-400/80 shadow-[0_0_8px_currentColor]" />
+                </div>
+              );
+            }),
           )}
         </div>
       </section>
