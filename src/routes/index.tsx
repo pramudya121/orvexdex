@@ -344,6 +344,73 @@ function Landing() {
         </div>
       </section>
 
+      {/* HOW IT WORKS */}
+      <section className="relative max-w-7xl mx-auto px-4 sm:px-6 pb-12">
+        <div className="text-center mb-10 animate-rise">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-strong border-gold text-[10px] tracking-[0.3em] uppercase text-gradient-gold font-semibold mb-3">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+            How it works
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            From wallet to trade in <span className="text-gradient-luxe-anim">three moves</span>.
+          </h2>
+          <p className="mt-3 text-sm text-muted-foreground max-w-2xl mx-auto">
+            No accounts. No forms. No waiting. Just pure on-chain execution, the way DeFi was meant to feel.
+          </p>
+        </div>
+        <div className="relative grid md:grid-cols-3 gap-5">
+          {/* connecting line for desktop */}
+          <div aria-hidden className="hidden md:block absolute top-12 left-[16%] right-[16%] h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+          {[
+            { n: "01", t: "Connect", b: "MetaMask, Rabby, WalletConnect — your keys, never ours. LitVM is auto-added on first connect.", chip: "5 sec" },
+            { n: "02", t: "Claim & Fund", b: "Grab zkLTC and sample assets from the in-app faucet. Cooldowns prevent abuse, balances arrive instantly.", chip: "10 sec" },
+            { n: "03", t: "Trade", b: "Smart router scans every wzkLTC pair for best execution. Confirm once — settlement is atomic.", chip: "Sub-second" },
+          ].map((s, i) => (
+            <div
+              key={s.n}
+              className="group relative rounded-2xl p-6 glass-strong border-gold card-hover overflow-hidden animate-rise"
+              style={{ animationDelay: `${i * 100}ms` }}
+            >
+              <div aria-hidden className="absolute -top-16 -right-16 w-44 h-44 rounded-full blur-3xl opacity-30 group-hover:opacity-70 transition-opacity duration-500 bg-primary/50" />
+              <div className="relative flex items-start gap-4">
+                <div className="shrink-0 grid place-items-center h-12 w-12 rounded-2xl bg-gradient-luxe text-primary-foreground font-black text-lg shadow-neon">
+                  {s.n}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-lg font-bold">{s.t}</h3>
+                    <span className="text-[10px] tracking-[0.2em] uppercase px-2 py-0.5 rounded-full glass border-gold text-gradient-gold font-semibold">{s.chip}</span>
+                  </div>
+                  <p className="mt-2 text-[13px] text-muted-foreground leading-relaxed">{s.b}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* SOCIAL PROOF / METRICS BAND */}
+      <section className="relative max-w-7xl mx-auto px-4 sm:px-6 pb-12">
+        <div className="relative rounded-3xl overflow-hidden border-gold glass-strong p-8 sm:p-10 animate-rise">
+          <div aria-hidden className="absolute inset-0 grid-bg opacity-[0.08] pointer-events-none" />
+          <div aria-hidden className="absolute -top-32 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full blur-3xl opacity-40 bg-primary/40 animate-pulse-glow" />
+          <div className="relative grid md:grid-cols-4 gap-6 text-center">
+            {[
+              { v: total > 0 ? String(total) : "—", l: "Live Pools", s: "On LitVM" },
+              { v: dex.data ? dex.data.txs24h.toLocaleString() : "—", l: "Swaps · 24h", s: "And counting" },
+              { v: dex.data ? dex.data.uniqueWallets.toLocaleString() : "—", l: "Unique Wallets", s: "Last 24h" },
+              { v: "0.30%", l: "LP Fee", s: "Zero protocol cut" },
+            ].map((m) => (
+              <div key={m.l} className="relative">
+                <div className="text-4xl sm:text-5xl font-extrabold text-gradient-luxe-anim leading-none">{m.v}</div>
+                <div className="mt-2 text-[11px] tracking-[0.25em] uppercase text-foreground/80 font-semibold">{m.l}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">{m.s}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* WHY ORVEX */}
       <section className="relative max-w-7xl mx-auto px-4 sm:px-6 pb-12">
         <div className="text-center mb-10 animate-rise">
