@@ -200,7 +200,16 @@ function SwapPage() {
         toast.push({ title: `Approving ${tokenIn.symbol}…`, hash });
         return;
       }
-      if (!path) return;
+      // Open confirm modal before submitting the swap
+      setConfirmOpen(true);
+    } catch (e: any) {
+      toast.push({ title: "Transaction failed", description: e?.shortMessage || e?.message, type: "error" });
+    }
+  };
+
+  const executeSwap = async () => {
+    if (!address || !path) return;
+    try {
       const dl = deadline(deadlineMin);
       let hash: `0x${string}`;
       if (tradeMode === "exactIn") {
@@ -222,7 +231,6 @@ function SwapPage() {
           });
         }
       } else {
-        // exact-out: send exactly amountOutWei, cap input by slippageMax(effInWei)
         const maxIn = slippageMax(effInWei, slippageBps);
         if (tokenIn.isNative) {
           hash = await writeContractAsync({
@@ -242,6 +250,7 @@ function SwapPage() {
         }
       }
       setPendingHash(hash);
+      setConfirmOpen(false);
       toast.push({ title: "Swapping…", hash });
     } catch (e: any) {
       toast.push({ title: "Transaction failed", description: e?.shortMessage || e?.message, type: "error" });
