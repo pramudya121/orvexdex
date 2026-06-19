@@ -480,6 +480,22 @@ function SwapPage() {
           </div>
         </div>
       </div>
+
+      <SwapConfirmModal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={executeSwap}
+        pending={isPending || !!pendingHash}
+        tokenIn={tokenIn}
+        tokenOut={tokenOut}
+        amountInWei={effInWei}
+        amountOutWei={effOutWei}
+        slippageBps={slippageBps}
+        tradeMode={tradeMode}
+        priceImpact={priceImpact}
+        hops={route.hops as 1 | 2}
+        deadlineMin={deadlineMin}
+      />
     </div>
   );
 }
