@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/toaster";
 import { explorerAddr } from "@/lib/chain";
 import { SwapCardSkeleton } from "@/components/skeletons";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { SwapConfirmModal } from "@/components/SwapConfirmModal";
 
 type SwapSearch = { from?: string; to?: string };
 
@@ -62,6 +63,7 @@ function SwapPage() {
   const [slippageBps, setSlippageBps] = useLocalStorage<number>("orvex.slippageBps", 50); // 0.50% default
   const [deadlineMin, setDeadlineMin] = useLocalStorage<number>("orvex.deadlineMin", 20);
   const [showSettings, setShowSettings] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     const a = findTokenByAddr(sp.from);
@@ -198,7 +200,16 @@ function SwapPage() {
         toast.push({ title: `Approving ${tokenIn.symbol}…`, hash });
         return;
       }
-      if (!path) return;
+      // Open confirm modal before submitting the swap
+      setConfirmOpen(true);
+    } catch (e: any) {
+      toast.push({ title: "Transaction failed", description: e?.shortMessage || e?.message, type: "error" });
+    }
+  };
+
+  const executeSwap = async () => {
+    if (!address || !path) return;
+    try {
       const dl = deadline(deadlineMin);
       let hash: `0x${string}`;
       if (tradeMode === "exactIn") {
@@ -220,7 +231,6 @@ function SwapPage() {
           });
         }
       } else {
-        // exact-out: send exactly amountOutWei, cap input by slippageMax(effInWei)
         const maxIn = slippageMax(effInWei, slippageBps);
         if (tokenIn.isNative) {
           hash = await writeContractAsync({
@@ -240,6 +250,7 @@ function SwapPage() {
         }
       }
       setPendingHash(hash);
+      setConfirmOpen(false);
       toast.push({ title: "Swapping…", hash });
     } catch (e: any) {
       toast.push({ title: "Transaction failed", description: e?.shortMessage || e?.message, type: "error" });
@@ -469,6 +480,22 @@ function SwapPage() {
           </div>
         </div>
       </div>
+
+      <SwapConfirmModal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={executeSwap}
+        pending={isPending || !!pendingHash}
+        tokenIn={tokenIn}
+        tokenOut={tokenOut}
+        amountInWei={effInWei}
+        amountOutWei={effOutWei}
+        slippageBps={slippageBps}
+        tradeMode={tradeMode}
+        priceImpact={priceImpact}
+        hops={route.hops as 1 | 2}
+        deadlineMin={deadlineMin}
+      />
     </div>
   );
 }
