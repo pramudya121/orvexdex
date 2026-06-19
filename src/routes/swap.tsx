@@ -63,6 +63,7 @@ function SwapPage() {
   const [slippageBps, setSlippageBps] = useLocalStorage<number>("orvex.slippageBps", 50); // 0.50% default
   const [deadlineMin, setDeadlineMin] = useLocalStorage<number>("orvex.deadlineMin", 20);
   const [showSettings, setShowSettings] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     const a = findTokenByAddr(sp.from);
