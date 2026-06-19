@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/toaster";
 import { explorerAddr } from "@/lib/chain";
 import { SwapCardSkeleton } from "@/components/skeletons";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { SwapConfirmModal } from "@/components/SwapConfirmModal";
 
 type SwapSearch = { from?: string; to?: string };
 
