@@ -15,7 +15,7 @@ import { TOKENS } from "@/lib/tokens";
 import { useStakingMeta, TokenIcons } from "@/lib/stakingMeta";
 import { useToast } from "@/components/ui/toaster";
 
-export const Route = createFileRoute("/admin/farm")({
+export const Route = createFileRoute("/admin-farm")({
   component: AdminFarmPage,
   head: () => ({
     meta: [

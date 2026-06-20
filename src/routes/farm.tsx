@@ -77,7 +77,7 @@ function FarmPage() {
               </Link>
               {isOwner && (
                 <Link
-                  to="/admin/farm"
+                  to="/admin-farm"
                   className="px-4 py-2 rounded-xl bg-gradient-brand text-primary-foreground text-sm font-semibold shadow-neon hover:scale-[1.02] transition"
                 >
                   ⚙ Admin Panel
