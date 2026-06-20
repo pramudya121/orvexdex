@@ -27,6 +27,7 @@ export const ADDR = {
   ZEC: "0x0177E73214265D1d6f29a273155803Af5Bf47cFa",
   XMR: "0x05466944d61662225ad19916725975230bb5b2B7",
   ORVX: "0x7216EAb89cDbb52D3D8A0e2F305F9Afb5cE122a3",
+  farm: "0x24fC2fF6B3fdaa559d95A542748cA03f5Fedef98",
 } as const;
 
 export const explorerTx = (hash: string) =>
