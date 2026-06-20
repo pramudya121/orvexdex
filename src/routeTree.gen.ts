@@ -18,9 +18,9 @@ import { Route as FaucetRouteImport } from './routes/faucet'
 import { Route as FarmRouteImport } from './routes/farm'
 import { Route as BrandRouteImport } from './routes/brand'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
+import { Route as AdminFarmRouteImport } from './routes/admin-farm'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AdminFarmRouteImport } from './routes/admin.farm'
 
 const SwapRoute = SwapRouteImport.update({
   id: '/swap',
@@ -67,6 +67,11 @@ const AnalyticsRoute = AnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminFarmRoute = AdminFarmRouteImport.update({
+  id: '/admin-farm',
+  path: '/admin-farm',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -77,15 +82,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminFarmRoute = AdminFarmRouteImport.update({
-  id: '/farm',
-  path: '/farm',
-  getParentRoute: () => AdminRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
+  '/admin': typeof AdminRoute
+  '/admin-farm': typeof AdminFarmRoute
   '/analytics': typeof AnalyticsRoute
   '/brand': typeof BrandRoute
   '/farm': typeof FarmRoute
@@ -95,11 +96,11 @@ export interface FileRoutesByFullPath {
   '/portfolio': typeof PortfolioRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/swap': typeof SwapRoute
-  '/admin/farm': typeof AdminFarmRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
+  '/admin': typeof AdminRoute
+  '/admin-farm': typeof AdminFarmRoute
   '/analytics': typeof AnalyticsRoute
   '/brand': typeof BrandRoute
   '/farm': typeof FarmRoute
@@ -109,12 +110,12 @@ export interface FileRoutesByTo {
   '/portfolio': typeof PortfolioRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/swap': typeof SwapRoute
-  '/admin/farm': typeof AdminFarmRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
+  '/admin': typeof AdminRoute
+  '/admin-farm': typeof AdminFarmRoute
   '/analytics': typeof AnalyticsRoute
   '/brand': typeof BrandRoute
   '/farm': typeof FarmRoute
@@ -124,13 +125,13 @@ export interface FileRoutesById {
   '/portfolio': typeof PortfolioRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/swap': typeof SwapRoute
-  '/admin/farm': typeof AdminFarmRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/admin'
+    | '/admin-farm'
     | '/analytics'
     | '/brand'
     | '/farm'
@@ -140,11 +141,11 @@ export interface FileRouteTypes {
     | '/portfolio'
     | '/sitemap.xml'
     | '/swap'
-    | '/admin/farm'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
+    | '/admin-farm'
     | '/analytics'
     | '/brand'
     | '/farm'
@@ -154,11 +155,11 @@ export interface FileRouteTypes {
     | '/portfolio'
     | '/sitemap.xml'
     | '/swap'
-    | '/admin/farm'
   id:
     | '__root__'
     | '/'
     | '/admin'
+    | '/admin-farm'
     | '/analytics'
     | '/brand'
     | '/farm'
@@ -168,12 +169,12 @@ export interface FileRouteTypes {
     | '/portfolio'
     | '/sitemap.xml'
     | '/swap'
-    | '/admin/farm'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRouteWithChildren
+  AdminRoute: typeof AdminRoute
+  AdminFarmRoute: typeof AdminFarmRoute
   AnalyticsRoute: typeof AnalyticsRoute
   BrandRoute: typeof BrandRoute
   FarmRoute: typeof FarmRoute
@@ -250,6 +251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-farm': {
+      id: '/admin-farm'
+      path: '/admin-farm'
+      fullPath: '/admin-farm'
+      preLoaderRoute: typeof AdminFarmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -264,29 +272,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/farm': {
-      id: '/admin/farm'
-      path: '/farm'
-      fullPath: '/admin/farm'
-      preLoaderRoute: typeof AdminFarmRouteImport
-      parentRoute: typeof AdminRoute
-    }
   }
 }
 
-interface AdminRouteChildren {
-  AdminFarmRoute: typeof AdminFarmRoute
-}
-
-const AdminRouteChildren: AdminRouteChildren = {
-  AdminFarmRoute: AdminFarmRoute,
-}
-
-const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRouteWithChildren,
+  AdminRoute: AdminRoute,
+  AdminFarmRoute: AdminFarmRoute,
   AnalyticsRoute: AnalyticsRoute,
   BrandRoute: BrandRoute,
   FarmRoute: FarmRoute,
