@@ -15,8 +15,10 @@ import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as PoolsRouteImport } from './routes/pools'
 import { Route as LiquidityRouteImport } from './routes/liquidity'
 import { Route as FaucetRouteImport } from './routes/faucet'
+import { Route as FarmRouteImport } from './routes/farm'
 import { Route as BrandRouteImport } from './routes/brand'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
+import { Route as AdminFarmRouteImport } from './routes/admin-farm'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -50,6 +52,11 @@ const FaucetRoute = FaucetRouteImport.update({
   path: '/faucet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FarmRoute = FarmRouteImport.update({
+  id: '/farm',
+  path: '/farm',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BrandRoute = BrandRouteImport.update({
   id: '/brand',
   path: '/brand',
@@ -58,6 +65,11 @@ const BrandRoute = BrandRouteImport.update({
 const AnalyticsRoute = AnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminFarmRoute = AdminFarmRouteImport.update({
+  id: '/admin-farm',
+  path: '/admin-farm',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -74,8 +86,10 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-farm': typeof AdminFarmRoute
   '/analytics': typeof AnalyticsRoute
   '/brand': typeof BrandRoute
+  '/farm': typeof FarmRoute
   '/faucet': typeof FaucetRoute
   '/liquidity': typeof LiquidityRoute
   '/pools': typeof PoolsRoute
@@ -86,8 +100,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-farm': typeof AdminFarmRoute
   '/analytics': typeof AnalyticsRoute
   '/brand': typeof BrandRoute
+  '/farm': typeof FarmRoute
   '/faucet': typeof FaucetRoute
   '/liquidity': typeof LiquidityRoute
   '/pools': typeof PoolsRoute
@@ -99,8 +115,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-farm': typeof AdminFarmRoute
   '/analytics': typeof AnalyticsRoute
   '/brand': typeof BrandRoute
+  '/farm': typeof FarmRoute
   '/faucet': typeof FaucetRoute
   '/liquidity': typeof LiquidityRoute
   '/pools': typeof PoolsRoute
@@ -113,8 +131,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/admin-farm'
     | '/analytics'
     | '/brand'
+    | '/farm'
     | '/faucet'
     | '/liquidity'
     | '/pools'
@@ -125,8 +145,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/admin-farm'
     | '/analytics'
     | '/brand'
+    | '/farm'
     | '/faucet'
     | '/liquidity'
     | '/pools'
@@ -137,8 +159,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/admin-farm'
     | '/analytics'
     | '/brand'
+    | '/farm'
     | '/faucet'
     | '/liquidity'
     | '/pools'
@@ -150,8 +174,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  AdminFarmRoute: typeof AdminFarmRoute
   AnalyticsRoute: typeof AnalyticsRoute
   BrandRoute: typeof BrandRoute
+  FarmRoute: typeof FarmRoute
   FaucetRoute: typeof FaucetRoute
   LiquidityRoute: typeof LiquidityRoute
   PoolsRoute: typeof PoolsRoute
@@ -204,6 +230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FaucetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/farm': {
+      id: '/farm'
+      path: '/farm'
+      fullPath: '/farm'
+      preLoaderRoute: typeof FarmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/brand': {
       id: '/brand'
       path: '/brand'
@@ -216,6 +249,13 @@ declare module '@tanstack/react-router' {
       path: '/analytics'
       fullPath: '/analytics'
       preLoaderRoute: typeof AnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-farm': {
+      id: '/admin-farm'
+      path: '/admin-farm'
+      fullPath: '/admin-farm'
+      preLoaderRoute: typeof AdminFarmRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -238,8 +278,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  AdminFarmRoute: AdminFarmRoute,
   AnalyticsRoute: AnalyticsRoute,
   BrandRoute: BrandRoute,
+  FarmRoute: FarmRoute,
   FaucetRoute: FaucetRoute,
   LiquidityRoute: LiquidityRoute,
   PoolsRoute: PoolsRoute,
