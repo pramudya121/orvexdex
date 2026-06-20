@@ -15,10 +15,12 @@ import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as PoolsRouteImport } from './routes/pools'
 import { Route as LiquidityRouteImport } from './routes/liquidity'
 import { Route as FaucetRouteImport } from './routes/faucet'
+import { Route as FarmRouteImport } from './routes/farm'
 import { Route as BrandRouteImport } from './routes/brand'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminFarmRouteImport } from './routes/admin.farm'
 
 const SwapRoute = SwapRouteImport.update({
   id: '/swap',
@@ -50,6 +52,11 @@ const FaucetRoute = FaucetRouteImport.update({
   path: '/faucet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FarmRoute = FarmRouteImport.update({
+  id: '/farm',
+  path: '/farm',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BrandRoute = BrandRouteImport.update({
   id: '/brand',
   path: '/brand',
@@ -70,43 +77,54 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminFarmRoute = AdminFarmRouteImport.update({
+  id: '/farm',
+  path: '/farm',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/brand': typeof BrandRoute
+  '/farm': typeof FarmRoute
   '/faucet': typeof FaucetRoute
   '/liquidity': typeof LiquidityRoute
   '/pools': typeof PoolsRoute
   '/portfolio': typeof PortfolioRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/swap': typeof SwapRoute
+  '/admin/farm': typeof AdminFarmRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/brand': typeof BrandRoute
+  '/farm': typeof FarmRoute
   '/faucet': typeof FaucetRoute
   '/liquidity': typeof LiquidityRoute
   '/pools': typeof PoolsRoute
   '/portfolio': typeof PortfolioRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/swap': typeof SwapRoute
+  '/admin/farm': typeof AdminFarmRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/brand': typeof BrandRoute
+  '/farm': typeof FarmRoute
   '/faucet': typeof FaucetRoute
   '/liquidity': typeof LiquidityRoute
   '/pools': typeof PoolsRoute
   '/portfolio': typeof PortfolioRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/swap': typeof SwapRoute
+  '/admin/farm': typeof AdminFarmRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -115,43 +133,50 @@ export interface FileRouteTypes {
     | '/admin'
     | '/analytics'
     | '/brand'
+    | '/farm'
     | '/faucet'
     | '/liquidity'
     | '/pools'
     | '/portfolio'
     | '/sitemap.xml'
     | '/swap'
+    | '/admin/farm'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
     | '/analytics'
     | '/brand'
+    | '/farm'
     | '/faucet'
     | '/liquidity'
     | '/pools'
     | '/portfolio'
     | '/sitemap.xml'
     | '/swap'
+    | '/admin/farm'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/analytics'
     | '/brand'
+    | '/farm'
     | '/faucet'
     | '/liquidity'
     | '/pools'
     | '/portfolio'
     | '/sitemap.xml'
     | '/swap'
+    | '/admin/farm'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AnalyticsRoute: typeof AnalyticsRoute
   BrandRoute: typeof BrandRoute
+  FarmRoute: typeof FarmRoute
   FaucetRoute: typeof FaucetRoute
   LiquidityRoute: typeof LiquidityRoute
   PoolsRoute: typeof PoolsRoute
@@ -204,6 +229,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FaucetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/farm': {
+      id: '/farm'
+      path: '/farm'
+      fullPath: '/farm'
+      preLoaderRoute: typeof FarmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/brand': {
       id: '/brand'
       path: '/brand'
@@ -232,14 +264,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/farm': {
+      id: '/admin/farm'
+      path: '/farm'
+      fullPath: '/admin/farm'
+      preLoaderRoute: typeof AdminFarmRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminFarmRoute: typeof AdminFarmRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminFarmRoute: AdminFarmRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   AnalyticsRoute: AnalyticsRoute,
   BrandRoute: BrandRoute,
+  FarmRoute: FarmRoute,
   FaucetRoute: FaucetRoute,
   LiquidityRoute: LiquidityRoute,
   PoolsRoute: PoolsRoute,
