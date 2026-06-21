@@ -1,0 +1,22 @@
+export const domainRegistrarAbi = [
+  { inputs: [{ name: "controller", type: "address" }], name: "addController", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "controller", type: "address" }], name: "removeController", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "to", type: "address" }, { name: "tokenId", type: "uint256" }], name: "approve", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "tokenId", type: "uint256" }], name: "burn", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "to", type: "address" }, { name: "tokenId", type: "uint256" }, { name: "expiry", type: "uint256" }], name: "mint", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "tokenId", type: "uint256" }, { name: "label", type: "bytes32" }], name: "reclaim", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "from", type: "address" }, { name: "to", type: "address" }, { name: "tokenId", type: "uint256" }], name: "transferFrom", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "account", type: "address" }], name: "balanceOf", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
+  { inputs: [{ name: "", type: "address" }], name: "controllers", outputs: [{ type: "bool" }], stateMutability: "view", type: "function" },
+  { inputs: [{ name: "", type: "uint256" }], name: "expiries", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
+  { inputs: [{ name: "tokenId", type: "uint256" }], name: "getApproved", outputs: [{ type: "address" }], stateMutability: "view", type: "function" },
+  { inputs: [{ name: "tokenId", type: "uint256" }], name: "isExpired", outputs: [{ type: "bool" }], stateMutability: "view", type: "function" },
+  { inputs: [], name: "owner", outputs: [{ type: "address" }], stateMutability: "view", type: "function" },
+  { inputs: [{ name: "tokenId", type: "uint256" }], name: "ownerOf", outputs: [{ type: "address" }], stateMutability: "view", type: "function" },
+  { inputs: [], name: "registry", outputs: [{ type: "address" }], stateMutability: "view", type: "function" },
+  { anonymous: false, inputs: [
+    { indexed: true, name: "from", type: "address" },
+    { indexed: true, name: "to", type: "address" },
+    { indexed: true, name: "tokenId", type: "uint256" },
+  ], name: "Transfer", type: "event" },
+] as const;
