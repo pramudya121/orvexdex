@@ -421,8 +421,8 @@ function VaultDrawer({ strategy, onClose }: { strategy: Strategy; onClose: () =>
 
   return (
     <div className="fixed inset-0 z-50 flex">
-      <button className="flex-1 bg-black/70 backdrop-blur-sm animate-fade-in" onClick={onClose} aria-label="Close drawer" />
-      <div className="w-full max-w-md h-full bg-background border-l border-border shadow-2xl overflow-y-auto animate-slide-in-right">
+      <button className="flex-1 bg-black/70 backdrop-blur-sm " onClick={onClose} aria-label="Close drawer" />
+      <div className="w-full max-w-md h-full bg-background border-l border-border shadow-2xl overflow-y-auto animate-rise">
         <div className="p-5 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={token.logo} alt={token.symbol} className="h-9 w-9 rounded-full" />
