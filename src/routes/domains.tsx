@@ -8,7 +8,7 @@ import {
   useWaitForTransactionReceipt,
   usePublicClient,
 } from "wagmi";
-import { keccak256, toBytes, formatEther, parseAbiItem, namehash } from "viem";
+import { keccak256, toBytes, formatEther, namehash } from "viem";
 import { ADDR, DOMAIN_TLD, explorerTx } from "@/lib/chain";
 import { domainControllerAbi } from "@/lib/abis/domainController";
 import { domainRegistrarAbi } from "@/lib/abis/domainRegistrar";
