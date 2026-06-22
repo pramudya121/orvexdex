@@ -1,0 +1,15 @@
+export const multiTokenVaultAbi = [
+  { inputs: [{ name: "_aiManager", type: "address" }], stateMutability: "nonpayable", type: "constructor" },
+  { anonymous: false, inputs: [{ indexed: true, name: "oldManager", type: "address" }, { indexed: true, name: "newManager", type: "address" }], name: "AIManagerChanged", type: "event" },
+  { anonymous: false, inputs: [{ indexed: true, name: "user", type: "address" }, { indexed: true, name: "token", type: "address" }, { indexed: false, name: "assets", type: "uint256" }, { indexed: false, name: "shares", type: "uint256" }], name: "Deposit", type: "event" },
+  { anonymous: false, inputs: [{ indexed: true, name: "user", type: "address" }, { indexed: true, name: "token", type: "address" }, { indexed: false, name: "assets", type: "uint256" }, { indexed: false, name: "shares", type: "uint256" }], name: "Withdraw", type: "event" },
+  { anonymous: false, inputs: [{ indexed: true, name: "token", type: "address" }], name: "Rebalance", type: "event" },
+  { inputs: [], name: "aiManager", outputs: [{ name: "", type: "address" }], stateMutability: "view", type: "function" },
+  { inputs: [{ name: "token", type: "address" }, { name: "assets", type: "uint256" }], name: "deposit", outputs: [{ name: "shares", type: "uint256" }], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "token", type: "address" }], name: "rebalance", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "newAI", type: "address" }], name: "setAIManager", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "", type: "address" }, { name: "", type: "address" }], name: "shareBalance", outputs: [{ name: "", type: "uint256" }], stateMutability: "view", type: "function" },
+  { inputs: [{ name: "token", type: "address" }], name: "totalAssets", outputs: [{ name: "", type: "uint256" }], stateMutability: "view", type: "function" },
+  { inputs: [{ name: "", type: "address" }], name: "totalShares", outputs: [{ name: "", type: "uint256" }], stateMutability: "view", type: "function" },
+  { inputs: [{ name: "token", type: "address" }, { name: "assets", type: "uint256" }], name: "withdraw", outputs: [{ name: "shares", type: "uint256" }], stateMutability: "nonpayable", type: "function" },
+] as const;

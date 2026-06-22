@@ -14,6 +14,7 @@ const NAV = [
   { to: "/pools", label: "Pools" },
   { to: "/farm", label: "Farm" },
   { to: "/domains", label: "Domains" },
+  { to: "/ai", label: "AI Hub" },
   { to: "/analytics", label: "Analytics" },
   { to: "/portfolio", label: "Portfolio" },
   { to: "/faucet", label: "Faucet" },

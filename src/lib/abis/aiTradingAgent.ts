@@ -1,0 +1,15 @@
+export const aiTradingAgentAbi = [
+  { inputs: [{ name: "_owner", type: "address" }], stateMutability: "nonpayable", type: "constructor" },
+  { stateMutability: "payable", type: "receive" },
+  { anonymous: false, inputs: [{ indexed: true, name: "to", type: "address" }, { indexed: false, name: "amount", type: "uint256" }], name: "EmergencyWithdraw", type: "event" },
+  { anonymous: false, inputs: [], name: "SessionKeyRevoked", type: "event" },
+  { anonymous: false, inputs: [{ indexed: true, name: "sessionKey", type: "address" }, { indexed: false, name: "expiry", type: "uint256" }], name: "SessionKeySet", type: "event" },
+  { anonymous: false, inputs: [{ indexed: true, name: "router", type: "address" }, { indexed: false, name: "value", type: "uint256" }, { indexed: false, name: "path", type: "address[]" }], name: "TradeExecuted", type: "event" },
+  { inputs: [], name: "cancelDelegation", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [], name: "emergencyWithdraw", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "router", type: "address" }, { name: "amountOutMin", type: "uint256" }, { name: "path", type: "address[]" }, { name: "deadline", type: "uint256" }], name: "executeTrade", outputs: [], stateMutability: "payable", type: "function" },
+  { inputs: [], name: "owner", outputs: [{ name: "", type: "address" }], stateMutability: "view", type: "function" },
+  { inputs: [], name: "sessionExpiry", outputs: [{ name: "", type: "uint256" }], stateMutability: "view", type: "function" },
+  { inputs: [], name: "sessionKey", outputs: [{ name: "", type: "address" }], stateMutability: "view", type: "function" },
+  { inputs: [{ name: "_sessionKey", type: "address" }, { name: "duration", type: "uint256" }], name: "setSessionKey", outputs: [], stateMutability: "nonpayable", type: "function" },
+] as const;

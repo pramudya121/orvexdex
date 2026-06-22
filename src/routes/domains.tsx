@@ -302,43 +302,27 @@ function DomainsPage() {
     if (!address || !publicClient) return;
     setLoadingMine(true);
     try {
-      const evt = parseAbiItem(
-        "event DomainRegistered(string indexed name, address indexed owner, uint256 expires, uint256 price)",
-      );
-      const logs = await publicClient.getLogs({
-        address: ADDR.domainController,
-        event: evt,
-        args: { owner: address },
-        fromBlock: 0n,
-        toBlock: "latest",
-      });
-      // string indexed disimpan sebagai hash → ambil current state per nama lewat domainInfo
-      // Kita pakai unique tx + cek balik dengan domains() bila perlu. Untuk MVP, simpan dari nama tx input data.
       const seen = new Map<string, number>();
-      for (const log of logs) {
-        // Coba decode nama dari calldata transaksi register() jika perlu
+      // Sumber utama: cache lokal nama yang sukses di-mint dari device ini.
+      const cached = JSON.parse(
+        localStorage.getItem("orvex.domain.owned." + address.toLowerCase()) || "[]",
+      ) as string[];
+      // Tambahkan nama yang sedang dicek bila terbukti milik user.
+      if (checkedName && !cached.includes(checkedName)) cached.push(checkedName);
+
+      for (const n of cached) {
         try {
-          const tx = await publicClient.getTransaction({ hash: log.transactionHash });
-          // input: register(string name, address registrant, uint256 duration, bytes32 secret)
-          // Decode by reading via domains() with brute force isn't possible. Instead grab name from tx via simulate? Skip — use storage.
-          // Fallback: ambil nama dari local cache pendingHash pasca-commit yang berhasil mint, tetapi paling aman: scan localStorage.
-          const cached = JSON.parse(localStorage.getItem("orvex.domain.owned." + address.toLowerCase()) || "[]") as string[];
-          for (const n of cached) {
-            if (!seen.has(n)) {
-              const info = (await publicClient.readContract({
-                address: ADDR.domainController,
-                abi: domainControllerAbi,
-                functionName: "domains",
-                args: [n],
-              })) as readonly [`0x${string}`, bigint];
-              if (info[0].toLowerCase() === address.toLowerCase()) {
-                seen.set(n, Number(info[1]));
-              }
-            }
+          const info = (await publicClient.readContract({
+            address: ADDR.domainController,
+            abi: domainControllerAbi,
+            functionName: "domains",
+            args: [n],
+          })) as readonly [`0x${string}`, bigint];
+          if (info[0].toLowerCase() === address.toLowerCase()) {
+            seen.set(n, Number(info[1]));
           }
-          void tx;
         } catch {
-          // ignore
+          // ignore single failure
         }
       }
       const list: MyDomain[] = Array.from(seen.entries()).map(([n, exp]) => ({ name: n, expires: exp }));
@@ -348,7 +332,7 @@ function DomainsPage() {
     } finally {
       setLoadingMine(false);
     }
-  }, [address, publicClient]);
+  }, [address, publicClient, checkedName]);
 
   // Cache nama saat mint sukses
   useEffect(() => {
