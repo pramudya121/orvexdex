@@ -32,6 +32,10 @@ export const ADDR = {
   domainRegistrar: "0x14eBDFe5b92E1e4ddC0059627b729DcB2E361594",
   domainResolver: "0x6BaBa44Fa03E79f1C849372079a33F8182D5bddA",
   domainRegistry: "0xc7291D28450c1c3f25F5DfB1Bc1058fde35A9524",
+  aiGuardrail: "0x2F2428bBa5a0172eb09f860535549c77D0Bb73C1",
+  aiExecutionController: "0x163ee8a51a9Cd0D24A10D7bD336E5f94845fE8AA",
+  multiTokenVault: "0x10A15b2cd5a2C664C4554636b45E7c297B21d5Db",
+  aiTradingAgent: "0x6A14dB4B430F28741Cef47E7AAabe0e9c6409e39",
 } as const;
 
 export const DOMAIN_TLD = "orvex";

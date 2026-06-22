@@ -19,6 +19,7 @@ import { Route as FarmRouteImport } from './routes/farm'
 import { Route as DomainsRouteImport } from './routes/domains'
 import { Route as BrandRouteImport } from './routes/brand'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
+import { Route as AiRouteImport } from './routes/ai'
 import { Route as AdminFarmRouteImport } from './routes/admin-farm'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -73,6 +74,11 @@ const AnalyticsRoute = AnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AiRoute = AiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminFarmRoute = AdminFarmRouteImport.update({
   id: '/admin-farm',
   path: '/admin-farm',
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/admin-farm': typeof AdminFarmRoute
+  '/ai': typeof AiRoute
   '/analytics': typeof AnalyticsRoute
   '/brand': typeof BrandRoute
   '/domains': typeof DomainsRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/admin-farm': typeof AdminFarmRoute
+  '/ai': typeof AiRoute
   '/analytics': typeof AnalyticsRoute
   '/brand': typeof BrandRoute
   '/domains': typeof DomainsRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/admin-farm': typeof AdminFarmRoute
+  '/ai': typeof AiRoute
   '/analytics': typeof AnalyticsRoute
   '/brand': typeof BrandRoute
   '/domains': typeof DomainsRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin-farm'
+    | '/ai'
     | '/analytics'
     | '/brand'
     | '/domains'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin-farm'
+    | '/ai'
     | '/analytics'
     | '/brand'
     | '/domains'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin-farm'
+    | '/ai'
     | '/analytics'
     | '/brand'
     | '/domains'
@@ -187,6 +199,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AdminFarmRoute: typeof AdminFarmRoute
+  AiRoute: typeof AiRoute
   AnalyticsRoute: typeof AnalyticsRoute
   BrandRoute: typeof BrandRoute
   DomainsRoute: typeof DomainsRoute
@@ -271,6 +284,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ai': {
+      id: '/ai'
+      path: '/ai'
+      fullPath: '/ai'
+      preLoaderRoute: typeof AiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin-farm': {
       id: '/admin-farm'
       path: '/admin-farm'
@@ -299,6 +319,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AdminFarmRoute: AdminFarmRoute,
+  AiRoute: AiRoute,
   AnalyticsRoute: AnalyticsRoute,
   BrandRoute: BrandRoute,
   DomainsRoute: DomainsRoute,
