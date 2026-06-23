@@ -41,11 +41,7 @@ export function Walkthrough({
   }, [open, step, idx, onStepChange]);
 
 
-  useEffect(() => {
-    if (open) setIdx(0);
-  }, [open]);
 
-  const step = steps[idx];
 
   useLayoutEffect(() => {
     if (!open || !step) return;
