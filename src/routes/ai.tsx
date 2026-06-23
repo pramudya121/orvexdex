@@ -590,7 +590,7 @@ function CopilotTab() {
       setPending(h);
       toast.push({ title: "Revoking AI access…", hash: h, type: "info" });
     } catch (e) {
-      toast.push({ title: "Cabut akses failed", description: getErr(e), type: "error" });
+      toast.push({ title: "Revoke access failed", description: getErr(e), type: "error" });
     }
   };
 
