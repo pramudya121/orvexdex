@@ -15,6 +15,8 @@ import { domainRegistrarAbi } from "@/lib/abis/domainRegistrar";
 import { domainResolverAbi } from "@/lib/abis/domainResolver";
 import { domainRegistryAbi } from "@/lib/abis/domainRegistry";
 import { useToast } from "@/components/ui/toaster";
+import { notifyDomainUpdated } from "@/lib/primaryDomain";
+
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import {
   Search,
@@ -284,9 +286,11 @@ function DomainsPage() {
       });
       localStorage.setItem(PRIMARY_KEY + ":" + address.toLowerCase(), domainName);
       setPrimaryLocal(domainName);
+      notifyDomainUpdated();
       setPendingHash(h);
       setPendingLabel("Set primary");
-      toast.push({ title: `${domainName}.${DOMAIN_TLD} dijadikan primary`, hash: h });
+      toast.push({ title: `${domainName}.${DOMAIN_TLD} set as primary`, hash: h });
+
     } catch (e) {
       toast.push({ title: "Gagal set primary", description: getErr(e), type: "error" });
     }
@@ -343,9 +347,18 @@ function DomainsPage() {
         cur.push(checkedName);
         localStorage.setItem(key, JSON.stringify(cur));
       }
+      // If user has no primary yet, auto-set this domain as primary locally
+      // so the header instantly shows their new identity.
+      const pKey = PRIMARY_KEY + ":" + address.toLowerCase();
+      if (!localStorage.getItem(pKey)) {
+        localStorage.setItem(pKey, checkedName);
+        setPrimaryLocal(checkedName);
+      }
+      notifyDomainUpdated();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receipt.isSuccess]);
+
 
   useEffect(() => {
     void refreshMyDomains();
