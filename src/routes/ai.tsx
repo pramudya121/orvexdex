@@ -17,6 +17,13 @@ import { multiTokenVaultAbi } from "@/lib/abis/multiTokenVault";
 import { aiTradingAgentAbi } from "@/lib/abis/aiTradingAgent";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { useToast } from "@/components/ui/toaster";
+import { Walkthrough, type TourStep } from "@/components/Walkthrough";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Sparkles,
   ShieldCheck,
@@ -37,7 +44,10 @@ import {
   XCircle,
   Clock,
   Wallet,
+  HelpCircle,
+  Info,
 } from "lucide-react";
+
 
 const getErr = (e: unknown) => {
   if (e instanceof Error) return e.message;
