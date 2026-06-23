@@ -87,11 +87,41 @@ const TABS: { id: TabId; label: string; icon: React.ComponentType<{ className?: 
   { id: "console", label: "Automation Console", icon: TerminalIcon },
 ];
 
+const TOUR_KEY = "orvex.ai.tour.v1";
+
+const TAB_HINTS: Record<TabId, string> = {
+  vaults: "Deposit into AI-managed strategy vaults",
+  copilot: "Delegate trading to your personal AI agent",
+  guardrail: "Configure on-chain safety limits",
+  console: "Live executor stream & controls",
+};
+
+const TOUR_STEPS: (TourStep & { tab?: TabId })[] = [
+  { target: "tabs", tab: "vaults", title: "Four Powerful Modules", body: "Switch between Collective Vaults, your Personal Copilot, Risk Guardrails, and the Automation Console. Each tab maps to a real on-chain contract.", placement: "bottom" },
+  { target: "vault-card", tab: "vaults", title: "AI-Managed Vaults", body: "Deposit assets into ERC-4626-style strategies. The AI auto-rebalances positions. TVL and 7D trend update live from the chain.", placement: "bottom" },
+  { target: "emergency-stop", tab: "copilot", title: "Emergency Stop", body: "Instantly revoke all AI delegation on-chain — your funds stay yours. One click calls cancelDelegation().", placement: "bottom" },
+  { target: "activate-agent", tab: "copilot", title: "Delegate to Your Copilot", body: "Authorize a session key for 1–30 days. The AI can trade within your Guardrail limits — nothing more.", placement: "top" },
+  { target: "guardrail-params", tab: "guardrail", title: "Set Hard Risk Limits", body: "Cap slippage, daily volume, and trade size. The Guardrail contract enforces these for every AI transaction.", placement: "bottom" },
+  { target: "whitelist", tab: "guardrail", title: "Token Whitelist", body: "Only whitelisted tokens are tradable by the AI. Toggle any asset on or off in one transaction.", placement: "top" },
+  { target: "console-terminal", tab: "console", title: "Live Automation Console", body: "Watch the AI executor stream actions in real time. Pause execution, simulate errors, or clear the log anytime.", placement: "top" },
+];
+
 function AIHubPage() {
   const { isConnected } = useAccount();
   const [tab, setTab] = useState<TabId>("vaults");
+  const [tourOpen, setTourOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(TOUR_KEY)) {
+        const t = setTimeout(() => setTourOpen(true), 700);
+        return () => clearTimeout(t);
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="relative max-w-7xl mx-auto px-4 py-10">
       {/* aurora */}
       <div className="pointer-events-none absolute inset-x-0 -top-10 h-[520px] overflow-hidden -z-10">
@@ -119,6 +149,17 @@ function AIHubPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setTourOpen(true)}
+                className="inline-flex items-center gap-1.5 glass rounded-full px-3 py-1.5 text-xs font-semibold hover:border-emerald-500/60 transition"
+              >
+                <HelpCircle className="h-3.5 w-3.5 text-emerald-400" /> Take Tour
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Walk through every AI Hub feature in 60s</TooltipContent>
+          </Tooltip>
           {isConnected ? (
             <span className="inline-flex items-center gap-2 glass rounded-full px-3 py-1.5 text-xs">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -131,24 +172,28 @@ function AIHubPage() {
       </div>
 
       {/* Tabs */}
-      <div className="glass rounded-2xl p-1.5 flex flex-wrap gap-1 mb-6">
+      <div data-tour="tabs" className="glass rounded-2xl p-1.5 flex flex-wrap gap-1 mb-6">
         {TABS.map((t) => {
           const active = t.id === tab;
           const Icon = t.icon;
           return (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`relative flex-1 min-w-[140px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                active
-                  ? "text-black shadow-neon"
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-              }`}
-              style={active ? { background: "linear-gradient(135deg,#10b981,#38bdf8)" } : undefined}
-            >
-              <Icon className="h-4 w-4" />
-              {t.label}
-            </button>
+            <Tooltip key={t.id}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setTab(t.id)}
+                  className={`relative flex-1 min-w-[140px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                    active
+                      ? "text-black shadow-neon"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                  }`}
+                  style={active ? { background: "linear-gradient(135deg,#10b981,#38bdf8)" } : undefined}
+                >
+                  <Icon className="h-4 w-4" />
+                  {t.label}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{TAB_HINTS[t.id]}</TooltipContent>
+            </Tooltip>
           );
         })}
       </div>
@@ -172,9 +217,22 @@ function AIHubPage() {
         <ContractChip label="Guardrail" addr={ADDR.aiGuardrail} />
         <ContractChip label="ExecutionController" addr={ADDR.aiExecutionController} />
       </div>
+
+      <Walkthrough
+        steps={TOUR_STEPS}
+        open={tourOpen}
+        onClose={() => setTourOpen(false)}
+        storageKey={TOUR_KEY}
+        onStepChange={(s) => {
+          const t = (s as TourStep & { tab?: TabId }).tab;
+          if (t && isConnected) setTab(t);
+        }}
+      />
     </div>
+    </TooltipProvider>
   );
 }
+
 
 function WalletGate() {
   return (
