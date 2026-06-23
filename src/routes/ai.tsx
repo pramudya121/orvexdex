@@ -645,7 +645,7 @@ function CopilotTab() {
                 <div>
                   <div className="font-black text-emerald-400">CONNECTED</div>
                   <div className="text-xs text-muted-foreground">
-                    Remaining: {remainingDays}h {remainingHours}j
+                    Remaining: {remainingDays}d {remainingHours}h
                   </div>
                 </div>
               </>
