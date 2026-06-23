@@ -58,12 +58,12 @@ export const Route = createFileRoute("/ai")({
       {
         name: "description",
         content:
-          "Vault AI, agen pribadi, guardrail risiko, dan konsol eksekusi otomatis — semua di satu dashboard ORVEX.",
+          "AI vaults, personal copilot, risk guardrails, and an automated execution console — all in one ORVEX dashboard.",
       },
       { property: "og:title", content: "AI Trading Hub — ORVEX" },
       {
         property: "og:description",
-        content: "AI Collective Vaults, Personal Copilot, Guardrail, & Live Automation di LitVM.",
+        content: "AI Collective Vaults, Personal Copilot, Guardrails & Live Automation on LitVM.",
       },
     ],
   }),
@@ -173,9 +173,9 @@ function WalletGate() {
         style={{ background: "linear-gradient(135deg,#10b981,#38bdf8)" }}>
         <Wallet className="h-8 w-8 text-black" />
       </div>
-      <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-2">Hubungkan Dompet Anda</h2>
+      <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-2">Connect Your Wallet</h2>
       <p className="text-muted-foreground max-w-md mx-auto mb-6">
-        AI Trading Hub menggunakan tanda tangan on-chain untuk mengaktifkan vault, agen, dan guardrail. Hubungkan dompet untuk memulai.
+        AI Trading Hub uses on-chain signatures to activate vaults, agents and guardrails. Connect your wallet to get started.
       </p>
       <div className="inline-block"><ConnectButton /></div>
     </div>
@@ -195,10 +195,10 @@ type Strategy = {
 };
 
 const STRATEGIES: Strategy[] = [
-  { id: "stable", name: "Stablecoin Yield Maximizer", tag: "Low", desc: "Auto-rotasi antar pool stabil, fokus APR konsisten.", tokenAddr: ADDR.wzkLTC as `0x${string}` },
-  { id: "bluechip", name: "AI Blue-Chip Momentum", tag: "Med", desc: "Akumulasi blue-chip dengan trigger momentum 7D.", tokenAddr: ADDR.ORVX as `0x${string}` },
-  { id: "alt", name: "AltSeason Hunter", tag: "High", desc: "Eksposur tinggi ke altcoin trending dengan stop-loss AI.", tokenAddr: ADDR.TRX as `0x${string}` },
-  { id: "xrp", name: "Cross-Asset Rebalance", tag: "Med", desc: "Bobot adaptif XRP/ADA/ZEC berdasar volatilitas.", tokenAddr: ADDR.XRP as `0x${string}` },
+  { id: "stable", name: "Stablecoin Yield Maximizer", tag: "Low", desc: "Auto-rotation across stable pools — focused on consistent APR.", tokenAddr: ADDR.wzkLTC as `0x${string}` },
+  { id: "bluechip", name: "AI Blue-Chip Momentum", tag: "Med", desc: "Blue-chip accumulation triggered by 7-day momentum signals.", tokenAddr: ADDR.ORVX as `0x${string}` },
+  { id: "alt", name: "AltSeason Hunter", tag: "High", desc: "High-exposure plays on trending altcoins with AI-driven stop-loss.", tokenAddr: ADDR.TRX as `0x${string}` },
+  { id: "xrp", name: "Cross-Asset Rebalance", tag: "Med", desc: "Adaptive XRP/ADA/ZEC weighting based on live volatility.", tokenAddr: ADDR.XRP as `0x${string}` },
 ];
 
 function VaultsTab() {
@@ -267,7 +267,7 @@ function StrategyCard({ strategy, onManage }: { strategy: Strategy; onManage: ()
           className="mt-5 w-full py-3 rounded-xl text-black font-bold shadow-neon transition hover:opacity-90"
           style={{ background: "linear-gradient(135deg,#10b981,#38bdf8)" }}
         >
-          Kelola / Manage
+          Manage Vault
         </button>
       </div>
     </div>
@@ -396,7 +396,7 @@ function VaultDrawer({ strategy, onClose }: { strategy: Strategy; onClose: () =>
       setPending(h);
       toast.push({ title: "Approving vault…", hash: h });
     } catch (e) {
-      toast.push({ title: "Approve gagal", description: getErr(e), type: "error" });
+      toast.push({ title: "Approve failed", description: getErr(e), type: "error" });
     }
   };
 
@@ -410,9 +410,9 @@ function VaultDrawer({ strategy, onClose }: { strategy: Strategy; onClose: () =>
         args: [strategy.tokenAddr, amountWei],
       });
       setPending(h);
-      toast.push({ title: `${mode === "deposit" ? "Deposit" : "Withdraw"} dikirim`, hash: h });
+      toast.push({ title: `${mode === "deposit" ? "Deposit" : "Withdraw"} submitted`, hash: h });
     } catch (e) {
-      toast.push({ title: `${mode} gagal`, description: getErr(e), type: "error" });
+      toast.push({ title: `${mode} failed`, description: getErr(e), type: "error" });
     }
   };
 
@@ -450,7 +450,7 @@ function VaultDrawer({ strategy, onClose }: { strategy: Strategy; onClose: () =>
 
           <div className="rounded-2xl bg-surface-2 border border-border p-4">
             <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-              <span>{mode === "deposit" ? "Jumlah deposit" : "Jumlah withdraw"}</span>
+              <span>{mode === "deposit" ? "Deposit amount" : "Withdraw amount"}</span>
               <button
                 onClick={() =>
                   setAmount(
@@ -461,7 +461,7 @@ function VaultDrawer({ strategy, onClose }: { strategy: Strategy; onClose: () =>
                 }
                 className="hover:text-foreground"
               >
-                {mode === "deposit" ? `Saldo: ${balNum.toFixed(4)}` : `Shares: ${sharesNum.toFixed(4)}`} · MAX
+                {mode === "deposit" ? `Balance: ${balNum.toFixed(4)}` : `Shares: ${sharesNum.toFixed(4)}`} · MAX
               </button>
             </div>
             <div className="flex items-center gap-2">
@@ -499,7 +499,7 @@ function VaultDrawer({ strategy, onClose }: { strategy: Strategy; onClose: () =>
               ))}
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
-              <span>Estimasi Gas</span>
+              <span>Estimated gas</span>
               <span className="font-mono">~0.0012 zkLTC</span>
             </div>
           </div>
@@ -515,7 +515,7 @@ function VaultDrawer({ strategy, onClose }: { strategy: Strategy; onClose: () =>
               className="w-full py-3 rounded-xl text-black font-bold shadow-neon disabled:opacity-50 inline-flex items-center justify-center gap-2"
               style={{ background: "linear-gradient(135deg,#10b981,#38bdf8)" }}>
               {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              {mode === "deposit" ? "Deposit ke Vault" : "Withdraw dari Vault"}
+              {mode === "deposit" ? "Deposit to Vault" : "Withdraw from Vault"}
             </button>
           )}
         </div>
@@ -557,7 +557,7 @@ function CopilotTab() {
 
   useEffect(() => {
     if (receipt.isSuccess && pending) {
-      toast.push({ title: "Konfirmasi tersimpan on-chain", type: "success", hash: pending });
+      toast.push({ title: "Confirmation stored on-chain", type: "success", hash: pending });
       setPending(undefined);
       sessionKey.refetch();
       sessionExpiry.refetch();
@@ -567,7 +567,7 @@ function CopilotTab() {
 
   const handleActivate = async () => {
     if (!isAddress(sessionKeyInput)) {
-      toast.push({ title: "Session key address tidak valid", type: "error" });
+      toast.push({ title: "Invalid session key address", type: "error" });
       return;
     }
     try {
@@ -576,9 +576,9 @@ function CopilotTab() {
         args: [sessionKeyInput as `0x${string}`, BigInt(days * 86400)],
       });
       setPending(h);
-      toast.push({ title: `Mengaktifkan agen ${days} hari…`, hash: h });
+      toast.push({ title: `Activating agent for ${days} days…`, hash: h });
     } catch (e) {
-      toast.push({ title: "Aktivasi gagal", description: getErr(e), type: "error" });
+      toast.push({ title: "Aktivasi failed", description: getErr(e), type: "error" });
     }
   };
 
@@ -588,9 +588,9 @@ function CopilotTab() {
         address: ADDR.aiTradingAgent, abi: aiTradingAgentAbi, functionName: "cancelDelegation",
       });
       setPending(h);
-      toast.push({ title: "Mencabut akses AI…", hash: h, type: "info" });
+      toast.push({ title: "Revoking AI access…", hash: h, type: "info" });
     } catch (e) {
-      toast.push({ title: "Cabut akses gagal", description: getErr(e), type: "error" });
+      toast.push({ title: "Revoke access failed", description: getErr(e), type: "error" });
     }
   };
 
@@ -602,7 +602,7 @@ function CopilotTab() {
       setPending(h);
       toast.push({ title: "Emergency withdraw…", hash: h });
     } catch (e) {
-      toast.push({ title: "Withdraw gagal", description: getErr(e), type: "error" });
+      toast.push({ title: "Withdraw failed", description: getErr(e), type: "error" });
     }
   };
 
@@ -620,9 +620,9 @@ function CopilotTab() {
           </div>
           <div className="flex-1">
             <div className="text-[11px] uppercase tracking-[0.25em] font-bold text-white/80">Emergency Control</div>
-            <div className="text-xl font-black text-white">EMERGENCY STOP — Cabut Semua Akses AI</div>
+            <div className="text-xl font-black text-white">EMERGENCY STOP — Revoke All AI Access</div>
             <div className="text-xs text-white/80 mt-0.5">
-              Memanggil <code>cancelDelegation()</code> di contract Agent. Instan & on-chain.
+              Calls <code>cancelDelegation()</code> on the Agent contract. Instant & on-chain.
             </div>
           </div>
           <Power className="h-7 w-7 text-white" />
@@ -633,7 +633,7 @@ function CopilotTab() {
         {/* Status */}
         <div className="md:col-span-1 glass-strong rounded-3xl p-6">
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">
-            <Activity className="h-4 w-4" /> Status Agen
+            <Activity className="h-4 w-4" /> Agent Status
           </div>
           <div className="flex items-center gap-3 mb-4">
             {active ? (
@@ -645,7 +645,7 @@ function CopilotTab() {
                 <div>
                   <div className="font-black text-emerald-400">CONNECTED</div>
                   <div className="text-xs text-muted-foreground">
-                    Sisa: {remainingDays}h {remainingHours}j
+                    Remaining: {remainingDays}d {remainingHours}h
                   </div>
                 </div>
               </>
@@ -654,7 +654,7 @@ function CopilotTab() {
                 <div className="h-4 w-4 rounded-full bg-muted-foreground/40" />
                 <div>
                   <div className="font-black text-muted-foreground">DISCONNECTED</div>
-                  <div className="text-xs text-muted-foreground">Belum ada session key aktif</div>
+                  <div className="text-xs text-muted-foreground">No active session key</div>
                 </div>
               </>
             )}
@@ -666,7 +666,7 @@ function CopilotTab() {
           </div>
           {!isOwnerOfAgent && (
             <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">
-              Anda bukan owner Agent ini — hanya owner yang dapat mengubah session key.
+              You are not the owner of this Agent — only the owner can change the session key.
             </div>
           )}
         </div>
@@ -675,8 +675,8 @@ function CopilotTab() {
         <div className="md:col-span-2 glass-strong rounded-3xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-[11px] uppercase tracking-[0.25em] text-sky-400 font-bold">Aktifkan Agen AI</div>
-              <div className="font-black text-2xl">Delegasi Eksekusi Terbatas</div>
+              <div className="text-[11px] uppercase tracking-[0.25em] text-sky-400 font-bold">Activate AI Agent</div>
+              <div className="font-black text-2xl">Scoped Execution Delegation</div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" checked={active} readOnly />
@@ -689,15 +689,15 @@ function CopilotTab() {
             <input
               value={sessionKeyInput}
               onChange={(e) => setSessionKeyInput(e.target.value)}
-              placeholder="0x… alamat session key yang akan diberi izin"
+              placeholder="0x… session key address to authorize"
               className="w-full bg-surface-2 border border-border rounded-xl px-4 py-3 font-mono text-sm outline-none focus:border-sky-500/50"
               spellCheck={false}
             />
 
             <div className="rounded-2xl bg-surface-2 border border-border p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-muted-foreground">Masa berlaku izin akses</span>
-                <span className="font-bold text-sky-400">{days} Hari</span>
+                <span className="text-xs text-muted-foreground">Access duration</span>
+                <span className="font-bold text-sky-400">{days} Days</span>
               </div>
               <input
                 type="range" min={1} max={30} value={days}
@@ -705,13 +705,13 @@ function CopilotTab() {
                 className="w-full accent-sky-500"
               />
               <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-                <span>1H</span><span>7H</span><span>14H</span><span>30H</span>
+                <span>1D</span><span>7D</span><span>14D</span><span>30D</span>
               </div>
               <div className="flex gap-2 mt-3">
                 {[1, 7, 14, 30].map((d) => (
                   <button key={d} onClick={() => setDays(d)}
                     className={`flex-1 py-1.5 rounded-md text-xs font-semibold border transition ${days === d ? "bg-sky-500/20 border-sky-500/50 text-sky-400" : "border-border text-muted-foreground hover:text-foreground"}`}>
-                    {d}H
+                    {d}D
                   </button>
                 ))}
               </div>
@@ -725,7 +725,7 @@ function CopilotTab() {
                 style={{ background: "linear-gradient(135deg,#10b981,#38bdf8)" }}
               >
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className="h-4 w-4" />}
-                Aktifkan
+                Activate
               </button>
               <button
                 onClick={handleEmergencyWithdraw}
@@ -733,7 +733,7 @@ function CopilotTab() {
                 className="py-3 rounded-xl border border-border bg-surface-2 hover:border-rose-500/50 hover:text-rose-400 font-bold transition disabled:opacity-40 inline-flex items-center justify-center gap-2"
               >
                 <Wallet className="h-4 w-4" />
-                Tarik Saldo
+                Withdraw Balance
               </button>
             </div>
           </div>
@@ -779,7 +779,7 @@ function GuardrailTab() {
 
   useEffect(() => {
     if (receipt.isSuccess && pending) {
-      toast.push({ title: "Guardrail terupdate", type: "success", hash: pending });
+      toast.push({ title: "Guardrail updated", type: "success", hash: pending });
       setPending(undefined);
       maxBps.refetch(); daily.refetch();
     }
@@ -788,19 +788,19 @@ function GuardrailTab() {
 
   const setSlip = async () => {
     const bps = Math.round(Number(slipInput) * 100);
-    if (!Number.isFinite(bps) || bps <= 0) return toast.push({ title: "Nilai slippage tidak valid", type: "error" });
+    if (!Number.isFinite(bps) || bps <= 0) return toast.push({ title: "Invalid slippage value", type: "error" });
     try {
       const h = await writeContractAsync({ address: ADDR.aiGuardrail, abi: aiGuardrailAbi, functionName: "setMaxPriceImpactBps", args: [BigInt(bps)] });
       setPending(h); toast.push({ title: `Set max slippage ${bps} bps…`, hash: h });
-    } catch (e) { toast.push({ title: "Set slippage gagal", description: getErr(e), type: "error" }); }
+    } catch (e) { toast.push({ title: "Set slippage failed", description: getErr(e), type: "error" }); }
   };
   const setDailyLimit = async () => {
     const v = Number(dailyInput);
-    if (!Number.isFinite(v) || v <= 0) return toast.push({ title: "Limit tidak valid", type: "error" });
+    if (!Number.isFinite(v) || v <= 0) return toast.push({ title: "Invalid limit", type: "error" });
     try {
       const h = await writeContractAsync({ address: ADDR.aiGuardrail, abi: aiGuardrailAbi, functionName: "setDailyLimit", args: [parseUnits(v.toString() as `${number}`, 18)] });
       setPending(h); toast.push({ title: `Set daily limit $${v}…`, hash: h });
-    } catch (e) { toast.push({ title: "Set limit gagal", description: getErr(e), type: "error" }); }
+    } catch (e) { toast.push({ title: "Set limit failed", description: getErr(e), type: "error" }); }
   };
 
   // Whitelist table
@@ -816,47 +816,47 @@ function GuardrailTab() {
     try {
       const h = await writeContractAsync({ address: ADDR.aiGuardrail, abi: aiGuardrailAbi, functionName: "setTokenWhitelist", args: [addr, status] });
       setPending(h); toast.push({ title: `${status ? "Whitelist" : "Remove"} ${short(addr)}…`, hash: h });
-    } catch (e) { toast.push({ title: "Toggle gagal", description: getErr(e), type: "error" }); }
+    } catch (e) { toast.push({ title: "Toggle failed", description: getErr(e), type: "error" }); }
   };
 
   return (
     <div className="space-y-5">
       {!isOwner && (
         <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-amber-300 text-sm flex items-center gap-3">
-          <ShieldCheck className="h-5 w-5" /> Read-only — hanya owner Guardrail (
+          <ShieldCheck className="h-5 w-5" /> Read-only — only the Guardrail owner (
           <span className="font-mono">{owner.data ? short(owner.data as string) : "…"}</span>
-          ) yang dapat memodifikasi parameter.
+          ) can modify these parameters.
         </div>
       )}
 
       <div className="grid md:grid-cols-3 gap-5">
         <ParamCard
           icon={<AlertTriangle className="h-5 w-5 text-amber-400" />}
-          title="Batas Maksimal Slippage"
+          title="Max Slippage Limit"
           unit="%"
           current={maxBps.data !== undefined ? `${(Number(maxBps.data as bigint) / 100).toFixed(2)}%` : "…"}
           value={slipInput} onChange={setSlipInput}
           onSave={setSlip} disabled={!isOwner || !!pending}
-          placeholder="cth: 1.5"
+          placeholder="e.g. 1.5"
         />
         <ParamCard
           icon={<Wallet className="h-5 w-5 text-emerald-400" />}
-          title="Maksimal Ukuran Trade"
+          title="Max Trade Size"
           unit="USD"
           current={tradeSizeInput || "—"}
           value={tradeSizeInput} onChange={setTradeSizeInput}
-          onSave={() => toast.push({ title: "Disimpan lokal", description: "Parameter ini dipakai oleh AI off-chain.", type: "info" })}
+          onSave={() => toast.push({ title: "Saved locally", description: "This parameter is consumed by the off-chain AI.", type: "info" })}
           disabled={!isOwner}
-          placeholder="cth: 5000"
+          placeholder="e.g. 5000"
         />
         <ParamCard
           icon={<Activity className="h-5 w-5 text-sky-400" />}
-          title="Batas Volume Harian"
+          title="Batas Volume Daysan"
           unit="USD"
           current={daily.data !== undefined ? Number(formatUnits(daily.data as bigint, 18)).toLocaleString() : "…"}
           value={dailyInput} onChange={setDailyInput}
           onSave={setDailyLimit} disabled={!isOwner || !!pending}
-          placeholder="cth: 100000"
+          placeholder="e.g. 100000"
         />
       </div>
 
@@ -865,7 +865,7 @@ function GuardrailTab() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="text-[11px] uppercase tracking-[0.25em] text-emerald-400 font-bold">Token Whitelist</div>
-            <div className="font-black text-xl">Daftar Token Diizinkan AI</div>
+            <div className="font-black text-xl">Tokens Allowed for AI</div>
           </div>
           <ShieldCheck className="h-6 w-6 text-emerald-400" />
         </div>
@@ -876,7 +876,7 @@ function GuardrailTab() {
                 <th className="py-3 px-2">Token</th>
                 <th className="py-3 px-2">Address</th>
                 <th className="py-3 px-2">Status</th>
-                <th className="py-3 px-2 text-right">Aksi</th>
+                <th className="py-3 px-2 text-right">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -935,7 +935,7 @@ function ParamCard({
     <div className="glass-strong rounded-2xl p-5">
       <div className="flex items-center gap-2 mb-2">{icon}<span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{title}</span></div>
       <div className="text-2xl font-black mb-1">{current}</div>
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-3">Nilai aktif on-chain</div>
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-3">Current on-chain value</div>
       <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-xl px-3 py-2">
         <input value={value} onChange={(e) => onChange(e.target.value.replace(/[^0-9.]/g, ""))}
           placeholder={placeholder}
@@ -1004,7 +1004,7 @@ function ConsoleTab() {
       setPending(h);
       toast.push({ title: isPaused ? "Resuming executor…" : "Pausing executor…", hash: h });
     } catch (e) {
-      toast.push({ title: "Aksi gagal", description: getErr(e), type: "error" });
+      toast.push({ title: "Action failed", description: getErr(e), type: "error" });
     }
   };
 
@@ -1022,7 +1022,7 @@ function ConsoleTab() {
     setErrorMode((v) => !v);
     pushLog({
       ts: nowStamp(),
-      text: errorMode ? "Simulasi error dinonaktifkan. Resume normal." : "❌ ERROR: Guardrail menolak transaksi — batas slippage terlampaui!",
+      text: errorMode ? "Error simulation disabled. Resuming normal operation." : "❌ ERROR: Guardrail rejected the transaction — slippage limit exceeded!",
       level: errorMode ? "info" : "err",
     });
   };
@@ -1044,7 +1044,7 @@ function ConsoleTab() {
         <button onClick={triggerError}
           className={`px-4 py-2 rounded-xl font-semibold text-sm transition inline-flex items-center gap-2 border ${errorMode ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-400" : "border-rose-500/50 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20"}`}>
           <AlertTriangle className="h-4 w-4" />
-          {errorMode ? "Kembali ke Normal" : "Simulasikan Error Transaksi AI"}
+          {errorMode ? "Back to Normal" : "Simulate AI Transaction Error"}
         </button>
         <button onClick={handleTogglePause} disabled={!isOwner || !!pending}
           className="px-4 py-2 rounded-xl font-semibold text-sm border border-border bg-surface-2 hover:border-amber-500/50 hover:text-amber-400 transition disabled:opacity-40 inline-flex items-center gap-2">
@@ -1117,11 +1117,11 @@ function buildSimLog(errorMode: boolean): LogLine {
   if (errorMode) {
     if (r < 0.4) return { ts: nowStamp(), text: "Guardrail Contract: Slippage 6.2% > maxBps 1.5% → REJECT ❌", level: "err" };
     if (r < 0.7) return { ts: nowStamp(), text: "Execution Controller: revert 'Guardrail: daily volume exceeded'", level: "err" };
-    return { ts: nowStamp(), text: "AI Server: retry queued — menunggu kondisi pasar membaik…", level: "warn" };
+    return { ts: nowStamp(), text: "AI Server: retry queued — waiting for better market conditions…", level: "warn" };
   }
-  if (r < 0.25) return { ts: nowStamp(), text: "AI Server: Memindai volatilitas pasar (ORVX/WBTC/ETH)…", level: "info" };
-  if (r < 0.5)  return { ts: nowStamp(), text: "Guardrail Contract: Memverifikasi tanda tangan transaksi… AMAN", level: "ok" };
-  if (r < 0.78) return { ts: nowStamp(), text: `Executor: Sukses Swap ${Math.floor(50 + Math.random()*500)} USDT → ETH @ Router. Tx 0x${Math.floor(Math.random()*0xffffff).toString(16).padStart(6,"0")}…`, level: "ok" };
+  if (r < 0.25) return { ts: nowStamp(), text: "AI Server: Scanning market volatility (ORVX/WBTC/ETH)…", level: "info" };
+  if (r < 0.5)  return { ts: nowStamp(), text: "Guardrail Contract: Verifying transaction signature… SAFE", level: "ok" };
+  if (r < 0.78) return { ts: nowStamp(), text: `Executor: Swap success ${Math.floor(50 + Math.random()*500)} USDT → ETH @ Router. Tx 0x${Math.floor(Math.random()*0xffffff).toString(16).padStart(6,"0")}…`, level: "ok" };
   return { ts: nowStamp(), text: `Checkpoint upkeep: block #${Math.floor(1_000_000 + Math.random() * 9_000_000)} processed`, level: "info" };
 }
 

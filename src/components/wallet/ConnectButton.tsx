@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useConnect, useAccount, useDisconnect, useChainId, useSwitchChain } from "wagmi";
 import { litvm } from "@/lib/chain";
 import { useEip6963Providers, type Eip6963Detail } from "@/lib/eip6963";
+import { usePrimaryDomain } from "@/lib/primaryDomain";
 import logo from "@/assets/orvex-logo.png";
+
 
 const ACTIVE_RDNS_KEY = "orvex.activeWalletRdns";
 
@@ -442,6 +444,8 @@ export function ConnectButton() {
   const detected = useEip6963Providers();
   const wrong = isConnected && chainId !== litvm.id;
   const [switching, setSwitching] = useState<string | null>(null);
+  const primaryDomain = usePrimaryDomain(address);
+
 
   const activeWallet = useMemo<Eip6963Detail | null>(() => {
     if (!isConnected || typeof window === "undefined") return null;
@@ -545,9 +549,16 @@ export function ConnectButton() {
               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
             />
           )}
-          {address?.slice(0, 6)}…{address?.slice(-4)}
+          {primaryDomain ? (
+            <span className="font-sans font-semibold bg-gradient-to-r from-[oklch(0.85_0.2_330)] to-[oklch(0.78_0.18_220)] bg-clip-text text-transparent max-w-[140px] truncate">
+              {primaryDomain}
+            </span>
+          ) : (
+            <>{address?.slice(0, 6)}…{address?.slice(-4)}</>
+          )}
           <span className="text-[10px] text-muted-foreground">▾</span>
         </button>
+
         {switcherOpen && (
           <div
             ref={switcherRef}
