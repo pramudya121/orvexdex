@@ -45,7 +45,7 @@ import {
   Clock,
   Wallet,
   HelpCircle,
-  Info,
+
 } from "lucide-react";
 
 
