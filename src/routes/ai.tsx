@@ -902,7 +902,7 @@ function GuardrailTab() {
         </div>
       )}
 
-      <div className="grid md:grid-cols-3 gap-5">
+      <div data-tour="guardrail-params" className="grid md:grid-cols-3 gap-5">
         <ParamCard
           icon={<AlertTriangle className="h-5 w-5 text-amber-400" />}
           title="Max Slippage Limit"
@@ -924,7 +924,7 @@ function GuardrailTab() {
         />
         <ParamCard
           icon={<Activity className="h-5 w-5 text-sky-400" />}
-          title="Batas Volume Daysan"
+          title="Daily Volume Limit"
           unit="USD"
           current={daily.data !== undefined ? Number(formatUnits(daily.data as bigint, 18)).toLocaleString() : "…"}
           value={dailyInput} onChange={setDailyInput}
@@ -934,7 +934,8 @@ function GuardrailTab() {
       </div>
 
       {/* Whitelist table */}
-      <div className="glass-strong rounded-3xl p-6">
+      <div data-tour="whitelist" className="glass-strong rounded-3xl p-6">
+
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="text-[11px] uppercase tracking-[0.25em] text-emerald-400 font-bold">Token Whitelist</div>
