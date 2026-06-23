@@ -17,6 +17,13 @@ import { multiTokenVaultAbi } from "@/lib/abis/multiTokenVault";
 import { aiTradingAgentAbi } from "@/lib/abis/aiTradingAgent";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { useToast } from "@/components/ui/toaster";
+import { Walkthrough, type TourStep } from "@/components/Walkthrough";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Sparkles,
   ShieldCheck,
@@ -37,7 +44,10 @@ import {
   XCircle,
   Clock,
   Wallet,
+  HelpCircle,
+
 } from "lucide-react";
+
 
 const getErr = (e: unknown) => {
   if (e instanceof Error) return e.message;
@@ -77,11 +87,41 @@ const TABS: { id: TabId; label: string; icon: React.ComponentType<{ className?: 
   { id: "console", label: "Automation Console", icon: TerminalIcon },
 ];
 
+const TOUR_KEY = "orvex.ai.tour.v1";
+
+const TAB_HINTS: Record<TabId, string> = {
+  vaults: "Deposit into AI-managed strategy vaults",
+  copilot: "Delegate trading to your personal AI agent",
+  guardrail: "Configure on-chain safety limits",
+  console: "Live executor stream & controls",
+};
+
+const TOUR_STEPS: (TourStep & { tab?: TabId })[] = [
+  { target: "tabs", tab: "vaults", title: "Four Powerful Modules", body: "Switch between Collective Vaults, your Personal Copilot, Risk Guardrails, and the Automation Console. Each tab maps to a real on-chain contract.", placement: "bottom" },
+  { target: "vault-card", tab: "vaults", title: "AI-Managed Vaults", body: "Deposit assets into ERC-4626-style strategies. The AI auto-rebalances positions. TVL and 7D trend update live from the chain.", placement: "bottom" },
+  { target: "emergency-stop", tab: "copilot", title: "Emergency Stop", body: "Instantly revoke all AI delegation on-chain — your funds stay yours. One click calls cancelDelegation().", placement: "bottom" },
+  { target: "activate-agent", tab: "copilot", title: "Delegate to Your Copilot", body: "Authorize a session key for 1–30 days. The AI can trade within your Guardrail limits — nothing more.", placement: "top" },
+  { target: "guardrail-params", tab: "guardrail", title: "Set Hard Risk Limits", body: "Cap slippage, daily volume, and trade size. The Guardrail contract enforces these for every AI transaction.", placement: "bottom" },
+  { target: "whitelist", tab: "guardrail", title: "Token Whitelist", body: "Only whitelisted tokens are tradable by the AI. Toggle any asset on or off in one transaction.", placement: "top" },
+  { target: "console-terminal", tab: "console", title: "Live Automation Console", body: "Watch the AI executor stream actions in real time. Pause execution, simulate errors, or clear the log anytime.", placement: "top" },
+];
+
 function AIHubPage() {
   const { isConnected } = useAccount();
   const [tab, setTab] = useState<TabId>("vaults");
+  const [tourOpen, setTourOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(TOUR_KEY)) {
+        const t = setTimeout(() => setTourOpen(true), 700);
+        return () => clearTimeout(t);
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="relative max-w-7xl mx-auto px-4 py-10">
       {/* aurora */}
       <div className="pointer-events-none absolute inset-x-0 -top-10 h-[520px] overflow-hidden -z-10">
@@ -109,6 +149,17 @@ function AIHubPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setTourOpen(true)}
+                className="inline-flex items-center gap-1.5 glass rounded-full px-3 py-1.5 text-xs font-semibold hover:border-emerald-500/60 transition"
+              >
+                <HelpCircle className="h-3.5 w-3.5 text-emerald-400" /> Take Tour
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Walk through every AI Hub feature in 60s</TooltipContent>
+          </Tooltip>
           {isConnected ? (
             <span className="inline-flex items-center gap-2 glass rounded-full px-3 py-1.5 text-xs">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -121,24 +172,28 @@ function AIHubPage() {
       </div>
 
       {/* Tabs */}
-      <div className="glass rounded-2xl p-1.5 flex flex-wrap gap-1 mb-6">
+      <div data-tour="tabs" className="glass rounded-2xl p-1.5 flex flex-wrap gap-1 mb-6">
         {TABS.map((t) => {
           const active = t.id === tab;
           const Icon = t.icon;
           return (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`relative flex-1 min-w-[140px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                active
-                  ? "text-black shadow-neon"
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-              }`}
-              style={active ? { background: "linear-gradient(135deg,#10b981,#38bdf8)" } : undefined}
-            >
-              <Icon className="h-4 w-4" />
-              {t.label}
-            </button>
+            <Tooltip key={t.id}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setTab(t.id)}
+                  className={`relative flex-1 min-w-[140px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                    active
+                      ? "text-black shadow-neon"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                  }`}
+                  style={active ? { background: "linear-gradient(135deg,#10b981,#38bdf8)" } : undefined}
+                >
+                  <Icon className="h-4 w-4" />
+                  {t.label}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{TAB_HINTS[t.id]}</TooltipContent>
+            </Tooltip>
           );
         })}
       </div>
@@ -162,9 +217,22 @@ function AIHubPage() {
         <ContractChip label="Guardrail" addr={ADDR.aiGuardrail} />
         <ContractChip label="ExecutionController" addr={ADDR.aiExecutionController} />
       </div>
+
+      <Walkthrough
+        steps={TOUR_STEPS}
+        open={tourOpen}
+        onClose={() => setTourOpen(false)}
+        storageKey={TOUR_KEY}
+        onStepChange={(s) => {
+          const t = (s as TourStep & { tab?: TabId }).tab;
+          if (t && isConnected) setTab(t);
+        }}
+      />
     </div>
+    </TooltipProvider>
   );
 }
+
 
 function WalletGate() {
   return (
@@ -206,11 +274,14 @@ function VaultsTab() {
 
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-5">
-      {STRATEGIES.map((s) => (
-        <StrategyCard key={s.id} strategy={s} onManage={() => setSelected(s)} />
+      {STRATEGIES.map((s, i) => (
+        <div key={s.id} data-tour={i === 0 ? "vault-card" : undefined}>
+          <StrategyCard strategy={s} onManage={() => setSelected(s)} />
+        </div>
       ))}
       {selected && <VaultDrawer strategy={selected} onClose={() => setSelected(null)} />}
     </div>
+
   );
 }
 
@@ -610,9 +681,11 @@ function CopilotTab() {
     <div className="space-y-5">
       {/* Emergency banner */}
       <button
+        data-tour="emergency-stop"
         onClick={handleEmergencyStop}
         disabled={!isOwnerOfAgent || !active || !!pending}
         className="w-full rounded-2xl border border-rose-500/50 bg-gradient-to-r from-rose-600 to-red-500 p-5 text-left shadow-[0_0_40px_-10px_rgba(244,63,94,0.7)] hover:shadow-[0_0_60px_-10px_rgba(244,63,94,0.9)] transition disabled:opacity-40 disabled:cursor-not-allowed"
+
       >
         <div className="flex items-center gap-4">
           <div className="h-12 w-12 rounded-xl bg-black/30 grid place-items-center">
@@ -672,7 +745,7 @@ function CopilotTab() {
         </div>
 
         {/* Activate */}
-        <div className="md:col-span-2 glass-strong rounded-3xl p-6">
+        <div data-tour="activate-agent" className="md:col-span-2 glass-strong rounded-3xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="text-[11px] uppercase tracking-[0.25em] text-sky-400 font-bold">Activate AI Agent</div>
@@ -829,7 +902,7 @@ function GuardrailTab() {
         </div>
       )}
 
-      <div className="grid md:grid-cols-3 gap-5">
+      <div data-tour="guardrail-params" className="grid md:grid-cols-3 gap-5">
         <ParamCard
           icon={<AlertTriangle className="h-5 w-5 text-amber-400" />}
           title="Max Slippage Limit"
@@ -851,7 +924,7 @@ function GuardrailTab() {
         />
         <ParamCard
           icon={<Activity className="h-5 w-5 text-sky-400" />}
-          title="Batas Volume Daysan"
+          title="Daily Volume Limit"
           unit="USD"
           current={daily.data !== undefined ? Number(formatUnits(daily.data as bigint, 18)).toLocaleString() : "…"}
           value={dailyInput} onChange={setDailyInput}
@@ -861,7 +934,8 @@ function GuardrailTab() {
       </div>
 
       {/* Whitelist table */}
-      <div className="glass-strong rounded-3xl p-6">
+      <div data-tour="whitelist" className="glass-strong rounded-3xl p-6">
+
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="text-[11px] uppercase tracking-[0.25em] text-emerald-400 font-bold">Token Whitelist</div>
@@ -1058,7 +1132,7 @@ function ConsoleTab() {
       </div>
 
       {/* Terminal */}
-      <div className={`rounded-3xl overflow-hidden border ${errorMode ? "border-rose-500/50 shadow-[0_0_40px_-10px_rgba(244,63,94,0.6)]" : "border-emerald-500/30 shadow-[0_0_40px_-10px_rgba(16,185,129,0.5)]"}`}>
+      <div data-tour="console-terminal" className={`rounded-3xl overflow-hidden border ${errorMode ? "border-rose-500/50 shadow-[0_0_40px_-10px_rgba(244,63,94,0.6)]" : "border-emerald-500/30 shadow-[0_0_40px_-10px_rgba(16,185,129,0.5)]"}`}>
         <div className="flex items-center gap-2 px-4 py-2 bg-black/80 border-b border-border">
           <span className="h-3 w-3 rounded-full bg-rose-500" />
           <span className="h-3 w-3 rounded-full bg-amber-500" />
