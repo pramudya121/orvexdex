@@ -745,7 +745,7 @@ function CopilotTab() {
         </div>
 
         {/* Activate */}
-        <div className="md:col-span-2 glass-strong rounded-3xl p-6">
+        <div data-tour="activate-agent" className="md:col-span-2 glass-strong rounded-3xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="text-[11px] uppercase tracking-[0.25em] text-sky-400 font-bold">Activate AI Agent</div>
