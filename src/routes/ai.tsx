@@ -1132,7 +1132,7 @@ function ConsoleTab() {
       </div>
 
       {/* Terminal */}
-      <div className={`rounded-3xl overflow-hidden border ${errorMode ? "border-rose-500/50 shadow-[0_0_40px_-10px_rgba(244,63,94,0.6)]" : "border-emerald-500/30 shadow-[0_0_40px_-10px_rgba(16,185,129,0.5)]"}`}>
+      <div data-tour="console-terminal" className={`rounded-3xl overflow-hidden border ${errorMode ? "border-rose-500/50 shadow-[0_0_40px_-10px_rgba(244,63,94,0.6)]" : "border-emerald-500/30 shadow-[0_0_40px_-10px_rgba(16,185,129,0.5)]"}`}>
         <div className="flex items-center gap-2 px-4 py-2 bg-black/80 border-b border-border">
           <span className="h-3 w-3 rounded-full bg-rose-500" />
           <span className="h-3 w-3 rounded-full bg-amber-500" />
