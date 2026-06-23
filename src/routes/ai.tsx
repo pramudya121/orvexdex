@@ -681,9 +681,11 @@ function CopilotTab() {
     <div className="space-y-5">
       {/* Emergency banner */}
       <button
+        data-tour="emergency-stop"
         onClick={handleEmergencyStop}
         disabled={!isOwnerOfAgent || !active || !!pending}
         className="w-full rounded-2xl border border-rose-500/50 bg-gradient-to-r from-rose-600 to-red-500 p-5 text-left shadow-[0_0_40px_-10px_rgba(244,63,94,0.7)] hover:shadow-[0_0_60px_-10px_rgba(244,63,94,0.9)] transition disabled:opacity-40 disabled:cursor-not-allowed"
+
       >
         <div className="flex items-center gap-4">
           <div className="h-12 w-12 rounded-xl bg-black/30 grid place-items-center">
