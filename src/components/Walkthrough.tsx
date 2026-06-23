@@ -17,15 +17,29 @@ export function Walkthrough({
   open,
   onClose,
   storageKey,
+  onStepChange,
 }: {
   steps: TourStep[];
   open: boolean;
   onClose: () => void;
   /** if set, marks tour as completed in localStorage when finished */
   storageKey?: string;
+  /** fired whenever the active step changes (incl. when tour opens) */
+  onStepChange?: (step: TourStep, index: number) => void;
 }) {
   const [idx, setIdx] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
+
+  useEffect(() => {
+    if (open) setIdx(0);
+  }, [open]);
+
+  const step = steps[idx];
+
+  useEffect(() => {
+    if (open && step && onStepChange) onStepChange(step, idx);
+  }, [open, step, idx, onStepChange]);
+
 
   useEffect(() => {
     if (open) setIdx(0);
