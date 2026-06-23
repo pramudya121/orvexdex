@@ -274,11 +274,14 @@ function VaultsTab() {
 
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-5">
-      {STRATEGIES.map((s) => (
-        <StrategyCard key={s.id} strategy={s} onManage={() => setSelected(s)} />
+      {STRATEGIES.map((s, i) => (
+        <div key={s.id} data-tour={i === 0 ? "vault-card" : undefined}>
+          <StrategyCard strategy={s} onManage={() => setSelected(s)} />
+        </div>
       ))}
       {selected && <VaultDrawer strategy={selected} onClose={() => setSelected(null)} />}
     </div>
+
   );
 }
 
