@@ -705,13 +705,13 @@ function CopilotTab() {
                 className="w-full accent-sky-500"
               />
               <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-                <span>1H</span><span>7H</span><span>14H</span><span>30H</span>
+                <span>1D</span><span>7D</span><span>14D</span><span>30D</span>
               </div>
               <div className="flex gap-2 mt-3">
                 {[1, 7, 14, 30].map((d) => (
                   <button key={d} onClick={() => setDays(d)}
                     className={`flex-1 py-1.5 rounded-md text-xs font-semibold border transition ${days === d ? "bg-sky-500/20 border-sky-500/50 text-sky-400" : "border-border text-muted-foreground hover:text-foreground"}`}>
-                    {d}H
+                    {d}D
                   </button>
                 ))}
               </div>
