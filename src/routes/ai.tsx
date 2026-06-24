@@ -15,6 +15,7 @@ import { aiGuardrailAbi } from "@/lib/abis/aiGuardrail";
 import { aiExecutionControllerAbi } from "@/lib/abis/aiExecutionController";
 import { multiTokenVaultAbi } from "@/lib/abis/multiTokenVault";
 import { aiTradingAgentAbi } from "@/lib/abis/aiTradingAgent";
+import { SignalsTab } from "@/components/ai/SignalsTab";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { useToast } from "@/components/ui/toaster";
 import { Walkthrough, type TourStep } from "@/components/Walkthrough";
