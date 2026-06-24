@@ -238,6 +238,7 @@ function AIHubPage() {
       ) : (
         <div key={tab} className="animate-rise">
           {tab === "vaults" && <VaultsTab />}
+          {tab === "signals" && <div data-tour="signals-feed"><SignalsTab /></div>}
           {tab === "copilot" && <CopilotTab />}
           {tab === "guardrail" && isGuardrailOwner && <GuardrailTab />}
           {tab === "console" && isConsoleOwner && <ConsoleTab />}
