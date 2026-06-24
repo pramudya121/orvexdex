@@ -15,6 +15,7 @@ import { aiGuardrailAbi } from "@/lib/abis/aiGuardrail";
 import { aiExecutionControllerAbi } from "@/lib/abis/aiExecutionController";
 import { multiTokenVaultAbi } from "@/lib/abis/multiTokenVault";
 import { aiTradingAgentAbi } from "@/lib/abis/aiTradingAgent";
+import { SignalsTab } from "@/components/ai/SignalsTab";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { useToast } from "@/components/ui/toaster";
 import { Walkthrough, type TourStep } from "@/components/Walkthrough";
@@ -45,7 +46,7 @@ import {
   Clock,
   Wallet,
   HelpCircle,
-
+  Radio,
 } from "lucide-react";
 
 
@@ -79,26 +80,29 @@ export const Route = createFileRoute("/ai")({
   }),
 });
 
-type TabId = "vaults" | "copilot" | "guardrail" | "console";
+type TabId = "vaults" | "signals" | "copilot" | "guardrail" | "console";
 const TABS: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "vaults", label: "Collective Vaults", icon: Vault },
+  { id: "signals", label: "Live Signals", icon: Radio },
   { id: "copilot", label: "Personal Copilot", icon: Bot },
   { id: "guardrail", label: "Guardrail & Risk", icon: ShieldCheck },
   { id: "console", label: "Automation Console", icon: TerminalIcon },
 ];
 
-const TOUR_KEY = "orvex.ai.tour.v1";
+const TOUR_KEY = "orvex.ai.tour.v2";
 
 const TAB_HINTS: Record<TabId, string> = {
   vaults: "Deposit into AI-managed strategy vaults",
+  signals: "Live AI-generated buy/sell signals from on-chain price action",
   copilot: "Delegate trading to your personal AI agent",
   guardrail: "Configure on-chain safety limits",
   console: "Live executor stream & controls",
 };
 
 const TOUR_STEPS: (TourStep & { tab?: TabId })[] = [
-  { target: "tabs", tab: "vaults", title: "Four Powerful Modules", body: "Switch between Collective Vaults, your Personal Copilot, Risk Guardrails, and the Automation Console. Each tab maps to a real on-chain contract.", placement: "bottom" },
+  { target: "tabs", tab: "vaults", title: "Five Powerful Modules", body: "Switch between Collective Vaults, Live Signals, Personal Copilot, Risk Guardrails, and the Automation Console. Each tab maps to a real on-chain contract.", placement: "bottom" },
   { target: "vault-card", tab: "vaults", title: "AI-Managed Vaults", body: "Deposit assets into ERC-4626-style strategies. The AI auto-rebalances positions. TVL and 7D trend update live from the chain.", placement: "bottom" },
+  { target: "signals-feed", tab: "signals", title: "Live AI Trading Signals", body: "Real-time BUY / SELL / HOLD signals generated from on-chain price action and momentum across every tracked pair. Confidence scores update every 8 seconds.", placement: "top" },
   { target: "emergency-stop", tab: "copilot", title: "Emergency Stop", body: "Instantly revoke all AI delegation on-chain — your funds stay yours. One click calls cancelDelegation().", placement: "bottom" },
   { target: "activate-agent", tab: "copilot", title: "Delegate to Your Copilot", body: "Authorize a session key for 1–30 days. The AI can trade within your Guardrail limits — nothing more.", placement: "top" },
   { target: "guardrail-params", tab: "guardrail", title: "Set Hard Risk Limits", body: "Cap slippage, daily volume, and trade size. The Guardrail contract enforces these for every AI transaction.", placement: "bottom" },
@@ -234,6 +238,7 @@ function AIHubPage() {
       ) : (
         <div key={tab} className="animate-rise">
           {tab === "vaults" && <VaultsTab />}
+          {tab === "signals" && <div data-tour="signals-feed"><SignalsTab /></div>}
           {tab === "copilot" && <CopilotTab />}
           {tab === "guardrail" && isGuardrailOwner && <GuardrailTab />}
           {tab === "console" && isConsoleOwner && <ConsoleTab />}
