@@ -107,9 +107,31 @@ const TOUR_STEPS: (TourStep & { tab?: TabId })[] = [
 ];
 
 function AIHubPage() {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const [tab, setTab] = useState<TabId>("vaults");
   const [tourOpen, setTourOpen] = useState(false);
+
+  // Owner detection — Guardrail & Automation Console are admin-only modules
+  const guardrailOwner = useReadContract({ address: ADDR.aiGuardrail, abi: aiGuardrailAbi, functionName: "owner" });
+  const consoleOwner = useReadContract({ address: ADDR.aiExecutionController, abi: aiExecutionControllerAbi, functionName: "owner" });
+  const isGuardrailOwner = !!address && !!guardrailOwner.data && (guardrailOwner.data as string).toLowerCase() === address.toLowerCase();
+  const isConsoleOwner = !!address && !!consoleOwner.data && (consoleOwner.data as string).toLowerCase() === address.toLowerCase();
+
+  const visibleTabs = useMemo(() => TABS.filter((t) => {
+    if (t.id === "guardrail") return isGuardrailOwner;
+    if (t.id === "console") return isConsoleOwner;
+    return true;
+  }), [isGuardrailOwner, isConsoleOwner]);
+
+  // If current tab becomes hidden (e.g. after disconnect), fall back to vaults
+  useEffect(() => {
+    if (!visibleTabs.find((t) => t.id === tab)) setTab("vaults");
+  }, [visibleTabs, tab]);
+
+  const visibleTour = useMemo(
+    () => TOUR_STEPS.filter((s) => !s.tab || visibleTabs.find((t) => t.id === s.tab)),
+    [visibleTabs],
+  );
 
   useEffect(() => {
     try {
@@ -119,6 +141,7 @@ function AIHubPage() {
       }
     } catch { /* ignore */ }
   }, []);
+
 
   return (
     <TooltipProvider delayDuration={200}>
