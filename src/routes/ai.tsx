@@ -107,9 +107,31 @@ const TOUR_STEPS: (TourStep & { tab?: TabId })[] = [
 ];
 
 function AIHubPage() {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const [tab, setTab] = useState<TabId>("vaults");
   const [tourOpen, setTourOpen] = useState(false);
+
+  // Owner detection — Guardrail & Automation Console are admin-only modules
+  const guardrailOwner = useReadContract({ address: ADDR.aiGuardrail, abi: aiGuardrailAbi, functionName: "owner" });
+  const consoleOwner = useReadContract({ address: ADDR.aiExecutionController, abi: aiExecutionControllerAbi, functionName: "owner" });
+  const isGuardrailOwner = !!address && !!guardrailOwner.data && (guardrailOwner.data as string).toLowerCase() === address.toLowerCase();
+  const isConsoleOwner = !!address && !!consoleOwner.data && (consoleOwner.data as string).toLowerCase() === address.toLowerCase();
+
+  const visibleTabs = useMemo(() => TABS.filter((t) => {
+    if (t.id === "guardrail") return isGuardrailOwner;
+    if (t.id === "console") return isConsoleOwner;
+    return true;
+  }), [isGuardrailOwner, isConsoleOwner]);
+
+  // If current tab becomes hidden (e.g. after disconnect), fall back to vaults
+  useEffect(() => {
+    if (!visibleTabs.find((t) => t.id === tab)) setTab("vaults");
+  }, [visibleTabs, tab]);
+
+  const visibleTour = useMemo(
+    () => TOUR_STEPS.filter((s) => !s.tab || visibleTabs.find((t) => t.id === s.tab)),
+    [visibleTabs],
+  );
 
   useEffect(() => {
     try {
@@ -119,6 +141,7 @@ function AIHubPage() {
       }
     } catch { /* ignore */ }
   }, []);
+
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -173,7 +196,7 @@ function AIHubPage() {
 
       {/* Tabs */}
       <div data-tour="tabs" className="glass rounded-2xl p-1.5 flex flex-wrap gap-1 mb-6">
-        {TABS.map((t) => {
+        {visibleTabs.map((t) => {
           const active = t.id === tab;
           const Icon = t.icon;
           return (
@@ -190,6 +213,9 @@ function AIHubPage() {
                 >
                   <Icon className="h-4 w-4" />
                   {t.label}
+                  {(t.id === "guardrail" || t.id === "console") && (
+                    <span className="ml-1 text-[9px] uppercase tracking-wider opacity-70">Admin</span>
+                  )}
                 </button>
               </TooltipTrigger>
               <TooltipContent>{TAB_HINTS[t.id]}</TooltipContent>
@@ -205,8 +231,8 @@ function AIHubPage() {
         <div key={tab} className="animate-rise">
           {tab === "vaults" && <VaultsTab />}
           {tab === "copilot" && <CopilotTab />}
-          {tab === "guardrail" && <GuardrailTab />}
-          {tab === "console" && <ConsoleTab />}
+          {tab === "guardrail" && isGuardrailOwner && <GuardrailTab />}
+          {tab === "console" && isConsoleOwner && <ConsoleTab />}
         </div>
       )}
 
@@ -218,8 +244,9 @@ function AIHubPage() {
         <ContractChip label="ExecutionController" addr={ADDR.aiExecutionController} />
       </div>
 
+
       <Walkthrough
-        steps={TOUR_STEPS}
+        steps={visibleTour}
         open={tourOpen}
         onClose={() => setTourOpen(false)}
         storageKey={TOUR_KEY}

@@ -1,5 +1,5 @@
 import { createConfig, http } from "wagmi";
-import { injected } from "wagmi/connectors";
+import { injected } from "@wagmi/core";
 import { litvm } from "./chain";
 
 // Multi-injected connector that detects all installed EIP-1193 wallets:
