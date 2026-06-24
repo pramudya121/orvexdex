@@ -246,7 +246,7 @@ function AIHubPage() {
 
 
       <Walkthrough
-        steps={TOUR_STEPS}
+        steps={visibleTour}
         open={tourOpen}
         onClose={() => setTourOpen(false)}
         storageKey={TOUR_KEY}
