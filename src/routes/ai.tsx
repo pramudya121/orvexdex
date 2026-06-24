@@ -100,8 +100,9 @@ const TAB_HINTS: Record<TabId, string> = {
 };
 
 const TOUR_STEPS: (TourStep & { tab?: TabId })[] = [
-  { target: "tabs", tab: "vaults", title: "Four Powerful Modules", body: "Switch between Collective Vaults, your Personal Copilot, Risk Guardrails, and the Automation Console. Each tab maps to a real on-chain contract.", placement: "bottom" },
+  { target: "tabs", tab: "vaults", title: "Five Powerful Modules", body: "Switch between Collective Vaults, Live Signals, Personal Copilot, Risk Guardrails, and the Automation Console. Each tab maps to a real on-chain contract.", placement: "bottom" },
   { target: "vault-card", tab: "vaults", title: "AI-Managed Vaults", body: "Deposit assets into ERC-4626-style strategies. The AI auto-rebalances positions. TVL and 7D trend update live from the chain.", placement: "bottom" },
+  { target: "signals-feed", tab: "signals", title: "Live AI Trading Signals", body: "Real-time BUY / SELL / HOLD signals generated from on-chain price action and momentum across every tracked pair. Confidence scores update every 8 seconds.", placement: "top" },
   { target: "emergency-stop", tab: "copilot", title: "Emergency Stop", body: "Instantly revoke all AI delegation on-chain — your funds stay yours. One click calls cancelDelegation().", placement: "bottom" },
   { target: "activate-agent", tab: "copilot", title: "Delegate to Your Copilot", body: "Authorize a session key for 1–30 days. The AI can trade within your Guardrail limits — nothing more.", placement: "top" },
   { target: "guardrail-params", tab: "guardrail", title: "Set Hard Risk Limits", body: "Cap slippage, daily volume, and trade size. The Guardrail contract enforces these for every AI transaction.", placement: "bottom" },
