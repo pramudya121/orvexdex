@@ -196,7 +196,7 @@ function AIHubPage() {
 
       {/* Tabs */}
       <div data-tour="tabs" className="glass rounded-2xl p-1.5 flex flex-wrap gap-1 mb-6">
-        {TABS.map((t) => {
+        {visibleTabs.map((t) => {
           const active = t.id === tab;
           const Icon = t.icon;
           return (
@@ -213,6 +213,9 @@ function AIHubPage() {
                 >
                   <Icon className="h-4 w-4" />
                   {t.label}
+                  {(t.id === "guardrail" || t.id === "console") && (
+                    <span className="ml-1 text-[9px] uppercase tracking-wider opacity-70">Admin</span>
+                  )}
                 </button>
               </TooltipTrigger>
               <TooltipContent>{TAB_HINTS[t.id]}</TooltipContent>
@@ -228,8 +231,8 @@ function AIHubPage() {
         <div key={tab} className="animate-rise">
           {tab === "vaults" && <VaultsTab />}
           {tab === "copilot" && <CopilotTab />}
-          {tab === "guardrail" && <GuardrailTab />}
-          {tab === "console" && <ConsoleTab />}
+          {tab === "guardrail" && isGuardrailOwner && <GuardrailTab />}
+          {tab === "console" && isConsoleOwner && <ConsoleTab />}
         </div>
       )}
 
@@ -240,6 +243,7 @@ function AIHubPage() {
         <ContractChip label="Guardrail" addr={ADDR.aiGuardrail} />
         <ContractChip label="ExecutionController" addr={ADDR.aiExecutionController} />
       </div>
+
 
       <Walkthrough
         steps={TOUR_STEPS}
