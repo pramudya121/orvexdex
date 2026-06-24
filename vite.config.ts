@@ -4,11 +4,4 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
-  vite: {
-    resolve: {
-      alias: {
-        events: "events",
-      },
-    },
-  },
 });
