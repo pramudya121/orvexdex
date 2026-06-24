@@ -117,11 +117,15 @@ function AIHubPage() {
   const isGuardrailOwner = !!address && !!guardrailOwner.data && (guardrailOwner.data as string).toLowerCase() === address.toLowerCase();
   const isConsoleOwner = !!address && !!consoleOwner.data && (consoleOwner.data as string).toLowerCase() === address.toLowerCase();
 
+  // Avoid SSR/client hydration mismatch — owner data is only known on the client
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const visibleTabs = useMemo(() => TABS.filter((t) => {
-    if (t.id === "guardrail") return isGuardrailOwner;
-    if (t.id === "console") return isConsoleOwner;
+    if (t.id === "guardrail") return mounted ? isGuardrailOwner : false;
+    if (t.id === "console") return mounted ? isConsoleOwner : false;
     return true;
-  }), [isGuardrailOwner, isConsoleOwner]);
+  }), [mounted, isGuardrailOwner, isConsoleOwner]);
 
   // If current tab becomes hidden (e.g. after disconnect), fall back to vaults
   useEffect(() => {
