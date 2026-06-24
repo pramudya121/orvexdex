@@ -80,18 +80,20 @@ export const Route = createFileRoute("/ai")({
   }),
 });
 
-type TabId = "vaults" | "copilot" | "guardrail" | "console";
+type TabId = "vaults" | "signals" | "copilot" | "guardrail" | "console";
 const TABS: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "vaults", label: "Collective Vaults", icon: Vault },
+  { id: "signals", label: "Live Signals", icon: Radio },
   { id: "copilot", label: "Personal Copilot", icon: Bot },
   { id: "guardrail", label: "Guardrail & Risk", icon: ShieldCheck },
   { id: "console", label: "Automation Console", icon: TerminalIcon },
 ];
 
-const TOUR_KEY = "orvex.ai.tour.v1";
+const TOUR_KEY = "orvex.ai.tour.v2";
 
 const TAB_HINTS: Record<TabId, string> = {
   vaults: "Deposit into AI-managed strategy vaults",
+  signals: "Live AI-generated buy/sell signals from on-chain price action",
   copilot: "Delegate trading to your personal AI agent",
   guardrail: "Configure on-chain safety limits",
   console: "Live executor stream & controls",
