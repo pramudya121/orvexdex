@@ -45,9 +45,12 @@ export const Route = createFileRoute("/portfolio")({
   }),
 });
 
+type PortfolioTab = "tokens" | "lp" | "farming";
+
 function PortfolioPage() {
   const { address, isConnected } = useAccount();
   const native = useBalance({ address, query: { refetchInterval: 10000 } });
+  const [tab, setTab] = useState<PortfolioTab>("tokens");
 
   const balanceCalls = useMemo(
     () => TOKENS.filter((t) => !t.isNative).map((t) => ({
@@ -92,26 +95,48 @@ function PortfolioPage() {
       )}
 
       {!isConnected && (
-        <div className="glass rounded-2xl p-10 text-center text-muted-foreground">Connect a wallet to see your balances and LP positions.</div>
+        <div className="glass rounded-2xl p-10 text-center text-muted-foreground">Connect a wallet to see your balances, LP positions, and farming rewards.</div>
       )}
 
       {isConnected && (
         <>
-          <SectionHeader title="Tokens" subtitle="Live balances" />
-          {balances.isLoading && !balances.data ? (
-            <PortfolioTokensSkeleton count={6} />
-          ) : (
-            <div className="grid sm:grid-cols-2 gap-3">
-              <TokenCard logo={TOKENS[0].logo} symbol="zkLTC" name="Native" balance={native.data?.value} decimals={18} />
-              {TOKENS.filter((t) => !t.isNative).map((t, i) => {
-                const b = balances.data?.[i]?.result as bigint | undefined;
-                return <TokenCard key={t.address + t.symbol} logo={t.logo} symbol={t.symbol} name={t.name} balance={b} decimals={t.decimals} address={t.address} />;
-              })}
-            </div>
+          {/* Sub-header nav — Tokens / LP / Farming */}
+          <div className="glass rounded-2xl p-1.5 flex items-center gap-1 mb-6 animate-rise">
+            <TabButton active={tab === "tokens"} onClick={() => setTab("tokens")} icon={<Coins className="h-4 w-4" />} label="Tokens" />
+            <TabButton active={tab === "lp"} onClick={() => setTab("lp")} icon={<Layers className="h-4 w-4" />} label="LP Positions" />
+            <TabButton active={tab === "farming"} onClick={() => setTab("farming")} icon={<Sprout className="h-4 w-4" />} label="Farming" />
+          </div>
+
+          {tab === "tokens" && (
+            <>
+              <SectionHeader title="Tokens" subtitle="Live balances · tap Send to transfer" />
+              {balances.isLoading && !balances.data ? (
+                <PortfolioTokensSkeleton count={6} />
+              ) : (
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <TokenCard logo={TOKENS[0].logo} symbol="zkLTC" name="Native" balance={native.data?.value} decimals={18} />
+                  {TOKENS.filter((t) => !t.isNative).map((t, i) => {
+                    const b = balances.data?.[i]?.result as bigint | undefined;
+                    return <TokenCard key={t.address + t.symbol} logo={t.logo} symbol={t.symbol} name={t.name} balance={b} decimals={t.decimals} address={t.address} />;
+                  })}
+                </div>
+              )}
+            </>
           )}
 
-          <SectionHeader title="LP Positions" subtitle="Underlying assets · live" className="mt-10" />
-          <LPositions owner={address!} />
+          {tab === "lp" && (
+            <>
+              <SectionHeader title="LP Positions" subtitle="Underlying assets · live" />
+              <LPositions owner={address!} />
+            </>
+          )}
+
+          {tab === "farming" && (
+            <>
+              <SectionHeader title="Farming" subtitle="Active staking positions · pending ORVX" />
+              <FarmingPositions owner={address!} />
+            </>
+          )}
 
           <SectionHeader title="Recent Activity" subtitle="Streamed from LitVM logs" className="mt-10" />
           <Suspense fallback={<ActivityFeedSkeleton rows={5} />}>
@@ -122,6 +147,23 @@ function PortfolioPage() {
     </div>
   );
 }
+
+function TabButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition ${
+        active
+          ? "bg-gradient-luxe text-primary-foreground shadow-neon"
+          : "text-muted-foreground hover:text-foreground hover:bg-surface-2"
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
 
 function SectionHeader({ title, subtitle, className = "" }: { title: string; subtitle?: string; className?: string }) {
   return (
