@@ -6,7 +6,7 @@ import { erc20Abi } from "@/lib/abis/wzkltc";
 import { factoryAbi } from "@/lib/abis/factory";
 import { pairAbi } from "@/lib/abis/pair";
 import { fmt } from "@/lib/format";
-import { lazy, Suspense, useMemo } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { usePoolStats, fmtWzk, type PoolMeta } from "@/lib/poolStats";
 import { findToken } from "@/lib/tokens";
 import {
@@ -14,10 +14,14 @@ import {
   LPositionsSkeleton,
   PortfolioTokensSkeleton,
 } from "@/components/skeletons";
+import { SendTokenDialog } from "@/components/portfolio/SendTokenDialog";
+import { FarmingPositions } from "@/components/portfolio/FarmingPositions";
+import { Coins, Layers, Sprout, Send } from "lucide-react";
 
 const ActivityFeed = lazy(() =>
   import("@/components/ActivityFeed").then((m) => ({ default: m.ActivityFeed })),
 );
+
 
 export const Route = createFileRoute("/portfolio")({
   component: PortfolioPage,
@@ -41,9 +45,12 @@ export const Route = createFileRoute("/portfolio")({
   }),
 });
 
+type PortfolioTab = "tokens" | "lp" | "farming";
+
 function PortfolioPage() {
   const { address, isConnected } = useAccount();
   const native = useBalance({ address, query: { refetchInterval: 10000 } });
+  const [tab, setTab] = useState<PortfolioTab>("tokens");
 
   const balanceCalls = useMemo(
     () => TOKENS.filter((t) => !t.isNative).map((t) => ({
@@ -88,26 +95,48 @@ function PortfolioPage() {
       )}
 
       {!isConnected && (
-        <div className="glass rounded-2xl p-10 text-center text-muted-foreground">Connect a wallet to see your balances and LP positions.</div>
+        <div className="glass rounded-2xl p-10 text-center text-muted-foreground">Connect a wallet to see your balances, LP positions, and farming rewards.</div>
       )}
 
       {isConnected && (
         <>
-          <SectionHeader title="Tokens" subtitle="Live balances" />
-          {balances.isLoading && !balances.data ? (
-            <PortfolioTokensSkeleton count={6} />
-          ) : (
-            <div className="grid sm:grid-cols-2 gap-3">
-              <TokenCard logo={TOKENS[0].logo} symbol="zkLTC" name="Native" balance={native.data?.value} decimals={18} />
-              {TOKENS.filter((t) => !t.isNative).map((t, i) => {
-                const b = balances.data?.[i]?.result as bigint | undefined;
-                return <TokenCard key={t.address + t.symbol} logo={t.logo} symbol={t.symbol} name={t.name} balance={b} decimals={t.decimals} address={t.address} />;
-              })}
-            </div>
+          {/* Sub-header nav — Tokens / LP / Farming */}
+          <div className="glass rounded-2xl p-1.5 flex items-center gap-1 mb-6 animate-rise">
+            <TabButton active={tab === "tokens"} onClick={() => setTab("tokens")} icon={<Coins className="h-4 w-4" />} label="Tokens" />
+            <TabButton active={tab === "lp"} onClick={() => setTab("lp")} icon={<Layers className="h-4 w-4" />} label="LP Positions" />
+            <TabButton active={tab === "farming"} onClick={() => setTab("farming")} icon={<Sprout className="h-4 w-4" />} label="Farming" />
+          </div>
+
+          {tab === "tokens" && (
+            <>
+              <SectionHeader title="Tokens" subtitle="Live balances · tap Send to transfer" />
+              {balances.isLoading && !balances.data ? (
+                <PortfolioTokensSkeleton count={6} />
+              ) : (
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <TokenCard logo={TOKENS[0].logo} symbol="zkLTC" name="Native" balance={native.data?.value} decimals={18} />
+                  {TOKENS.filter((t) => !t.isNative).map((t, i) => {
+                    const b = balances.data?.[i]?.result as bigint | undefined;
+                    return <TokenCard key={t.address + t.symbol} logo={t.logo} symbol={t.symbol} name={t.name} balance={b} decimals={t.decimals} address={t.address} />;
+                  })}
+                </div>
+              )}
+            </>
           )}
 
-          <SectionHeader title="LP Positions" subtitle="Underlying assets · live" className="mt-10" />
-          <LPositions owner={address!} />
+          {tab === "lp" && (
+            <>
+              <SectionHeader title="LP Positions" subtitle="Underlying assets · live" />
+              <LPositions owner={address!} />
+            </>
+          )}
+
+          {tab === "farming" && (
+            <>
+              <SectionHeader title="Farming" subtitle="Active staking positions · pending ORVX" />
+              <FarmingPositions owner={address!} />
+            </>
+          )}
 
           <SectionHeader title="Recent Activity" subtitle="Streamed from LitVM logs" className="mt-10" />
           <Suspense fallback={<ActivityFeedSkeleton rows={5} />}>
@@ -118,6 +147,23 @@ function PortfolioPage() {
     </div>
   );
 }
+
+function TabButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition ${
+        active
+          ? "bg-gradient-luxe text-primary-foreground shadow-neon"
+          : "text-muted-foreground hover:text-foreground hover:bg-surface-2"
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
 
 function SectionHeader({ title, subtitle, className = "" }: { title: string; subtitle?: string; className?: string }) {
   return (
@@ -142,24 +188,51 @@ function KpiCard({ label, value, accent = "brand", pulse }: { label: string; val
 }
 
 function TokenCard({ logo, symbol, name, balance, decimals, address }: { logo: string; symbol: string; name: string; balance?: bigint; decimals: number; address?: string }) {
+  const [sendOpen, setSendOpen] = useState(false);
+  const hasBalance = (balance ?? 0n) > 0n;
   return (
-    <div className="glass rounded-2xl p-4 flex items-center justify-between card-hover animate-rise">
-      <div className="flex items-center gap-3">
-        <img src={logo} alt={`${symbol} token logo`} className="h-10 w-10 rounded-full ring-2 ring-white/5" />
-        <div>
-          <div className="font-semibold">{symbol}</div>
-          <div className="text-xs text-muted-foreground">{name}</div>
+    <>
+      <div className="glass rounded-2xl p-4 card-hover animate-rise">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <img src={logo} alt={`${symbol} token logo`} className="h-10 w-10 rounded-full ring-2 ring-white/5" />
+            <div className="min-w-0">
+              <div className="font-semibold">{symbol}</div>
+              <div className="text-xs text-muted-foreground truncate">{name}</div>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="font-mono font-semibold">{fmt(balance, decimals)}</div>
+            {address && (
+              <a href={explorerAddr(address)} target="_blank" rel="noreferrer" className="text-xs text-accent hover:underline">contract ↗</a>
+            )}
+          </div>
+        </div>
+        <div className="mt-3 pt-3 border-t border-border/60 flex justify-end">
+          <button
+            onClick={() => setSendOpen(true)}
+            disabled={!hasBalance}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-2 border border-border hover:border-primary/60 text-xs font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed"
+            title={hasBalance ? `Send ${symbol}` : "No balance to send"}
+          >
+            <Send className="h-3.5 w-3.5" />
+            Send
+          </button>
         </div>
       </div>
-      <div className="text-right">
-        <div className="font-mono font-semibold">{fmt(balance, decimals)}</div>
-        {address && (
-          <a href={explorerAddr(address)} target="_blank" rel="noreferrer" className="text-xs text-accent hover:underline">contract ↗</a>
-        )}
-      </div>
-    </div>
+      <SendTokenDialog
+        open={sendOpen}
+        onOpenChange={setSendOpen}
+        symbol={symbol}
+        logo={logo}
+        decimals={decimals}
+        balance={balance}
+        tokenAddress={address}
+      />
+    </>
   );
 }
+
 
 function LPositions({ owner }: { owner: `0x${string}` }) {
   const len = useReadContract({ address: ADDR.factory, abi: factoryAbi, functionName: "allPairsLength", query: { refetchInterval: 20000 } });

@@ -246,7 +246,7 @@ function DomainsPage() {
       toast.push({ title: "Belum ada commit", description: "Klik Commit dulu", type: "error" });
       return;
     }
-    const delay = Number(commitDelay.data ?? 60n);
+    const delay = Number(commitDelay.data ?? 5n);
     const elapsed = Math.floor(Date.now() / 1000) - stored.committedAt;
     if (elapsed < delay) {
       toast.push({ title: `Tunggu ${delay - elapsed}s lagi sebelum mint`, type: "error" });
@@ -272,6 +272,13 @@ function DomainsPage() {
       toast.push({ title: "Mint gagal", description: getErr(e), type: "error" });
     }
   };
+
+  // 1s ticker so countdown updates live without waiting for a re-render trigger.
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    const id = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   // ============ handleSetPrimary ============
   // Menulis reverse record di PublicResolver (setReverse) + simpan preferensi lokal
@@ -371,8 +378,9 @@ function DomainsPage() {
 
   // ─────────────────────── UI ───────────────────────
   const existingCommit = checkedName && address ? loadCommit(checkedName, address) : null;
-  const delaySec = Number(commitDelay.data ?? 60n);
-  const elapsed = existingCommit ? Math.floor(Date.now() / 1000) - existingCommit.committedAt : 0;
+  // Default delay UX = 5s (was 60s). Actual on-chain minimum still respected via commitDelay read.
+  const delaySec = Number(commitDelay.data ?? 5n);
+  const elapsed = existingCommit ? now - existingCommit.committedAt : 0;
   const canReveal = !!existingCommit && elapsed >= delaySec;
   const waitSec = existingCommit ? Math.max(0, delaySec - elapsed) : 0;
 
