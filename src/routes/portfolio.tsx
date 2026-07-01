@@ -188,24 +188,51 @@ function KpiCard({ label, value, accent = "brand", pulse }: { label: string; val
 }
 
 function TokenCard({ logo, symbol, name, balance, decimals, address }: { logo: string; symbol: string; name: string; balance?: bigint; decimals: number; address?: string }) {
+  const [sendOpen, setSendOpen] = useState(false);
+  const hasBalance = (balance ?? 0n) > 0n;
   return (
-    <div className="glass rounded-2xl p-4 flex items-center justify-between card-hover animate-rise">
-      <div className="flex items-center gap-3">
-        <img src={logo} alt={`${symbol} token logo`} className="h-10 w-10 rounded-full ring-2 ring-white/5" />
-        <div>
-          <div className="font-semibold">{symbol}</div>
-          <div className="text-xs text-muted-foreground">{name}</div>
+    <>
+      <div className="glass rounded-2xl p-4 card-hover animate-rise">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <img src={logo} alt={`${symbol} token logo`} className="h-10 w-10 rounded-full ring-2 ring-white/5" />
+            <div className="min-w-0">
+              <div className="font-semibold">{symbol}</div>
+              <div className="text-xs text-muted-foreground truncate">{name}</div>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="font-mono font-semibold">{fmt(balance, decimals)}</div>
+            {address && (
+              <a href={explorerAddr(address)} target="_blank" rel="noreferrer" className="text-xs text-accent hover:underline">contract ↗</a>
+            )}
+          </div>
+        </div>
+        <div className="mt-3 pt-3 border-t border-border/60 flex justify-end">
+          <button
+            onClick={() => setSendOpen(true)}
+            disabled={!hasBalance}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-2 border border-border hover:border-primary/60 text-xs font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed"
+            title={hasBalance ? `Send ${symbol}` : "No balance to send"}
+          >
+            <Send className="h-3.5 w-3.5" />
+            Send
+          </button>
         </div>
       </div>
-      <div className="text-right">
-        <div className="font-mono font-semibold">{fmt(balance, decimals)}</div>
-        {address && (
-          <a href={explorerAddr(address)} target="_blank" rel="noreferrer" className="text-xs text-accent hover:underline">contract ↗</a>
-        )}
-      </div>
-    </div>
+      <SendTokenDialog
+        open={sendOpen}
+        onOpenChange={setSendOpen}
+        symbol={symbol}
+        logo={logo}
+        decimals={decimals}
+        balance={balance}
+        tokenAddress={address}
+      />
+    </>
   );
 }
+
 
 function LPositions({ owner }: { owner: `0x${string}` }) {
   const len = useReadContract({ address: ADDR.factory, abi: factoryAbi, functionName: "allPairsLength", query: { refetchInterval: 20000 } });
