@@ -6,7 +6,7 @@ import { erc20Abi } from "@/lib/abis/wzkltc";
 import { factoryAbi } from "@/lib/abis/factory";
 import { pairAbi } from "@/lib/abis/pair";
 import { fmt } from "@/lib/format";
-import { lazy, Suspense, useMemo } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { usePoolStats, fmtWzk, type PoolMeta } from "@/lib/poolStats";
 import { findToken } from "@/lib/tokens";
 import {
@@ -14,10 +14,14 @@ import {
   LPositionsSkeleton,
   PortfolioTokensSkeleton,
 } from "@/components/skeletons";
+import { SendTokenDialog } from "@/components/portfolio/SendTokenDialog";
+import { FarmingPositions } from "@/components/portfolio/FarmingPositions";
+import { Coins, Layers, Sprout, Activity, Send } from "lucide-react";
 
 const ActivityFeed = lazy(() =>
   import("@/components/ActivityFeed").then((m) => ({ default: m.ActivityFeed })),
 );
+
 
 export const Route = createFileRoute("/portfolio")({
   component: PortfolioPage,
