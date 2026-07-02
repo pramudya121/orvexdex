@@ -46,7 +46,7 @@ export const Route = createFileRoute("/portfolio")({
   }),
 });
 
-type PortfolioTab = "tokens" | "lp" | "farming";
+type PortfolioTab = "tokens" | "lp" | "farming" | "ai";
 
 function PortfolioPage() {
   const { address, isConnected } = useAccount();
