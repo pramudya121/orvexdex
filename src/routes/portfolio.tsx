@@ -16,7 +16,8 @@ import {
 } from "@/components/skeletons";
 import { SendTokenDialog } from "@/components/portfolio/SendTokenDialog";
 import { FarmingPositions } from "@/components/portfolio/FarmingPositions";
-import { Coins, Layers, Sprout, Send } from "lucide-react";
+import { AiAnalyzerTab } from "@/components/portfolio/AiAnalyzerTab";
+import { Coins, Layers, Sprout, Send, Brain } from "lucide-react";
 
 const ActivityFeed = lazy(() =>
   import("@/components/ActivityFeed").then((m) => ({ default: m.ActivityFeed })),
