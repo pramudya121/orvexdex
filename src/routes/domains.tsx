@@ -496,7 +496,7 @@ function DomainsPage() {
                 disabled={!valid}
                 className="px-5 md:px-7 rounded-xl bg-gradient-luxe text-primary-foreground font-bold shadow-neon hover:shadow-gold transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                Cek
+                Check
               </button>
             </div>
             <div className="mt-2 flex items-center justify-between gap-2 px-2 text-[11px]">
