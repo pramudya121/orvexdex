@@ -835,6 +835,29 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
   );
 }
 
+function StepDot({ active, done, label }: { active: boolean; done: boolean; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span
+        className={`h-2.5 w-2.5 rounded-full transition ${
+          done
+            ? "bg-accent shadow-[0_0_8px_hsl(var(--accent))]"
+            : active
+              ? "bg-primary animate-pulse shadow-[0_0_8px_hsl(var(--primary))]"
+              : "bg-border"
+        }`}
+      />
+      <span
+        className={
+          done ? "text-accent" : active ? "text-foreground" : "text-muted-foreground"
+        }
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
 function ContractChip({ label, addr }: { label: string; addr: string }) {
   return (
     <div className="glass rounded-xl px-3 py-2 flex items-center justify-between">
