@@ -215,9 +215,16 @@ function DomainsPage() {
   // Langkah 2 (setelah COMMIT_REVEAL_DELAY): write register() payable dengan value = price
   const handleCommit = async () => {
     if (!address || !checkedName) return;
+    if (!valid) {
+      toast.push({ title: "Invalid name", type: "error" });
+      return;
+    }
+    if (isAvailable !== true) {
+      toast.push({ title: "Domain not available", type: "error" });
+      return;
+    }
     try {
       const secret = randomSecret();
-      // pre-compute commitment hash (pure on chain)
       const commitment = (await publicClient!.readContract({
         address: ADDR.domainController,
         abi: domainControllerAbi,
@@ -241,9 +248,9 @@ function DomainsPage() {
       });
       setPendingHash(h);
       setPendingLabel("Commit");
-      toast.push({ title: "Commit dikirim — tunggu jeda lalu Mint", hash: h });
+      toast.push({ title: "Commit sent — wait a moment then Mint", hash: h });
     } catch (e) {
-      toast.push({ title: "Commit gagal", description: getErr(e), type: "error" });
+      toast.push({ title: "Commit failed", description: getErr(e), type: "error" });
     }
   };
 
@@ -251,17 +258,27 @@ function DomainsPage() {
     if (!address || !checkedName) return;
     const stored = loadCommit(checkedName, address);
     if (!stored) {
-      toast.push({ title: "Belum ada commit", description: "Klik Commit dulu", type: "error" });
+      toast.push({ title: "No commit found", description: "Click Commit first", type: "error" });
       return;
     }
     const delay = Number(commitDelay.data ?? 5n);
+    const expiry = Number(commitExpiry.data ?? 86400n);
     const elapsed = Math.floor(Date.now() / 1000) - stored.committedAt;
     if (elapsed < delay) {
-      toast.push({ title: `Tunggu ${delay - elapsed}s lagi sebelum mint`, type: "error" });
+      toast.push({ title: `Wait ${delay - elapsed}s more before minting`, type: "error" });
+      return;
+    }
+    if (elapsed > expiry) {
+      toast.push({ title: "Commit expired — please commit again", type: "error" });
+      clearCommit(checkedName, address);
+      return;
+    }
+    if (isAvailable !== true) {
+      toast.push({ title: "Domain no longer available", type: "error" });
       return;
     }
     if (!priceWei) {
-      toast.push({ title: "Harga belum tersedia", type: "error" });
+      toast.push({ title: "Price not ready", type: "error" });
       return;
     }
     try {
@@ -277,7 +294,7 @@ function DomainsPage() {
       toast.push({ title: `Minting ${checkedName}.${DOMAIN_TLD}…`, hash: h });
       clearCommit(checkedName, address);
     } catch (e) {
-      toast.push({ title: "Mint gagal", description: getErr(e), type: "error" });
+      toast.push({ title: "Mint failed", description: getErr(e), type: "error" });
     }
   };
 
