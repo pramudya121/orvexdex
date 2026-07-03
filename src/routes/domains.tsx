@@ -125,6 +125,17 @@ function DomainsPage() {
   const name = useMemo(() => sanitize(rawQuery), [rawQuery]);
   const valid = name.length >= 3;
 
+  // Debounced live-check: 300ms after the user stops typing we hit the
+  // contract for isAvailable + price so the UI updates without a button click.
+  useEffect(() => {
+    if (!valid) {
+      setCheckedName(null);
+      return;
+    }
+    const t = setTimeout(() => setCheckedName(name), 300);
+    return () => clearTimeout(t);
+  }, [name, valid]);
+
   // ───────────────────── ON-CHAIN READS ─────────────────────
   const minDur = useReadContract({
     address: ADDR.domainController,
@@ -142,8 +153,7 @@ function DomainsPage() {
     functionName: "COMMIT_REVEAL_EXPIRY",
   });
 
-  // Cek ketersediaan + info domain saat ada nama yang sudah dicek
-  // SOURCE: DomainRegistrarController.isAvailable & domainInfo (read)
+  // Live availability + domain info + price. Auto-refetches every 10s.
   const availability = useReadContracts({
     contracts: checkedName
       ? [
@@ -167,7 +177,7 @@ function DomainsPage() {
           },
         ]
       : [],
-    query: { enabled: !!checkedName, refetchInterval: 12000 },
+    query: { enabled: !!checkedName, refetchInterval: 10000 },
   });
 
   const isAvailable = availability.data?.[0]?.result as boolean | undefined;
@@ -192,11 +202,9 @@ function DomainsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receipt.isSuccess]);
 
-  // ============ handleSearch ============
-  // Memicu pembacaan on-chain isAvailable + price dari DomainRegistrarController
   const handleSearch = useCallback(() => {
     if (!valid) {
-      toast.push({ title: "Nama minimal 3 karakter", type: "error" });
+      toast.push({ title: "Name must be at least 3 characters", type: "error" });
       return;
     }
     setCheckedName(name);
@@ -207,9 +215,16 @@ function DomainsPage() {
   // Langkah 2 (setelah COMMIT_REVEAL_DELAY): write register() payable dengan value = price
   const handleCommit = async () => {
     if (!address || !checkedName) return;
+    if (!valid) {
+      toast.push({ title: "Invalid name", type: "error" });
+      return;
+    }
+    if (isAvailable !== true) {
+      toast.push({ title: "Domain not available", type: "error" });
+      return;
+    }
     try {
       const secret = randomSecret();
-      // pre-compute commitment hash (pure on chain)
       const commitment = (await publicClient!.readContract({
         address: ADDR.domainController,
         abi: domainControllerAbi,
@@ -233,9 +248,9 @@ function DomainsPage() {
       });
       setPendingHash(h);
       setPendingLabel("Commit");
-      toast.push({ title: "Commit dikirim — tunggu jeda lalu Mint", hash: h });
+      toast.push({ title: "Commit sent — wait a moment then Mint", hash: h });
     } catch (e) {
-      toast.push({ title: "Commit gagal", description: getErr(e), type: "error" });
+      toast.push({ title: "Commit failed", description: getErr(e), type: "error" });
     }
   };
 
@@ -243,17 +258,27 @@ function DomainsPage() {
     if (!address || !checkedName) return;
     const stored = loadCommit(checkedName, address);
     if (!stored) {
-      toast.push({ title: "Belum ada commit", description: "Klik Commit dulu", type: "error" });
+      toast.push({ title: "No commit found", description: "Click Commit first", type: "error" });
       return;
     }
     const delay = Number(commitDelay.data ?? 5n);
+    const expiry = Number(commitExpiry.data ?? 86400n);
     const elapsed = Math.floor(Date.now() / 1000) - stored.committedAt;
     if (elapsed < delay) {
-      toast.push({ title: `Tunggu ${delay - elapsed}s lagi sebelum mint`, type: "error" });
+      toast.push({ title: `Wait ${delay - elapsed}s more before minting`, type: "error" });
+      return;
+    }
+    if (elapsed > expiry) {
+      toast.push({ title: "Commit expired — please commit again", type: "error" });
+      clearCommit(checkedName, address);
+      return;
+    }
+    if (isAvailable !== true) {
+      toast.push({ title: "Domain no longer available", type: "error" });
       return;
     }
     if (!priceWei) {
-      toast.push({ title: "Harga belum tersedia", type: "error" });
+      toast.push({ title: "Price not ready", type: "error" });
       return;
     }
     try {
@@ -269,7 +294,7 @@ function DomainsPage() {
       toast.push({ title: `Minting ${checkedName}.${DOMAIN_TLD}…`, hash: h });
       clearCommit(checkedName, address);
     } catch (e) {
-      toast.push({ title: "Mint gagal", description: getErr(e), type: "error" });
+      toast.push({ title: "Mint failed", description: getErr(e), type: "error" });
     }
   };
 
@@ -471,11 +496,33 @@ function DomainsPage() {
                 disabled={!valid}
                 className="px-5 md:px-7 rounded-xl bg-gradient-luxe text-primary-foreground font-bold shadow-neon hover:shadow-gold transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                Cek
+                Check
               </button>
             </div>
-            <div className="mt-2 text-[11px] text-muted-foreground text-left px-2">
-              Hanya huruf kecil, angka, dan tanda hubung — minimal 3 karakter.
+            <div className="mt-2 flex items-center justify-between gap-2 px-2 text-[11px]">
+              <span className="text-muted-foreground">
+                Lowercase letters, digits, and hyphens — min 3 characters.
+              </span>
+              {valid && checkedName === name && (
+                <span className="inline-flex items-center gap-1.5 font-semibold">
+                  {availability.isFetching ? (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                      <span className="text-muted-foreground">Checking…</span>
+                    </>
+                  ) : isAvailable === true ? (
+                    <>
+                      <CheckCircle2 className="h-3 w-3 text-accent" />
+                      <span className="text-accent">Available</span>
+                    </>
+                  ) : isAvailable === false ? (
+                    <>
+                      <XCircle className="h-3 w-3 text-destructive" />
+                      <span className="text-destructive">Taken</span>
+                    </>
+                  ) : null}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -501,17 +548,21 @@ function DomainsPage() {
                 </div>
                 <div className="text-sm text-muted-foreground mt-2">
                   {checkedName.length <= 3
-                    ? "Nama Premium — sangat langka"
+                    ? "Premium name — extra rare"
                     : checkedName.length === 4
-                      ? "Nama pendek — populer"
-                      : "Nama standar"}
+                      ? "Short name — popular"
+                      : "Standard name"}
                 </div>
                 <div className="flex gap-3 mt-5">
                   <Stat icon={<Shield className="h-4 w-4" />} label="NFT" value="ERC-721" />
-                  <Stat icon={<Clock className="h-4 w-4" />} label="Durasi" value={`${yearsClamped} thn`} />
+                  <Stat
+                    icon={<Clock className="h-4 w-4" />}
+                    label="Duration"
+                    value={`${yearsClamped} yr`}
+                  />
                   <Stat
                     icon={<Sparkles className="h-4 w-4" />}
-                    label="Harga"
+                    label="Price"
                     value={
                       isPriceLoading
                         ? "…"
@@ -525,26 +576,26 @@ function DomainsPage() {
 
               <div className="rounded-2xl bg-surface-2 border border-border p-5">
                 <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-3">
-                  Pilih durasi registrasi
+                  Choose registration duration
                 </div>
                 <div className="flex items-center justify-between rounded-xl bg-surface border border-border p-2">
                   <button
                     onClick={() => setYears((y) => Math.max(1, y - 1))}
                     className="h-10 w-10 rounded-lg bg-surface-2 hover:bg-primary/20 grid place-items-center transition"
-                    aria-label="Kurangi tahun"
+                    aria-label="Decrease years"
                   >
                     <Minus className="h-4 w-4" />
                   </button>
                   <div className="text-center">
                     <div className="text-3xl font-black">{yearsClamped}</div>
                     <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                      Tahun
+                      {yearsClamped === 1 ? "Year" : "Years"}
                     </div>
                   </div>
                   <button
                     onClick={() => setYears((y) => Math.min(5, y + 1))}
                     className="h-10 w-10 rounded-lg bg-surface-2 hover:bg-primary/20 grid place-items-center transition"
-                    aria-label="Tambah tahun"
+                    aria-label="Increase years"
                   >
                     <Plus className="h-4 w-4" />
                   </button>
@@ -561,7 +612,30 @@ function DomainsPage() {
                   </span>
                 </div>
 
-                {/* Commit-reveal flow */}
+                {/* Commit-reveal status stepper */}
+                {isConnected && (
+                  <div className="mt-5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em]">
+                    <StepDot
+                      active={!existingCommit || !!pendingHash}
+                      done={!!existingCommit}
+                      label="Commit"
+                    />
+                    <div className="flex-1 h-px bg-border" />
+                    <StepDot
+                      active={!!existingCommit && !canReveal}
+                      done={!!existingCommit && canReveal}
+                      label={existingCommit && !canReveal ? `Wait ${waitSec}s` : "Ready"}
+                    />
+                    <div className="flex-1 h-px bg-border" />
+                    <StepDot
+                      active={!!(pendingHash && pendingLabel === "Mint")}
+                      done={false}
+                      label="Register"
+                    />
+                  </div>
+                )}
+
+                {/* Commit-reveal action */}
                 {!isConnected ? (
                   <div className="mt-4">
                     <ConnectButton />
@@ -569,23 +643,29 @@ function DomainsPage() {
                 ) : !existingCommit ? (
                   <button
                     onClick={handleCommit}
-                    disabled={!!pendingHash}
+                    disabled={
+                      !!pendingHash ||
+                      isAvailable !== true ||
+                      !priceWei ||
+                      (minDur.data !== undefined &&
+                        BigInt(yearsClamped * SECONDS_PER_YEAR) < (minDur.data as bigint))
+                    }
                     className="mt-4 w-full py-3 rounded-xl bg-gradient-luxe text-primary-foreground font-bold shadow-neon hover:shadow-gold transition disabled:opacity-40 inline-flex items-center justify-center gap-2"
                   >
                     {pendingHash && pendingLabel === "Commit" ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin" /> Commit…
+                        <Loader2 className="h-4 w-4 animate-spin" /> Committing…
                       </>
                     ) : (
                       <>
-                        <Shield className="h-4 w-4" /> 1/2 — Commit
+                        <Shield className="h-4 w-4" /> Step 1 — Commit
                       </>
                     )}
                   </button>
                 ) : (
                   <button
                     onClick={handleMint}
-                    disabled={!canReveal || !!pendingHash}
+                    disabled={!canReveal || !!pendingHash || !priceWei || isAvailable !== true}
                     className="mt-4 w-full py-3 rounded-xl bg-gradient-luxe text-primary-foreground font-bold shadow-neon hover:shadow-gold transition disabled:opacity-40 inline-flex items-center justify-center gap-2"
                   >
                     {pendingHash && pendingLabel === "Mint" ? (
@@ -594,17 +674,17 @@ function DomainsPage() {
                       </>
                     ) : canReveal ? (
                       <>
-                        <Sparkles className="h-4 w-4" /> 2/2 — Mint Domain
+                        <Sparkles className="h-4 w-4" /> Step 2 — Register Domain
                       </>
                     ) : (
                       <>
-                        <Clock className="h-4 w-4" /> Tunggu {waitSec}s
+                        <Clock className="h-4 w-4" /> Wait {waitSec}s
                       </>
                     )}
                   </button>
                 )}
                 <div className="mt-2 text-[10px] text-muted-foreground text-center">
-                  Anti-front-running: commit dulu, lalu mint setelah ~{delaySec}s.
+                  Anti front-running: commit first, then register after ~{delaySec}s.
                 </div>
               </div>
             </div>
@@ -620,7 +700,7 @@ function DomainsPage() {
                 </div>
                 {domainInfo && (
                   <div className="mt-2 text-sm text-muted-foreground">
-                    Pemilik:{" "}
+                    Owner:{" "}
                     <span className="font-mono text-foreground">
                       {domainInfo[0] === ZERO
                         ? "—"
@@ -629,7 +709,7 @@ function DomainsPage() {
                     {domainInfo[1] > 0n && (
                       <>
                         {" · "}
-                        Berakhir{" "}
+                        Expires{" "}
                         <span className="text-foreground">
                           {new Date(Number(domainInfo[1]) * 1000).toLocaleDateString()}
                         </span>
@@ -654,18 +734,19 @@ function DomainsPage() {
                     setPendingLabel("Renew");
                     toast.push({ title: "Renewing…", hash: h });
                   } catch (e) {
-                    toast.push({ title: "Renew gagal", description: getErr(e), type: "error" });
+                    toast.push({ title: "Renew failed", description: getErr(e), type: "error" });
                   }
                 }}
                 disabled={
                   !isConnected ||
                   !domainInfo ||
+                  !priceWei ||
                   domainInfo[0].toLowerCase() !== (address?.toLowerCase() ?? "")
                 }
                 className="px-5 py-3 rounded-xl glass border border-border hover:border-primary/60 font-semibold transition disabled:opacity-40"
-                title="Perpanjang (hanya pemilik)"
+                title="Renew (owner only)"
               >
-                Perpanjang {yearsClamped} thn
+                Renew {yearsClamped} yr
               </button>
             </div>
           )}
@@ -675,24 +756,24 @@ function DomainsPage() {
       {/* MY DOMAINS */}
       <div className="flex items-center gap-3 mb-4">
         <h2 className="text-xl font-bold tracking-tight inline-flex items-center gap-2">
-          <Crown className="h-5 w-5 text-accent" /> Domain Saya
+          <Crown className="h-5 w-5 text-accent" /> My Domains
         </h2>
         <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
         <button
           onClick={() => void refreshMyDomains()}
           className="text-xs glass px-3 py-1.5 rounded-full hover:border-primary/60"
         >
-          {loadingMine ? "Memuat…" : "Refresh"}
+          {loadingMine ? "Loading…" : "Refresh"}
         </button>
       </div>
 
       {!isConnected ? (
         <div className="glass rounded-2xl p-8 text-center text-muted-foreground">
-          Hubungkan dompet untuk melihat domain yang Anda miliki.
+          Connect your wallet to see the domains you own.
         </div>
       ) : myDomains.length === 0 ? (
         <div className="glass rounded-2xl p-8 text-center text-muted-foreground">
-          Belum ada domain. Cari dan mint nama pertama Anda di atas ✨
+          No domains yet. Search and mint your first name above ✨
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -726,7 +807,7 @@ function DomainsPage() {
                   <span className="text-gradient-luxe">.{DOMAIN_TLD}</span>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  {daysLeft > 0 ? `Berlaku ${daysLeft} hari lagi` : "Kedaluwarsa"}
+                  {daysLeft > 0 ? `${daysLeft} days remaining` : "Expired"}
                 </div>
                 <button
                   onClick={() => handleSetPrimary(d.name)}
@@ -734,7 +815,7 @@ function DomainsPage() {
                   className="mt-4 w-full py-2.5 rounded-xl bg-surface-2 border border-border hover:border-primary/60 font-semibold text-sm transition disabled:opacity-40 inline-flex items-center justify-center gap-2"
                 >
                   <Star className="h-4 w-4" />
-                  {isPrimary ? "Sudah Primary" : "Jadikan Domain Utama"}
+                  {isPrimary ? "Primary" : "Set as Primary"}
                 </button>
               </div>
             );
@@ -765,6 +846,29 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
   );
 }
 
+function StepDot({ active, done, label }: { active: boolean; done: boolean; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span
+        className={`h-2.5 w-2.5 rounded-full transition ${
+          done
+            ? "bg-accent shadow-[0_0_8px_hsl(var(--accent))]"
+            : active
+              ? "bg-primary animate-pulse shadow-[0_0_8px_hsl(var(--primary))]"
+              : "bg-border"
+        }`}
+      />
+      <span
+        className={
+          done ? "text-accent" : active ? "text-foreground" : "text-muted-foreground"
+        }
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
 function ContractChip({ label, addr }: { label: string; addr: string }) {
   return (
     <div className="glass rounded-xl px-3 py-2 flex items-center justify-between">
@@ -781,6 +885,8 @@ function ContractChip({ label, addr }: { label: string; addr: string }) {
 // atau menulis subnode via Registry.setSubnodeOwner) bisa langsung ditambahkan di sini
 // tanpa perlu mengubah dependencies.
 void namehash;
+
+
 void keccak256;
 void toBytes;
 void domainRegistrarAbi;
