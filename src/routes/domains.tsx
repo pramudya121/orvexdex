@@ -694,7 +694,7 @@ function DomainsPage() {
                 </div>
                 {domainInfo && (
                   <div className="mt-2 text-sm text-muted-foreground">
-                    Pemilik:{" "}
+                    Owner:{" "}
                     <span className="font-mono text-foreground">
                       {domainInfo[0] === ZERO
                         ? "—"
@@ -703,7 +703,7 @@ function DomainsPage() {
                     {domainInfo[1] > 0n && (
                       <>
                         {" · "}
-                        Berakhir{" "}
+                        Expires{" "}
                         <span className="text-foreground">
                           {new Date(Number(domainInfo[1]) * 1000).toLocaleDateString()}
                         </span>
@@ -728,18 +728,19 @@ function DomainsPage() {
                     setPendingLabel("Renew");
                     toast.push({ title: "Renewing…", hash: h });
                   } catch (e) {
-                    toast.push({ title: "Renew gagal", description: getErr(e), type: "error" });
+                    toast.push({ title: "Renew failed", description: getErr(e), type: "error" });
                   }
                 }}
                 disabled={
                   !isConnected ||
                   !domainInfo ||
+                  !priceWei ||
                   domainInfo[0].toLowerCase() !== (address?.toLowerCase() ?? "")
                 }
                 className="px-5 py-3 rounded-xl glass border border-border hover:border-primary/60 font-semibold transition disabled:opacity-40"
-                title="Perpanjang (hanya pemilik)"
+                title="Renew (owner only)"
               >
-                Perpanjang {yearsClamped} thn
+                Renew {yearsClamped} yr
               </button>
             </div>
           )}
@@ -749,24 +750,24 @@ function DomainsPage() {
       {/* MY DOMAINS */}
       <div className="flex items-center gap-3 mb-4">
         <h2 className="text-xl font-bold tracking-tight inline-flex items-center gap-2">
-          <Crown className="h-5 w-5 text-accent" /> Domain Saya
+          <Crown className="h-5 w-5 text-accent" /> My Domains
         </h2>
         <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
         <button
           onClick={() => void refreshMyDomains()}
           className="text-xs glass px-3 py-1.5 rounded-full hover:border-primary/60"
         >
-          {loadingMine ? "Memuat…" : "Refresh"}
+          {loadingMine ? "Loading…" : "Refresh"}
         </button>
       </div>
 
       {!isConnected ? (
         <div className="glass rounded-2xl p-8 text-center text-muted-foreground">
-          Hubungkan dompet untuk melihat domain yang Anda miliki.
+          Connect your wallet to see the domains you own.
         </div>
       ) : myDomains.length === 0 ? (
         <div className="glass rounded-2xl p-8 text-center text-muted-foreground">
-          Belum ada domain. Cari dan mint nama pertama Anda di atas ✨
+          No domains yet. Search and mint your first name above ✨
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -800,7 +801,7 @@ function DomainsPage() {
                   <span className="text-gradient-luxe">.{DOMAIN_TLD}</span>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  {daysLeft > 0 ? `Berlaku ${daysLeft} hari lagi` : "Kedaluwarsa"}
+                  {daysLeft > 0 ? `${daysLeft} days remaining` : "Expired"}
                 </div>
                 <button
                   onClick={() => handleSetPrimary(d.name)}
@@ -808,7 +809,7 @@ function DomainsPage() {
                   className="mt-4 w-full py-2.5 rounded-xl bg-surface-2 border border-border hover:border-primary/60 font-semibold text-sm transition disabled:opacity-40 inline-flex items-center justify-center gap-2"
                 >
                   <Star className="h-4 w-4" />
-                  {isPrimary ? "Sudah Primary" : "Jadikan Domain Utama"}
+                  {isPrimary ? "Primary" : "Set as Primary"}
                 </button>
               </div>
             );
