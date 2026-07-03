@@ -608,7 +608,30 @@ function DomainsPage() {
                   </span>
                 </div>
 
-                {/* Commit-reveal flow */}
+                {/* Commit-reveal status stepper */}
+                {isConnected && (
+                  <div className="mt-5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em]">
+                    <StepDot
+                      active={!existingCommit || !!pendingHash}
+                      done={!!existingCommit}
+                      label="Commit"
+                    />
+                    <div className="flex-1 h-px bg-border" />
+                    <StepDot
+                      active={!!existingCommit && !canReveal}
+                      done={!!existingCommit && canReveal}
+                      label={existingCommit && !canReveal ? `Wait ${waitSec}s` : "Ready"}
+                    />
+                    <div className="flex-1 h-px bg-border" />
+                    <StepDot
+                      active={!!(pendingHash && pendingLabel === "Mint")}
+                      done={false}
+                      label="Register"
+                    />
+                  </div>
+                )}
+
+                {/* Commit-reveal action */}
                 {!isConnected ? (
                   <div className="mt-4">
                     <ConnectButton />
@@ -616,23 +639,23 @@ function DomainsPage() {
                 ) : !existingCommit ? (
                   <button
                     onClick={handleCommit}
-                    disabled={!!pendingHash}
+                    disabled={!!pendingHash || isAvailable !== true || !priceWei}
                     className="mt-4 w-full py-3 rounded-xl bg-gradient-luxe text-primary-foreground font-bold shadow-neon hover:shadow-gold transition disabled:opacity-40 inline-flex items-center justify-center gap-2"
                   >
                     {pendingHash && pendingLabel === "Commit" ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin" /> Commit…
+                        <Loader2 className="h-4 w-4 animate-spin" /> Committing…
                       </>
                     ) : (
                       <>
-                        <Shield className="h-4 w-4" /> 1/2 — Commit
+                        <Shield className="h-4 w-4" /> Step 1 — Commit
                       </>
                     )}
                   </button>
                 ) : (
                   <button
                     onClick={handleMint}
-                    disabled={!canReveal || !!pendingHash}
+                    disabled={!canReveal || !!pendingHash || !priceWei || isAvailable !== true}
                     className="mt-4 w-full py-3 rounded-xl bg-gradient-luxe text-primary-foreground font-bold shadow-neon hover:shadow-gold transition disabled:opacity-40 inline-flex items-center justify-center gap-2"
                   >
                     {pendingHash && pendingLabel === "Mint" ? (
@@ -641,17 +664,17 @@ function DomainsPage() {
                       </>
                     ) : canReveal ? (
                       <>
-                        <Sparkles className="h-4 w-4" /> 2/2 — Mint Domain
+                        <Sparkles className="h-4 w-4" /> Step 2 — Register Domain
                       </>
                     ) : (
                       <>
-                        <Clock className="h-4 w-4" /> Tunggu {waitSec}s
+                        <Clock className="h-4 w-4" /> Wait {waitSec}s
                       </>
                     )}
                   </button>
                 )}
                 <div className="mt-2 text-[10px] text-muted-foreground text-center">
-                  Anti-front-running: commit dulu, lalu mint setelah ~{delaySec}s.
+                  Anti front-running: commit first, then register after ~{delaySec}s.
                 </div>
               </div>
             </div>
