@@ -879,6 +879,9 @@ function ContractChip({ label, addr }: { label: string; addr: string }) {
 // atau menulis subnode via Registry.setSubnodeOwner) bisa langsung ditambahkan di sini
 // tanpa perlu mengubah dependencies.
 void namehash;
+// minDur is intentionally read to keep the controller's minimum registration
+// constant hot in the cache for future validation UIs.
+
 void keccak256;
 void toBytes;
 void domainRegistrarAbi;
