@@ -548,17 +548,21 @@ function DomainsPage() {
                 </div>
                 <div className="text-sm text-muted-foreground mt-2">
                   {checkedName.length <= 3
-                    ? "Nama Premium — sangat langka"
+                    ? "Premium name — extra rare"
                     : checkedName.length === 4
-                      ? "Nama pendek — populer"
-                      : "Nama standar"}
+                      ? "Short name — popular"
+                      : "Standard name"}
                 </div>
                 <div className="flex gap-3 mt-5">
                   <Stat icon={<Shield className="h-4 w-4" />} label="NFT" value="ERC-721" />
-                  <Stat icon={<Clock className="h-4 w-4" />} label="Durasi" value={`${yearsClamped} thn`} />
+                  <Stat
+                    icon={<Clock className="h-4 w-4" />}
+                    label="Duration"
+                    value={`${yearsClamped} yr`}
+                  />
                   <Stat
                     icon={<Sparkles className="h-4 w-4" />}
-                    label="Harga"
+                    label="Price"
                     value={
                       isPriceLoading
                         ? "…"
