@@ -16,7 +16,8 @@ import {
 } from "@/components/skeletons";
 import { SendTokenDialog } from "@/components/portfolio/SendTokenDialog";
 import { FarmingPositions } from "@/components/portfolio/FarmingPositions";
-import { Coins, Layers, Sprout, Send } from "lucide-react";
+import { AiAnalyzerTab } from "@/components/portfolio/AiAnalyzerTab";
+import { Coins, Layers, Sprout, Send, Brain } from "lucide-react";
 
 const ActivityFeed = lazy(() =>
   import("@/components/ActivityFeed").then((m) => ({ default: m.ActivityFeed })),
@@ -45,7 +46,7 @@ export const Route = createFileRoute("/portfolio")({
   }),
 });
 
-type PortfolioTab = "tokens" | "lp" | "farming";
+type PortfolioTab = "tokens" | "lp" | "farming" | "ai";
 
 function PortfolioPage() {
   const { address, isConnected } = useAccount();
@@ -100,11 +101,12 @@ function PortfolioPage() {
 
       {isConnected && (
         <>
-          {/* Sub-header nav — Tokens / LP / Farming */}
-          <div className="glass rounded-2xl p-1.5 flex items-center gap-1 mb-6 animate-rise">
+          {/* Sub-header nav — Tokens / LP / Farming / AI */}
+          <div className="glass rounded-2xl p-1.5 flex items-center gap-1 mb-6 animate-rise overflow-x-auto">
             <TabButton active={tab === "tokens"} onClick={() => setTab("tokens")} icon={<Coins className="h-4 w-4" />} label="Tokens" />
             <TabButton active={tab === "lp"} onClick={() => setTab("lp")} icon={<Layers className="h-4 w-4" />} label="LP Positions" />
             <TabButton active={tab === "farming"} onClick={() => setTab("farming")} icon={<Sprout className="h-4 w-4" />} label="Farming" />
+            <TabButton active={tab === "ai"} onClick={() => setTab("ai")} icon={<Brain className="h-4 w-4" />} label="AI Analyzer" />
           </div>
 
           {tab === "tokens" && (
@@ -135,6 +137,13 @@ function PortfolioPage() {
             <>
               <SectionHeader title="Farming" subtitle="Active staking positions · pending ORVX" />
               <FarmingPositions owner={address!} />
+            </>
+          )}
+
+          {tab === "ai" && (
+            <>
+              <SectionHeader title="AI Analyzer" subtitle="Powered by Lovable AI · live pricing" />
+              <AiAnalyzerTab />
             </>
           )}
 
