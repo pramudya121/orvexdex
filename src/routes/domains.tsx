@@ -125,6 +125,17 @@ function DomainsPage() {
   const name = useMemo(() => sanitize(rawQuery), [rawQuery]);
   const valid = name.length >= 3;
 
+  // Debounced live-check: 300ms after the user stops typing we hit the
+  // contract for isAvailable + price so the UI updates without a button click.
+  useEffect(() => {
+    if (!valid) {
+      setCheckedName(null);
+      return;
+    }
+    const t = setTimeout(() => setCheckedName(name), 300);
+    return () => clearTimeout(t);
+  }, [name, valid]);
+
   // ───────────────────── ON-CHAIN READS ─────────────────────
   const minDur = useReadContract({
     address: ADDR.domainController,
@@ -142,8 +153,7 @@ function DomainsPage() {
     functionName: "COMMIT_REVEAL_EXPIRY",
   });
 
-  // Cek ketersediaan + info domain saat ada nama yang sudah dicek
-  // SOURCE: DomainRegistrarController.isAvailable & domainInfo (read)
+  // Live availability + domain info + price. Auto-refetches every 10s.
   const availability = useReadContracts({
     contracts: checkedName
       ? [
@@ -167,7 +177,7 @@ function DomainsPage() {
           },
         ]
       : [],
-    query: { enabled: !!checkedName, refetchInterval: 12000 },
+    query: { enabled: !!checkedName, refetchInterval: 10000 },
   });
 
   const isAvailable = availability.data?.[0]?.result as boolean | undefined;
@@ -192,11 +202,9 @@ function DomainsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receipt.isSuccess]);
 
-  // ============ handleSearch ============
-  // Memicu pembacaan on-chain isAvailable + price dari DomainRegistrarController
   const handleSearch = useCallback(() => {
     if (!valid) {
-      toast.push({ title: "Nama minimal 3 karakter", type: "error" });
+      toast.push({ title: "Name must be at least 3 characters", type: "error" });
       return;
     }
     setCheckedName(name);
