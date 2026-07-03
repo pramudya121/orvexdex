@@ -572,26 +572,26 @@ function DomainsPage() {
 
               <div className="rounded-2xl bg-surface-2 border border-border p-5">
                 <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-3">
-                  Pilih durasi registrasi
+                  Choose registration duration
                 </div>
                 <div className="flex items-center justify-between rounded-xl bg-surface border border-border p-2">
                   <button
                     onClick={() => setYears((y) => Math.max(1, y - 1))}
                     className="h-10 w-10 rounded-lg bg-surface-2 hover:bg-primary/20 grid place-items-center transition"
-                    aria-label="Kurangi tahun"
+                    aria-label="Decrease years"
                   >
                     <Minus className="h-4 w-4" />
                   </button>
                   <div className="text-center">
                     <div className="text-3xl font-black">{yearsClamped}</div>
                     <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                      Tahun
+                      {yearsClamped === 1 ? "Year" : "Years"}
                     </div>
                   </div>
                   <button
                     onClick={() => setYears((y) => Math.min(5, y + 1))}
                     className="h-10 w-10 rounded-lg bg-surface-2 hover:bg-primary/20 grid place-items-center transition"
-                    aria-label="Tambah tahun"
+                    aria-label="Increase years"
                   >
                     <Plus className="h-4 w-4" />
                   </button>
