@@ -643,7 +643,13 @@ function DomainsPage() {
                 ) : !existingCommit ? (
                   <button
                     onClick={handleCommit}
-                    disabled={!!pendingHash || isAvailable !== true || !priceWei}
+                    disabled={
+                      !!pendingHash ||
+                      isAvailable !== true ||
+                      !priceWei ||
+                      (minDur.data !== undefined &&
+                        BigInt(yearsClamped * SECONDS_PER_YEAR) < (minDur.data as bigint))
+                    }
                     className="mt-4 w-full py-3 rounded-xl bg-gradient-luxe text-primary-foreground font-bold shadow-neon hover:shadow-gold transition disabled:opacity-40 inline-flex items-center justify-center gap-2"
                   >
                     {pendingHash && pendingLabel === "Commit" ? (
