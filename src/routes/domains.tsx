@@ -499,8 +499,30 @@ function DomainsPage() {
                 Cek
               </button>
             </div>
-            <div className="mt-2 text-[11px] text-muted-foreground text-left px-2">
-              Hanya huruf kecil, angka, dan tanda hubung — minimal 3 karakter.
+            <div className="mt-2 flex items-center justify-between gap-2 px-2 text-[11px]">
+              <span className="text-muted-foreground">
+                Lowercase letters, digits, and hyphens — min 3 characters.
+              </span>
+              {valid && checkedName === name && (
+                <span className="inline-flex items-center gap-1.5 font-semibold">
+                  {availability.isFetching ? (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                      <span className="text-muted-foreground">Checking…</span>
+                    </>
+                  ) : isAvailable === true ? (
+                    <>
+                      <CheckCircle2 className="h-3 w-3 text-accent" />
+                      <span className="text-accent">Available</span>
+                    </>
+                  ) : isAvailable === false ? (
+                    <>
+                      <XCircle className="h-3 w-3 text-destructive" />
+                      <span className="text-destructive">Taken</span>
+                    </>
+                  ) : null}
+                </span>
+              )}
             </div>
           </div>
         </div>
