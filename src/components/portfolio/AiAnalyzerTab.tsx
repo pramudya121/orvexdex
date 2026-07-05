@@ -279,13 +279,44 @@ function AnalysisResult({ data }: { data: AnalyzerResult }) {
           <Sparkles className="h-3.5 w-3.5" /> Recommendations
         </div>
         <ul className="space-y-2">
-          {data.recommendations.map((r, i) => (
-            <li key={i} className="flex items-start gap-3 text-sm">
-              <span className="mt-1 h-1.5 w-1.5 rounded-full bg-gradient-luxe shrink-0" />
-              <span>{r}</span>
-            </li>
-          ))}
+          {data.recommendations.map((r, i) => {
+            const pair = extractSwapPair(r);
+            return (
+              <li key={i} className="flex items-start gap-3 text-sm">
+                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-gradient-luxe shrink-0" />
+                <div className="flex-1 flex items-start justify-between gap-3 flex-wrap">
+                  <span className="flex-1 min-w-[200px]">{r}</span>
+                  {pair && (
+                    <Link
+                      to="/swap"
+                      search={{ from: pair.from, to: pair.to } as any}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gradient-luxe text-primary-foreground text-[11px] font-bold uppercase tracking-wider shadow-neon hover:opacity-90 transition shrink-0"
+                    >
+                      Swap {pair.from} → {pair.to}
+                    </Link>
+                  )}
+                  {!pair && /stake|farm/i.test(r) && (
+                    <Link
+                      to="/farm"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg glass hover:bg-surface-2 text-[11px] font-bold uppercase tracking-wider shrink-0"
+                    >
+                      Open Farm
+                    </Link>
+                  )}
+                  {!pair && /liquidity|lp\b|provide/i.test(r) && (
+                    <Link
+                      to="/liquidity"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg glass hover:bg-surface-2 text-[11px] font-bold uppercase tracking-wider shrink-0"
+                    >
+                      Add Liquidity
+                    </Link>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ul>
+
       </div>
     </div>
   );
