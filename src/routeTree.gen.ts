@@ -23,6 +23,7 @@ import { Route as AiRouteImport } from './routes/ai'
 import { Route as AdminFarmRouteImport } from './routes/admin-farm'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DNameRouteImport } from './routes/d.$name'
 
 const SwapRoute = SwapRouteImport.update({
   id: '/swap',
@@ -94,6 +95,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DNameRoute = DNameRouteImport.update({
+  id: '/d/$name',
+  path: '/d/$name',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/portfolio': typeof PortfolioRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/swap': typeof SwapRoute
+  '/d/$name': typeof DNameRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/portfolio': typeof PortfolioRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/swap': typeof SwapRoute
+  '/d/$name': typeof DNameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/portfolio': typeof PortfolioRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/swap': typeof SwapRoute
+  '/d/$name': typeof DNameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/portfolio'
     | '/sitemap.xml'
     | '/swap'
+    | '/d/$name'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/portfolio'
     | '/sitemap.xml'
     | '/swap'
+    | '/d/$name'
   id:
     | '__root__'
     | '/'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/portfolio'
     | '/sitemap.xml'
     | '/swap'
+    | '/d/$name'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -210,6 +222,7 @@ export interface RootRouteChildren {
   PortfolioRoute: typeof PortfolioRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SwapRoute: typeof SwapRoute
+  DNameRoute: typeof DNameRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -312,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/d/$name': {
+      id: '/d/$name'
+      path: '/d/$name'
+      fullPath: '/d/$name'
+      preLoaderRoute: typeof DNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -330,6 +350,7 @@ const rootRouteChildren: RootRouteChildren = {
   PortfolioRoute: PortfolioRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SwapRoute: SwapRoute,
+  DNameRoute: DNameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
