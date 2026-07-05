@@ -158,7 +158,7 @@ function DomainProfilePage() {
               <div className="font-semibold">This name is available.</div>
               <div className="text-muted-foreground text-xs mt-0.5">Claim it on the Domains page — commit, wait, then register.</div>
             </div>
-            <Link to="/domains" search={{ q: label } as any} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-luxe text-primary-foreground font-bold text-sm shadow-neon hover:opacity-90 transition">
+            <Link to="/domains" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-luxe text-primary-foreground font-bold text-sm shadow-neon hover:opacity-90 transition">
               <ArrowLeftRight className="h-4 w-4" /> Claim {full}
             </Link>
           </div>
