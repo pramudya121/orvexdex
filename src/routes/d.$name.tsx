@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useReadContract, useReadContracts } from "wagmi";
-import { namehash, keccak256, toBytes, isAddress } from "viem";
+import { namehash, isAddress } from "viem";
 import { Copy, ExternalLink, Globe, Twitter, Github, MessageCircle, ArrowLeftRight, Wallet } from "lucide-react";
 import { ADDR, DOMAIN_TLD, explorerAddr } from "@/lib/chain";
 import { domainRegistryAbi } from "@/lib/abis/domainRegistry";
