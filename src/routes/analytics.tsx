@@ -89,8 +89,26 @@ function AnalyticsPage() {
       <div className="animate-rise mb-6">
         <div className="text-[11px] tracking-[0.3em] uppercase text-gradient-gold font-semibold mb-2">Atelier · Insight</div>
         <h1 className="text-4xl md:text-5xl font-extrabold text-gradient-luxe tracking-tight">DEX Analytics</h1>
-        <p className="text-sm text-muted-foreground mt-1">Live protocol metrics on LitVM · {total} pools</p>
+        <p className="text-sm text-muted-foreground mt-1">Live protocol metrics on LitVM · {total} pools on {dex.name}</p>
       </div>
+
+      {/* Multi-DEX selector */}
+      <div className="glass rounded-2xl p-2 mb-5 inline-flex gap-1 animate-rise">
+        {DEXES.map((d) => (
+          <button
+            key={d.id}
+            onClick={() => setDexId(d.id)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-[0.15em] transition ${
+              dexId === d.id ? "bg-gradient-luxe text-primary-foreground shadow-neon" : "text-muted-foreground hover:text-foreground"
+            }`}
+            style={dexId === d.id ? undefined : { boxShadow: `inset 0 0 0 1px ${d.color}22` }}
+          >
+            <span className="inline-block h-2 w-2 rounded-full mr-2 align-middle" style={{ background: d.color }} />
+            {d.name}
+          </button>
+        ))}
+      </div>
+
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8 animate-rise">
         <Stat label="TVL" value={fmtWzk(totalTvl)} unit="wzkLTC" tone="luxe" />
