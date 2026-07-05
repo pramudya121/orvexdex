@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useReadContract, useReadContracts } from "wagmi";
-import { ADDR, explorerAddr } from "@/lib/chain";
+import { DEXES, explorerAddr } from "@/lib/chain";
 import { factoryAbi } from "@/lib/abis/factory";
 import { pairAbi } from "@/lib/abis/pair";
 import { findToken } from "@/lib/tokens";
@@ -24,13 +24,17 @@ export const Route = createFileRoute("/analytics")({
 });
 
 function AnalyticsPage() {
-  const len = useReadContract({ address: ADDR.factory, abi: factoryAbi, functionName: "allPairsLength", query: { refetchInterval: 30000 } });
+  const [dexId, setDexId] = useState<string>(DEXES[0].id);
+  const dex = DEXES.find((d) => d.id === dexId) ?? DEXES[0];
+  const factoryAddr = dex.factory;
+
+  const len = useReadContract({ address: factoryAddr, abi: factoryAbi, functionName: "allPairsLength", query: { refetchInterval: 30000 } });
   const total = Number((len.data as bigint | undefined) ?? 0n);
 
   const pairCalls = useMemo(() => Array.from({ length: total }, (_, i) => ({
-    address: ADDR.factory as `0x${string}`, abi: factoryAbi,
+    address: factoryAddr as `0x${string}`, abi: factoryAbi,
     functionName: "allPairs" as const, args: [BigInt(i)] as const,
-  })), [total]);
+  })), [total, factoryAddr]);
   const pairsQ = useReadContracts({ contracts: pairCalls, query: { enabled: total > 0 } });
   const pairAddrs = (pairsQ.data ?? []).map((r) => r.result as `0x${string}` | undefined).filter(Boolean) as `0x${string}`[];
 
@@ -85,8 +89,26 @@ function AnalyticsPage() {
       <div className="animate-rise mb-6">
         <div className="text-[11px] tracking-[0.3em] uppercase text-gradient-gold font-semibold mb-2">Atelier · Insight</div>
         <h1 className="text-4xl md:text-5xl font-extrabold text-gradient-luxe tracking-tight">DEX Analytics</h1>
-        <p className="text-sm text-muted-foreground mt-1">Live protocol metrics on LitVM · {total} pools</p>
+        <p className="text-sm text-muted-foreground mt-1">Live protocol metrics on LitVM · {total} pools on {dex.name}</p>
       </div>
+
+      {/* Multi-DEX selector */}
+      <div className="glass rounded-2xl p-2 mb-5 inline-flex gap-1 animate-rise">
+        {DEXES.map((d) => (
+          <button
+            key={d.id}
+            onClick={() => setDexId(d.id)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-[0.15em] transition ${
+              dexId === d.id ? "bg-gradient-luxe text-primary-foreground shadow-neon" : "text-muted-foreground hover:text-foreground"
+            }`}
+            style={dexId === d.id ? undefined : { boxShadow: `inset 0 0 0 1px ${d.color}22` }}
+          >
+            <span className="inline-block h-2 w-2 rounded-full mr-2 align-middle" style={{ background: d.color }} />
+            {d.name}
+          </button>
+        ))}
+      </div>
+
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8 animate-rise">
         <Stat label="TVL" value={fmtWzk(totalTvl)} unit="wzkLTC" tone="luxe" />

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   useAccount,
@@ -817,6 +817,13 @@ function DomainsPage() {
                   <Star className="h-4 w-4" />
                   {isPrimary ? "Primary" : "Set as Primary"}
                 </button>
+                <Link
+                  to="/d/$name"
+                  params={{ name: d.name }}
+                  className="mt-2 w-full py-2 rounded-xl glass border border-border hover:border-primary/60 text-xs font-semibold transition inline-flex items-center justify-center gap-2"
+                >
+                  <Globe className="h-3.5 w-3.5" /> View Public Profile
+                </Link>
               </div>
             );
           })}

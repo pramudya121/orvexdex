@@ -40,6 +40,36 @@ export const ADDR = {
 
 export const DOMAIN_TLD = "orvex";
 
+// Multi-DEX registry — all Uniswap V2 forks on LitVM.
+// Add new DEXes here to surface them across analytics, aggregator, and routing.
+export type DexConfig = {
+  id: string;
+  name: string;
+  factory: `0x${string}`;
+  router?: `0x${string}`;
+  color: string; // tailwind-friendly hex
+};
+
+export const DEXES: readonly DexConfig[] = [
+  {
+    id: "orvex",
+    name: "OrvexSwap",
+    factory: "0x42e4E19020aa23947e1BE3260b7e4CCFDd246128",
+    router: "0x03D2D542100fa926de135a08B609c8538E45F6ee",
+    color: "#c084fc",
+  },
+  {
+    id: "drunkencats",
+    name: "DrunkenCats",
+    factory: "0x7D0FFa85a986CDCDD8f56dF7d1EF6ffb2A164c8C",
+    router: "0xb0e39b72824fA03b2CbD4486ddDc3630D680eA1b",
+    color: "#f59e0b",
+  },
+] as const;
+
+export const findDex = (factory: string) =>
+  DEXES.find((d) => d.factory.toLowerCase() === factory.toLowerCase());
+
 export const explorerTx = (hash: string) =>
   `${litvm.blockExplorers.default.url}/tx/${hash}`;
 export const explorerAddr = (a: string) =>
