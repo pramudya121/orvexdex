@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useReadContract, useReadContracts } from "wagmi";
-import { ADDR, explorerAddr } from "@/lib/chain";
+import { ADDR, DEXES, explorerAddr } from "@/lib/chain";
 import { factoryAbi } from "@/lib/abis/factory";
 import { pairAbi } from "@/lib/abis/pair";
 import { findToken } from "@/lib/tokens";
