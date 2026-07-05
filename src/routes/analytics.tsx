@@ -24,13 +24,17 @@ export const Route = createFileRoute("/analytics")({
 });
 
 function AnalyticsPage() {
-  const len = useReadContract({ address: ADDR.factory, abi: factoryAbi, functionName: "allPairsLength", query: { refetchInterval: 30000 } });
+  const [dexId, setDexId] = useState<string>(DEXES[0].id);
+  const dex = DEXES.find((d) => d.id === dexId) ?? DEXES[0];
+  const factoryAddr = dex.factory;
+
+  const len = useReadContract({ address: factoryAddr, abi: factoryAbi, functionName: "allPairsLength", query: { refetchInterval: 30000 } });
   const total = Number((len.data as bigint | undefined) ?? 0n);
 
   const pairCalls = useMemo(() => Array.from({ length: total }, (_, i) => ({
-    address: ADDR.factory as `0x${string}`, abi: factoryAbi,
+    address: factoryAddr as `0x${string}`, abi: factoryAbi,
     functionName: "allPairs" as const, args: [BigInt(i)] as const,
-  })), [total]);
+  })), [total, factoryAddr]);
   const pairsQ = useReadContracts({ contracts: pairCalls, query: { enabled: total > 0 } });
   const pairAddrs = (pairsQ.data ?? []).map((r) => r.result as `0x${string}` | undefined).filter(Boolean) as `0x${string}`[];
 
