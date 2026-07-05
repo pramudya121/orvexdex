@@ -2,7 +2,30 @@ import { useMemo, useState } from "react";
 import { useAccount, useBalance, useReadContract, useReadContracts } from "wagmi";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { Brain, Sparkles, ShieldAlert, TrendingUp, AlertCircle, Loader2, RefreshCcw } from "lucide-react";
+
+function extractSwapPair(text: string): { from: string; to: string } | null {
+  const symbols = ["zkLTC", "wzkLTC", "TRX", "XRP", "ADA", "ZEC", "XMR", "ORVX"];
+  const upper = text.toUpperCase();
+  // Find first two occurrences of a known symbol, in order
+  const found: { sym: string; idx: number }[] = [];
+  for (const s of symbols) {
+    let i = -1;
+    while ((i = upper.indexOf(s.toUpperCase(), i + 1)) !== -1) {
+      found.push({ sym: s, idx: i });
+    }
+  }
+  found.sort((a, b) => a.idx - b.idx);
+  const uniq: typeof found = [];
+  for (const f of found) {
+    if (!uniq.find((u) => u.sym === f.sym)) uniq.push(f);
+    if (uniq.length === 2) break;
+  }
+  if (uniq.length < 2) return null;
+  return { from: uniq[0].sym, to: uniq[1].sym };
+}
+
 import { ADDR } from "@/lib/chain";
 import { TOKENS, findToken } from "@/lib/tokens";
 import { erc20Abi } from "@/lib/abis/wzkltc";
