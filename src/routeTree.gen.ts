@@ -18,6 +18,7 @@ import { Route as FaucetRouteImport } from './routes/faucet'
 import { Route as FarmRouteImport } from './routes/farm'
 import { Route as DomainsRouteImport } from './routes/domains'
 import { Route as BrandRouteImport } from './routes/brand'
+import { Route as AssistantRouteImport } from './routes/assistant'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as AdminFarmRouteImport } from './routes/admin-farm'
@@ -25,6 +26,7 @@ import { Route as AdminAggregatorRouteImport } from './routes/admin-aggregator'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DNameRouteImport } from './routes/d.$name'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
 
 const SwapRoute = SwapRouteImport.update({
   id: '/swap',
@@ -71,6 +73,11 @@ const BrandRoute = BrandRouteImport.update({
   path: '/brand',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AssistantRoute = AssistantRouteImport.update({
+  id: '/assistant',
+  path: '/assistant',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AnalyticsRoute = AnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -106,6 +113,11 @@ const DNameRoute = DNameRouteImport.update({
   path: '/d/$name',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -114,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/admin-farm': typeof AdminFarmRoute
   '/ai': typeof AiRoute
   '/analytics': typeof AnalyticsRoute
+  '/assistant': typeof AssistantRoute
   '/brand': typeof BrandRoute
   '/domains': typeof DomainsRoute
   '/farm': typeof FarmRoute
@@ -123,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/portfolio': typeof PortfolioRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/swap': typeof SwapRoute
+  '/api/chat': typeof ApiChatRoute
   '/d/$name': typeof DNameRoute
 }
 export interface FileRoutesByTo {
@@ -132,6 +146,7 @@ export interface FileRoutesByTo {
   '/admin-farm': typeof AdminFarmRoute
   '/ai': typeof AiRoute
   '/analytics': typeof AnalyticsRoute
+  '/assistant': typeof AssistantRoute
   '/brand': typeof BrandRoute
   '/domains': typeof DomainsRoute
   '/farm': typeof FarmRoute
@@ -141,6 +156,7 @@ export interface FileRoutesByTo {
   '/portfolio': typeof PortfolioRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/swap': typeof SwapRoute
+  '/api/chat': typeof ApiChatRoute
   '/d/$name': typeof DNameRoute
 }
 export interface FileRoutesById {
@@ -151,6 +167,7 @@ export interface FileRoutesById {
   '/admin-farm': typeof AdminFarmRoute
   '/ai': typeof AiRoute
   '/analytics': typeof AnalyticsRoute
+  '/assistant': typeof AssistantRoute
   '/brand': typeof BrandRoute
   '/domains': typeof DomainsRoute
   '/farm': typeof FarmRoute
@@ -160,6 +177,7 @@ export interface FileRoutesById {
   '/portfolio': typeof PortfolioRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/swap': typeof SwapRoute
+  '/api/chat': typeof ApiChatRoute
   '/d/$name': typeof DNameRoute
 }
 export interface FileRouteTypes {
@@ -171,6 +189,7 @@ export interface FileRouteTypes {
     | '/admin-farm'
     | '/ai'
     | '/analytics'
+    | '/assistant'
     | '/brand'
     | '/domains'
     | '/farm'
@@ -180,6 +199,7 @@ export interface FileRouteTypes {
     | '/portfolio'
     | '/sitemap.xml'
     | '/swap'
+    | '/api/chat'
     | '/d/$name'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -189,6 +209,7 @@ export interface FileRouteTypes {
     | '/admin-farm'
     | '/ai'
     | '/analytics'
+    | '/assistant'
     | '/brand'
     | '/domains'
     | '/farm'
@@ -198,6 +219,7 @@ export interface FileRouteTypes {
     | '/portfolio'
     | '/sitemap.xml'
     | '/swap'
+    | '/api/chat'
     | '/d/$name'
   id:
     | '__root__'
@@ -207,6 +229,7 @@ export interface FileRouteTypes {
     | '/admin-farm'
     | '/ai'
     | '/analytics'
+    | '/assistant'
     | '/brand'
     | '/domains'
     | '/farm'
@@ -216,6 +239,7 @@ export interface FileRouteTypes {
     | '/portfolio'
     | '/sitemap.xml'
     | '/swap'
+    | '/api/chat'
     | '/d/$name'
   fileRoutesById: FileRoutesById
 }
@@ -226,6 +250,7 @@ export interface RootRouteChildren {
   AdminFarmRoute: typeof AdminFarmRoute
   AiRoute: typeof AiRoute
   AnalyticsRoute: typeof AnalyticsRoute
+  AssistantRoute: typeof AssistantRoute
   BrandRoute: typeof BrandRoute
   DomainsRoute: typeof DomainsRoute
   FarmRoute: typeof FarmRoute
@@ -235,6 +260,7 @@ export interface RootRouteChildren {
   PortfolioRoute: typeof PortfolioRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SwapRoute: typeof SwapRoute
+  ApiChatRoute: typeof ApiChatRoute
   DNameRoute: typeof DNameRoute
 }
 
@@ -303,6 +329,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BrandRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/assistant': {
+      id: '/assistant'
+      path: '/assistant'
+      fullPath: '/assistant'
+      preLoaderRoute: typeof AssistantRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/analytics': {
       id: '/analytics'
       path: '/analytics'
@@ -352,6 +385,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DNameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -362,6 +402,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminFarmRoute: AdminFarmRoute,
   AiRoute: AiRoute,
   AnalyticsRoute: AnalyticsRoute,
+  AssistantRoute: AssistantRoute,
   BrandRoute: BrandRoute,
   DomainsRoute: DomainsRoute,
   FarmRoute: FarmRoute,
@@ -371,6 +412,7 @@ const rootRouteChildren: RootRouteChildren = {
   PortfolioRoute: PortfolioRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SwapRoute: SwapRoute,
+  ApiChatRoute: ApiChatRoute,
   DNameRoute: DNameRoute,
 }
 export const routeTree = rootRouteImport
