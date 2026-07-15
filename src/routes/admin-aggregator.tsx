@@ -248,7 +248,6 @@ function RouterRow({
           {remove.busy ? "…" : "Remove"}
         </button>
       </div>
-      {short(row.router)}
     </div>
   );
 }
