@@ -21,6 +21,7 @@ import { Route as BrandRouteImport } from './routes/brand'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as AdminFarmRouteImport } from './routes/admin-farm'
+import { Route as AdminAggregatorRouteImport } from './routes/admin-aggregator'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DNameRouteImport } from './routes/d.$name'
@@ -85,6 +86,11 @@ const AdminFarmRoute = AdminFarmRouteImport.update({
   path: '/admin-farm',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAggregatorRoute = AdminAggregatorRouteImport.update({
+  id: '/admin-aggregator',
+  path: '/admin-aggregator',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -104,6 +110,7 @@ const DNameRoute = DNameRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-aggregator': typeof AdminAggregatorRoute
   '/admin-farm': typeof AdminFarmRoute
   '/ai': typeof AiRoute
   '/analytics': typeof AnalyticsRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-aggregator': typeof AdminAggregatorRoute
   '/admin-farm': typeof AdminFarmRoute
   '/ai': typeof AiRoute
   '/analytics': typeof AnalyticsRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-aggregator': typeof AdminAggregatorRoute
   '/admin-farm': typeof AdminFarmRoute
   '/ai': typeof AiRoute
   '/analytics': typeof AnalyticsRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/admin-aggregator'
     | '/admin-farm'
     | '/ai'
     | '/analytics'
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/admin-aggregator'
     | '/admin-farm'
     | '/ai'
     | '/analytics'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/admin-aggregator'
     | '/admin-farm'
     | '/ai'
     | '/analytics'
@@ -210,6 +222,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  AdminAggregatorRoute: typeof AdminAggregatorRoute
   AdminFarmRoute: typeof AdminFarmRoute
   AiRoute: typeof AiRoute
   AnalyticsRoute: typeof AnalyticsRoute
@@ -311,6 +324,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFarmRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-aggregator': {
+      id: '/admin-aggregator'
+      path: '/admin-aggregator'
+      fullPath: '/admin-aggregator'
+      preLoaderRoute: typeof AdminAggregatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -338,6 +358,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  AdminAggregatorRoute: AdminAggregatorRoute,
   AdminFarmRoute: AdminFarmRoute,
   AiRoute: AiRoute,
   AnalyticsRoute: AnalyticsRoute,
