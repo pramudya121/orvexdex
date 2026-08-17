@@ -1,9 +1,23 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Sparkles, Send, Loader2, Trash2, Bot, User as UserIcon } from "lucide-react";
+import {
+  Sparkles,
+  Send,
+  Loader2,
+  Trash2,
+  Bot,
+  User as UserIcon,
+  ChevronRight,
+  Wrench,
+  CheckCircle2,
+  XCircle,
+  Wallet,
+} from "lucide-react";
+import { loadPortfolioBrief } from "@/lib/portfolioContext";
+
 
 const STORAGE_KEY = "orvex.assistant.messages.v1";
 
