@@ -234,41 +234,127 @@ function EmptyState({ onPick }: { onPick: (s: string) => void }) {
   );
 }
 
+type ToolPart = {
+  type: string;
+  state?: string;
+  input?: unknown;
+  output?: unknown;
+  errorText?: string;
+};
+
+const TOOL_LABELS: Record<string, string> = {
+  getProtocolStats: "Reading protocol stats",
+  getPools: "Listing liquidity pools",
+  getTokenPrice: "Fetching token price",
+  getPool: "Reading pool reserves",
+  quoteSwap: "Quoting swap route",
+};
+
+function ToolCard({ part }: { part: ToolPart }) {
+  const [open, setOpen] = useState(false);
+  const name = part.type.replace(/^tool-/, "");
+  const label = TOOL_LABELS[name] ?? name;
+  const state = part.state ?? "input-available";
+  const done = state === "output-available";
+  const failed = state === "output-error";
+
+  return (
+    <div className="rounded-xl border border-border bg-surface-2/60 overflow-hidden">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs font-semibold hover:bg-white/5 transition"
+      >
+        <ChevronRight className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? "rotate-90" : ""}`} />
+        {failed ? (
+          <XCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
+        ) : done ? (
+          <CheckCircle2 className="h-3.5 w-3.5 text-accent shrink-0" />
+        ) : (
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />
+        )}
+        <Wrench className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        <span className="truncate">{label}</span>
+        <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground">
+          {failed ? "error" : done ? "on-chain" : "running"}
+        </span>
+      </button>
+      {open && (
+        <div className="px-3 pb-3 space-y-2">
+          {part.input != null && (
+            <pre className="text-[11px] bg-black/30 rounded-lg p-2 overflow-x-auto">
+              {JSON.stringify(part.input, null, 2)}
+            </pre>
+          )}
+          {part.errorText && <div className="text-[11px] text-destructive">{part.errorText}</div>}
+          {part.output != null && (
+            <pre className="text-[11px] bg-black/30 rounded-lg p-2 overflow-x-auto max-h-60">
+              {JSON.stringify(part.output, null, 2)}
+            </pre>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const MD_COMPONENTS = {
+  a: ({ href, children }: { href?: string; children?: React.ReactNode }) => {
+    if (href && href.startsWith("/")) {
+      const [path, qs] = href.split("?");
+      const search = qs ? Object.fromEntries(new URLSearchParams(qs)) : undefined;
+      return (
+        <Link
+          to={path}
+          search={search as never}
+          className="not-prose inline-flex items-center gap-1.5 px-3 py-1.5 my-1 rounded-lg bg-gradient-luxe text-primary-foreground text-[11px] font-bold uppercase tracking-wider shadow-neon hover:opacity-90 transition no-underline"
+        >
+          {children}
+        </Link>
+      );
+    }
+    return (
+      <a href={href} target="_blank" rel="noreferrer">
+        {children}
+      </a>
+    );
+  },
+};
+
 function Bubble({ msg }: { msg: UIMessage }) {
   const isUser = msg.role === "user";
-  const text = msg.parts
-    .map((p) => (p.type === "text" ? p.text : ""))
-    .join("");
+  const parts = msg.parts as unknown as ToolPart[];
+  const text = msg.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
+  const toolParts = parts.filter((p) => typeof p.type === "string" && p.type.startsWith("tool-"));
 
   return (
     <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
       <div
         className={`h-8 w-8 shrink-0 rounded-full grid place-items-center ${
-          isUser ? "bg-primary/20 text-primary" : "text-black"
+          isUser ? "bg-primary text-primary-foreground" : "text-black"
         }`}
-        style={
-          isUser
-            ? undefined
-            : { background: "linear-gradient(135deg,#10b981,#38bdf8)" }
-        }
+        style={isUser ? undefined : { background: "linear-gradient(135deg,#10b981,#38bdf8)" }}
       >
         {isUser ? <UserIcon className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
       </div>
-      <div
-        className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
-          isUser
-            ? "bg-primary/15 border border-primary/30"
-            : "bg-surface-2 border border-border"
-        }`}
-      >
+      <div className={`max-w-[85%] text-sm ${isUser ? "rounded-2xl px-4 py-2.5 bg-primary text-primary-foreground" : ""}`}>
         {isUser ? (
           <div className="whitespace-pre-wrap">{text}</div>
         ) : (
-          <div className="prose prose-sm prose-invert max-w-none prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-code:text-emerald-300 prose-a:text-primary">
-            <ReactMarkdown>{text || "…"}</ReactMarkdown>
+          <div className="space-y-2">
+            {toolParts.length > 0 && (
+              <div className="space-y-1.5">
+                {toolParts.map((p, i) => (
+                  <ToolCard key={`${p.type}-${i}`} part={p} />
+                ))}
+              </div>
+            )}
+            <div className="prose prose-sm prose-invert max-w-none prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-code:text-emerald-300 prose-a:text-primary">
+              <ReactMarkdown components={MD_COMPONENTS}>{text || (toolParts.length ? "" : "…")}</ReactMarkdown>
+            </div>
           </div>
         )}
       </div>
     </div>
   );
+
 }
