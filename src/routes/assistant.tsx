@@ -107,8 +107,12 @@ function ChatUI({ initial }: { initial: UIMessage[] }) {
     const t = text.trim();
     if (!t || busy) return;
     setInput("");
-    await sendMessage({ text: t });
+    // Attach the latest portfolio brief (written by Portfolio → AI Analyzer)
+    // so the Copilot can reason about the user's real holdings and P&L.
+    const brief = loadPortfolioBrief();
+    await sendMessage({ text: t }, brief ? { body: { portfolio: brief.text } } : undefined);
   };
+
 
   const onKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
