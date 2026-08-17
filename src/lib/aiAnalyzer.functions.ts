@@ -14,7 +14,9 @@ const InputSchema = z.object({
   holdings: z.array(HoldingSchema),
   lpCount: z.number(),
   farmingCount: z.number(),
+  pnl: z.string().optional(),
 });
+
 
 export type AnalyzerInput = z.infer<typeof InputSchema>;
 
@@ -43,6 +45,8 @@ Active farming positions: ${data.farmingCount}
 
 Holdings:
 ${data.holdings.map((h) => `- ${h.symbol}: ${h.amount} (${h.valueWzk ?? "?"} wzkLTC, ${((h.share ?? 0) * 100).toFixed(1)}% of portfolio)`).join("\n")}
+${data.pnl ? `\nHistorical P&L (on-chain snapshots):\n${data.pnl}\n` : ""}
+
 
 Return a JSON object with:
 - riskScore (0-100, higher = riskier concentration/volatility)
