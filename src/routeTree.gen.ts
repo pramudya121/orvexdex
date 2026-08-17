@@ -9,93 +9,28 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SwapRouteImport } from './routes/swap'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as PortfolioRouteImport } from './routes/portfolio'
-import { Route as PoolsRouteImport } from './routes/pools'
-import { Route as LiquidityRouteImport } from './routes/liquidity'
-import { Route as FaucetRouteImport } from './routes/faucet'
-import { Route as FarmRouteImport } from './routes/farm'
-import { Route as DomainsRouteImport } from './routes/domains'
-import { Route as BrandRouteImport } from './routes/brand'
-import { Route as AssistantRouteImport } from './routes/assistant'
-import { Route as AnalyticsRouteImport } from './routes/analytics'
-import { Route as AiRouteImport } from './routes/ai'
-import { Route as AdminFarmRouteImport } from './routes/admin-farm'
-import { Route as AdminAggregatorRouteImport } from './routes/admin-aggregator'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as DNameRouteImport } from './routes/d.$name'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AdminAggregatorRouteImport } from './routes/admin-aggregator'
+import { Route as AdminFarmRouteImport } from './routes/admin-farm'
+import { Route as AiRouteImport } from './routes/ai'
+import { Route as AnalyticsRouteImport } from './routes/analytics'
+import { Route as AssistantRouteImport } from './routes/assistant'
+import { Route as BrandRouteImport } from './routes/brand'
+import { Route as DomainsRouteImport } from './routes/domains'
+import { Route as FarmRouteImport } from './routes/farm'
+import { Route as FaucetRouteImport } from './routes/faucet'
+import { Route as LiquidityRouteImport } from './routes/liquidity'
+import { Route as PoolsRouteImport } from './routes/pools'
+import { Route as PortfolioRouteImport } from './routes/portfolio'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SwapRouteImport } from './routes/swap'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as DNameRouteImport } from './routes/d.$name'
 
-const SwapRoute = SwapRouteImport.update({
-  id: '/swap',
-  path: '/swap',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PortfolioRoute = PortfolioRouteImport.update({
-  id: '/portfolio',
-  path: '/portfolio',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PoolsRoute = PoolsRouteImport.update({
-  id: '/pools',
-  path: '/pools',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LiquidityRoute = LiquidityRouteImport.update({
-  id: '/liquidity',
-  path: '/liquidity',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FaucetRoute = FaucetRouteImport.update({
-  id: '/faucet',
-  path: '/faucet',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FarmRoute = FarmRouteImport.update({
-  id: '/farm',
-  path: '/farm',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DomainsRoute = DomainsRouteImport.update({
-  id: '/domains',
-  path: '/domains',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BrandRoute = BrandRouteImport.update({
-  id: '/brand',
-  path: '/brand',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AssistantRoute = AssistantRouteImport.update({
-  id: '/assistant',
-  path: '/assistant',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AnalyticsRoute = AnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AiRoute = AiRouteImport.update({
-  id: '/ai',
-  path: '/ai',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminFarmRoute = AdminFarmRouteImport.update({
-  id: '/admin-farm',
-  path: '/admin-farm',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminAggregatorRoute = AdminAggregatorRouteImport.update({
-  id: '/admin-aggregator',
-  path: '/admin-aggregator',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -103,19 +38,84 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AdminAggregatorRoute = AdminAggregatorRouteImport.update({
+  id: '/admin-aggregator',
+  path: '/admin-aggregator',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DNameRoute = DNameRouteImport.update({
-  id: '/d/$name',
-  path: '/d/$name',
+const AdminFarmRoute = AdminFarmRouteImport.update({
+  id: '/admin-farm',
+  path: '/admin-farm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiRoute = AiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnalyticsRoute = AnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssistantRoute = AssistantRouteImport.update({
+  id: '/assistant',
+  path: '/assistant',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrandRoute = BrandRouteImport.update({
+  id: '/brand',
+  path: '/brand',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DomainsRoute = DomainsRouteImport.update({
+  id: '/domains',
+  path: '/domains',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FarmRoute = FarmRouteImport.update({
+  id: '/farm',
+  path: '/farm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaucetRoute = FaucetRouteImport.update({
+  id: '/faucet',
+  path: '/faucet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiquidityRoute = LiquidityRouteImport.update({
+  id: '/liquidity',
+  path: '/liquidity',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoolsRoute = PoolsRouteImport.update({
+  id: '/pools',
+  path: '/pools',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortfolioRoute = PortfolioRouteImport.update({
+  id: '/portfolio',
+  path: '/portfolio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SwapRoute = SwapRouteImport.update({
+  id: '/swap',
+  path: '/swap',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DNameRoute = DNameRouteImport.update({
+  id: '/d/$name',
+  path: '/d/$name',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -266,102 +266,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/swap': {
-      id: '/swap'
-      path: '/swap'
-      fullPath: '/swap'
-      preLoaderRoute: typeof SwapRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/portfolio': {
-      id: '/portfolio'
-      path: '/portfolio'
-      fullPath: '/portfolio'
-      preLoaderRoute: typeof PortfolioRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pools': {
-      id: '/pools'
-      path: '/pools'
-      fullPath: '/pools'
-      preLoaderRoute: typeof PoolsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/liquidity': {
-      id: '/liquidity'
-      path: '/liquidity'
-      fullPath: '/liquidity'
-      preLoaderRoute: typeof LiquidityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/faucet': {
-      id: '/faucet'
-      path: '/faucet'
-      fullPath: '/faucet'
-      preLoaderRoute: typeof FaucetRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/farm': {
-      id: '/farm'
-      path: '/farm'
-      fullPath: '/farm'
-      preLoaderRoute: typeof FarmRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/domains': {
-      id: '/domains'
-      path: '/domains'
-      fullPath: '/domains'
-      preLoaderRoute: typeof DomainsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/brand': {
-      id: '/brand'
-      path: '/brand'
-      fullPath: '/brand'
-      preLoaderRoute: typeof BrandRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/assistant': {
-      id: '/assistant'
-      path: '/assistant'
-      fullPath: '/assistant'
-      preLoaderRoute: typeof AssistantRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/analytics': {
-      id: '/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AnalyticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ai': {
-      id: '/ai'
-      path: '/ai'
-      fullPath: '/ai'
-      preLoaderRoute: typeof AiRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin-farm': {
-      id: '/admin-farm'
-      path: '/admin-farm'
-      fullPath: '/admin-farm'
-      preLoaderRoute: typeof AdminFarmRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin-aggregator': {
-      id: '/admin-aggregator'
-      path: '/admin-aggregator'
-      fullPath: '/admin-aggregator'
-      preLoaderRoute: typeof AdminAggregatorRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -371,18 +280,102 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/admin-aggregator': {
+      id: '/admin-aggregator'
+      path: '/admin-aggregator'
+      fullPath: '/admin-aggregator'
+      preLoaderRoute: typeof AdminAggregatorRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/d/$name': {
-      id: '/d/$name'
-      path: '/d/$name'
-      fullPath: '/d/$name'
-      preLoaderRoute: typeof DNameRouteImport
+    '/admin-farm': {
+      id: '/admin-farm'
+      path: '/admin-farm'
+      fullPath: '/admin-farm'
+      preLoaderRoute: typeof AdminFarmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai': {
+      id: '/ai'
+      path: '/ai'
+      fullPath: '/ai'
+      preLoaderRoute: typeof AiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/analytics': {
+      id: '/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assistant': {
+      id: '/assistant'
+      path: '/assistant'
+      fullPath: '/assistant'
+      preLoaderRoute: typeof AssistantRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brand': {
+      id: '/brand'
+      path: '/brand'
+      fullPath: '/brand'
+      preLoaderRoute: typeof BrandRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/domains': {
+      id: '/domains'
+      path: '/domains'
+      fullPath: '/domains'
+      preLoaderRoute: typeof DomainsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/farm': {
+      id: '/farm'
+      path: '/farm'
+      fullPath: '/farm'
+      preLoaderRoute: typeof FarmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faucet': {
+      id: '/faucet'
+      path: '/faucet'
+      fullPath: '/faucet'
+      preLoaderRoute: typeof FaucetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/liquidity': {
+      id: '/liquidity'
+      path: '/liquidity'
+      fullPath: '/liquidity'
+      preLoaderRoute: typeof LiquidityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pools': {
+      id: '/pools'
+      path: '/pools'
+      fullPath: '/pools'
+      preLoaderRoute: typeof PoolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portfolio': {
+      id: '/portfolio'
+      path: '/portfolio'
+      fullPath: '/portfolio'
+      preLoaderRoute: typeof PortfolioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/swap': {
+      id: '/swap'
+      path: '/swap'
+      fullPath: '/swap'
+      preLoaderRoute: typeof SwapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
@@ -390,6 +383,13 @@ declare module '@tanstack/react-router' {
       path: '/api/chat'
       fullPath: '/api/chat'
       preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/d/$name': {
+      id: '/d/$name'
+      path: '/d/$name'
+      fullPath: '/d/$name'
+      preLoaderRoute: typeof DNameRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
