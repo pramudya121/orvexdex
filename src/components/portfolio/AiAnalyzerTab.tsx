@@ -1,9 +1,16 @@
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useAccount, useBalance, useReadContract, useReadContracts } from "wagmi";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Brain, Sparkles, ShieldAlert, TrendingUp, AlertCircle, Loader2, RefreshCcw } from "lucide-react";
+import { loadHistory, recordSnapshot, summarize, type PnlPoint } from "@/lib/pnlHistory";
+import { savePortfolioBrief } from "@/lib/portfolioContext";
+
+const PnlChart = lazy(() =>
+  import("@/components/portfolio/PnlChart").then((m) => ({ default: m.PnlChart })),
+);
+
 
 function extractSwapPair(text: string): { from: string; to: string } | null {
   const symbols = ["zkLTC", "wzkLTC", "TRX", "XRP", "ADA", "ZEC", "XMR", "ORVX"];
