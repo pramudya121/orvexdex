@@ -197,6 +197,57 @@ export function AiAnalyzerTab() {
   const lpBals = useReadContracts({ contracts: lpBalCalls, query: { enabled: !!address && pairAddrs.length > 0 } });
   const lpCount = (lpBals.data ?? []).filter((r) => ((r?.result as bigint | undefined) ?? 0n) > 0n).length;
 
+
+  // ---- P&L history: snapshot live value, persist per wallet, summarise -------
+  const [history, setHistory] = useState<PnlPoint[]>([]);
+  useEffect(() => {
+    setHistory(loadHistory(address));
+  }, [address]);
+
+  const totalNumeric = snapshot ? Number(snapshot.total) / 1e18 : NaN;
+  const holdingsKey = snapshot
+    ? snapshot.rows.map((r) => `${r.symbol}:${(Number(r.valueWzk) / 1e18).toFixed(6)}`).join("|")
+    : "";
+
+  useEffect(() => {
+    if (!address || !snapshot || !Number.isFinite(totalNumeric) || snapshot.rows.length === 0) return;
+    const next = recordSnapshot(
+      address,
+      totalNumeric,
+      snapshot.rows.map((r) => ({ symbol: r.symbol, value: Number(r.valueWzk) / 1e18 })),
+    );
+    setHistory([...next]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, holdingsKey]);
+
+  const pnlSummary = useMemo(() => summarize(history), [history]);
+
+  const pnlText = useMemo(() => {
+    if (!pnlSummary || pnlSummary.points < 2) return undefined;
+    const parts = [
+      `Value now ${pnlSummary.last.toFixed(4)} wzkLTC (from ${pnlSummary.first.toFixed(4)})`,
+      `Change ${pnlSummary.absChange >= 0 ? "+" : ""}${pnlSummary.absChange.toFixed(4)} wzkLTC (${pnlSummary.pctChange >= 0 ? "+" : ""}${pnlSummary.pctChange.toFixed(2)}%)`,
+      `High ${pnlSummary.high.toFixed(4)} / Low ${pnlSummary.low.toFixed(4)}`,
+      pnlSummary.best ? `Best asset ${pnlSummary.best.symbol} ${pnlSummary.best.pct >= 0 ? "+" : ""}${pnlSummary.best.pct.toFixed(1)}%` : null,
+      pnlSummary.worst ? `Worst asset ${pnlSummary.worst.symbol} ${pnlSummary.worst.pct >= 0 ? "+" : ""}${pnlSummary.worst.pct.toFixed(1)}%` : null,
+      `Tracked since ${new Date(pnlSummary.since ?? Date.now()).toLocaleString()} over ${pnlSummary.points} snapshots`,
+    ].filter(Boolean);
+    return parts.join("; ");
+  }, [pnlSummary]);
+
+  // Share a compact brief with the Copilot so chat can reason about real holdings.
+  useEffect(() => {
+    if (!address || !snapshot || snapshot.rows.length === 0) return;
+    const total = Number(snapshot.total) / 1e18 || 1;
+    const lines = snapshot.rows
+      .map((r) => `- ${r.symbol}: ${fmt(r.amount, r.decimals, 6)} (${(Number(r.valueWzk) / 1e18).toFixed(4)} wzkLTC, ${((Number(r.valueWzk) / 1e18 / total) * 100).toFixed(1)}%)`)
+      .join("\n");
+    savePortfolioBrief(
+      address,
+      `Wallet ${address}\nTotal value: ${total.toFixed(4)} wzkLTC across ${snapshot.rows.length} assets, ${lpCount} LP positions.\nHoldings:\n${lines}${pnlText ? `\nP&L: ${pnlText}` : ""}`,
+    );
+  }, [address, snapshot, lpCount, pnlText]);
+
   const analyze = useServerFn(analyzePortfolio);
   const mutation = useMutation({
     mutationFn: async () => {
@@ -214,10 +265,12 @@ export function AiAnalyzerTab() {
           })),
           lpCount,
           farmingCount: 0,
+          pnl: pnlText,
         },
       });
     },
   });
+
 
   if (!isConnected || !address) {
     return <div className="glass rounded-2xl p-10 text-center text-muted-foreground">Connect a wallet to run AI analysis.</div>;
