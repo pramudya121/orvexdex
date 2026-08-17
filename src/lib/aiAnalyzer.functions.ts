@@ -14,7 +14,9 @@ const InputSchema = z.object({
   holdings: z.array(HoldingSchema),
   lpCount: z.number(),
   farmingCount: z.number(),
+  pnl: z.string().optional(),
 });
+
 
 export type AnalyzerInput = z.infer<typeof InputSchema>;
 
