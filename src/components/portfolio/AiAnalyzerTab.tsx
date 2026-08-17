@@ -303,6 +303,13 @@ export function AiAnalyzerTab() {
         </button>
       </div>
 
+      {/* Historical P&L — lazy-loaded chart bundle */}
+      <Suspense fallback={<div className="glass rounded-2xl h-64 animate-pulse" />}>
+        <PnlChart points={history} address={address} onCleared={() => setHistory([])} />
+      </Suspense>
+
+
+
       {empty && (
         <div className="glass rounded-2xl p-8 text-center text-muted-foreground text-sm">
           No holdings detected yet. Grab test tokens from the Faucet, then run analysis.
