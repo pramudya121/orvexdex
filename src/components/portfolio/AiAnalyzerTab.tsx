@@ -234,18 +234,6 @@ export function AiAnalyzerTab() {
     return parts.join("; ");
   }, [pnlSummary]);
 
-  // Share a compact brief with the Copilot so chat can reason about real holdings.
-  useEffect(() => {
-    if (!address || !snapshot || snapshot.rows.length === 0) return;
-    const total = Number(snapshot.total) / 1e18 || 1;
-    const lines = snapshot.rows
-      .map((r) => `- ${r.symbol}: ${fmt(r.amount, r.decimals, 6)} (${(Number(r.valueWzk) / 1e18).toFixed(4)} wzkLTC, ${((Number(r.valueWzk) / 1e18 / total) * 100).toFixed(1)}%)`)
-      .join("\n");
-    savePortfolioBrief(
-      address,
-      `Wallet ${address}\nTotal value: ${total.toFixed(4)} wzkLTC across ${snapshot.rows.length} assets, ${lpCount} LP positions.\nHoldings:\n${lines}${pnlText ? `\nP&L: ${pnlText}` : ""}`,
-    );
-  }, [address, snapshot, lpCount, pnlText]);
 
   const analyze = useServerFn(analyzePortfolio);
   const mutation = useMutation({
