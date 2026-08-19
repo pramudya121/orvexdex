@@ -18,6 +18,7 @@ const PAGES: { to: string; label: string; hint: string }[] = [
   { to: "/pools", label: "Pools", hint: "Browse pairs" },
   { to: "/analytics", label: "Analytics", hint: "Protocol metrics" },
   { to: "/portfolio", label: "Portfolio", hint: "Your positions" },
+  { to: "/history", label: "History", hint: "Your transactions" },
   { to: "/faucet", label: "Faucet", hint: "Claim test tokens" },
   { to: "/brand", label: "Brand", hint: "Press kit" },
 ];
