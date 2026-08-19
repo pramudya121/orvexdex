@@ -15,7 +15,6 @@ const NAV = [
   { to: "/farm", label: "Farm" },
   { to: "/domains", label: "Domains" },
   { to: "/ai", label: "AI Hub" },
-  { to: "/assistant", label: "Copilot" },
   { to: "/analytics", label: "Analytics" },
   { to: "/portfolio", label: "Portfolio" },
   { to: "/faucet", label: "Faucet" },

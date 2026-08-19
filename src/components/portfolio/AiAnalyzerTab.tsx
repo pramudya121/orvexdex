@@ -5,7 +5,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Brain, Sparkles, ShieldAlert, TrendingUp, AlertCircle, Loader2, RefreshCcw } from "lucide-react";
 import { loadHistory, recordSnapshot, summarize, type PnlPoint } from "@/lib/pnlHistory";
-import { savePortfolioBrief } from "@/lib/portfolioContext";
 
 const PnlChart = lazy(() =>
   import("@/components/portfolio/PnlChart").then((m) => ({ default: m.PnlChart })),
