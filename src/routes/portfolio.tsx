@@ -15,12 +15,16 @@ import {
   PortfolioTokensSkeleton,
 } from "@/components/skeletons";
 import { SendTokenDialog } from "@/components/portfolio/SendTokenDialog";
-import { FarmingPositions } from "@/components/portfolio/FarmingPositions";
-import { AiAnalyzerTab } from "@/components/portfolio/AiAnalyzerTab";
 import { Coins, Layers, Sprout, Send, Brain } from "lucide-react";
 
 const ActivityFeed = lazy(() =>
   import("@/components/ActivityFeed").then((m) => ({ default: m.ActivityFeed })),
+);
+const FarmingPositions = lazy(() =>
+  import("@/components/portfolio/FarmingPositions").then((m) => ({ default: m.FarmingPositions })),
+);
+const AiAnalyzerTab = lazy(() =>
+  import("@/components/portfolio/AiAnalyzerTab").then((m) => ({ default: m.AiAnalyzerTab })),
 );
 
 
@@ -102,7 +106,7 @@ function PortfolioPage() {
       {isConnected && (
         <>
           {/* Sub-header nav — Tokens / LP / Farming / AI */}
-          <div className="glass rounded-2xl p-1.5 flex items-center gap-1 mb-6 animate-rise overflow-x-auto">
+          <div className="sticky top-16 z-20 glass-strong rounded-2xl p-1.5 flex items-center gap-1 mb-6 animate-rise overflow-x-auto shadow-lg">
             <TabButton active={tab === "tokens"} onClick={() => setTab("tokens")} icon={<Coins className="h-4 w-4" />} label="Tokens" />
             <TabButton active={tab === "lp"} onClick={() => setTab("lp")} icon={<Layers className="h-4 w-4" />} label="LP Positions" />
             <TabButton active={tab === "farming"} onClick={() => setTab("farming")} icon={<Sprout className="h-4 w-4" />} label="Farming" />
@@ -110,7 +114,7 @@ function PortfolioPage() {
           </div>
 
           {tab === "tokens" && (
-            <>
+            <div className="animate-rise">
               <SectionHeader title="Tokens" subtitle="Live balances · tap Send to transfer" />
               {balances.isLoading && !balances.data ? (
                 <PortfolioTokensSkeleton count={6} />
@@ -123,28 +127,32 @@ function PortfolioPage() {
                   })}
                 </div>
               )}
-            </>
+            </div>
           )}
 
           {tab === "lp" && (
-            <>
+            <div className="animate-rise">
               <SectionHeader title="LP Positions" subtitle="Underlying assets · live" />
               <LPositions owner={address!} />
-            </>
+            </div>
           )}
 
           {tab === "farming" && (
-            <>
+            <div className="animate-rise">
               <SectionHeader title="Farming" subtitle="Active staking positions · pending ORVX" />
-              <FarmingPositions owner={address!} />
-            </>
+              <Suspense fallback={<LPositionsSkeleton count={2} />}>
+                <FarmingPositions owner={address!} />
+              </Suspense>
+            </div>
           )}
 
           {tab === "ai" && (
-            <>
+            <div className="animate-rise">
               <SectionHeader title="AI Analyzer" subtitle="Powered by Lovable AI · live pricing" />
-              <AiAnalyzerTab />
-            </>
+              <Suspense fallback={<PortfolioTokensSkeleton count={3} />}>
+                <AiAnalyzerTab />
+              </Suspense>
+            </div>
           )}
 
           <SectionHeader title="Recent Activity" subtitle="Streamed from LitVM logs" className="mt-10" />
