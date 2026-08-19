@@ -17,6 +17,7 @@ const NAV = [
   { to: "/ai", label: "AI Hub" },
   { to: "/analytics", label: "Analytics" },
   { to: "/portfolio", label: "Portfolio" },
+  { to: "/history", label: "History" },
   { to: "/faucet", label: "Faucet" },
 ];
 

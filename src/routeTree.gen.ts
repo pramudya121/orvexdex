@@ -19,6 +19,7 @@ import { Route as BrandRouteImport } from './routes/brand'
 import { Route as DomainsRouteImport } from './routes/domains'
 import { Route as FarmRouteImport } from './routes/farm'
 import { Route as FaucetRouteImport } from './routes/faucet'
+import { Route as HistoryRouteImport } from './routes/history'
 import { Route as LiquidityRouteImport } from './routes/liquidity'
 import { Route as PoolsRouteImport } from './routes/pools'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
@@ -76,6 +77,11 @@ const FaucetRoute = FaucetRouteImport.update({
   path: '/faucet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LiquidityRoute = LiquidityRouteImport.update({
   id: '/liquidity',
   path: '/liquidity',
@@ -118,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/domains': typeof DomainsRoute
   '/farm': typeof FarmRoute
   '/faucet': typeof FaucetRoute
+  '/history': typeof HistoryRoute
   '/liquidity': typeof LiquidityRoute
   '/pools': typeof PoolsRoute
   '/portfolio': typeof PortfolioRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/domains': typeof DomainsRoute
   '/farm': typeof FarmRoute
   '/faucet': typeof FaucetRoute
+  '/history': typeof HistoryRoute
   '/liquidity': typeof LiquidityRoute
   '/pools': typeof PoolsRoute
   '/portfolio': typeof PortfolioRoute
@@ -155,6 +163,7 @@ export interface FileRoutesById {
   '/domains': typeof DomainsRoute
   '/farm': typeof FarmRoute
   '/faucet': typeof FaucetRoute
+  '/history': typeof HistoryRoute
   '/liquidity': typeof LiquidityRoute
   '/pools': typeof PoolsRoute
   '/portfolio': typeof PortfolioRoute
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
     | '/domains'
     | '/farm'
     | '/faucet'
+    | '/history'
     | '/liquidity'
     | '/pools'
     | '/portfolio'
@@ -193,6 +203,7 @@ export interface FileRouteTypes {
     | '/domains'
     | '/farm'
     | '/faucet'
+    | '/history'
     | '/liquidity'
     | '/pools'
     | '/portfolio'
@@ -211,6 +222,7 @@ export interface FileRouteTypes {
     | '/domains'
     | '/farm'
     | '/faucet'
+    | '/history'
     | '/liquidity'
     | '/pools'
     | '/portfolio'
@@ -230,6 +242,7 @@ export interface RootRouteChildren {
   DomainsRoute: typeof DomainsRoute
   FarmRoute: typeof FarmRoute
   FaucetRoute: typeof FaucetRoute
+  HistoryRoute: typeof HistoryRoute
   LiquidityRoute: typeof LiquidityRoute
   PoolsRoute: typeof PoolsRoute
   PortfolioRoute: typeof PortfolioRoute
@@ -310,6 +323,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FaucetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/liquidity': {
       id: '/liquidity'
       path: '/liquidity'
@@ -366,6 +386,7 @@ const rootRouteChildren: RootRouteChildren = {
   DomainsRoute: DomainsRoute,
   FarmRoute: FarmRoute,
   FaucetRoute: FaucetRoute,
+  HistoryRoute: HistoryRoute,
   LiquidityRoute: LiquidityRoute,
   PoolsRoute: PoolsRoute,
   PortfolioRoute: PortfolioRoute,
