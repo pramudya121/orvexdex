@@ -15,12 +15,16 @@ import {
   PortfolioTokensSkeleton,
 } from "@/components/skeletons";
 import { SendTokenDialog } from "@/components/portfolio/SendTokenDialog";
-import { FarmingPositions } from "@/components/portfolio/FarmingPositions";
-import { AiAnalyzerTab } from "@/components/portfolio/AiAnalyzerTab";
 import { Coins, Layers, Sprout, Send, Brain } from "lucide-react";
 
 const ActivityFeed = lazy(() =>
   import("@/components/ActivityFeed").then((m) => ({ default: m.ActivityFeed })),
+);
+const FarmingPositions = lazy(() =>
+  import("@/components/portfolio/FarmingPositions").then((m) => ({ default: m.FarmingPositions })),
+);
+const AiAnalyzerTab = lazy(() =>
+  import("@/components/portfolio/AiAnalyzerTab").then((m) => ({ default: m.AiAnalyzerTab })),
 );
 
 
