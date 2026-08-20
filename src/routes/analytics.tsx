@@ -120,6 +120,21 @@ function AnalyticsPage() {
         ))}
       </div>
 
+      <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground mb-6">
+        <a href={explorerAddr(dex.factory)} target="_blank" rel="noreferrer" className="glass rounded-xl px-3 py-1.5 hover:text-accent font-mono">
+          Factory {dex.factory.slice(0, 8)}…{dex.factory.slice(-4)}
+        </a>
+        {dex.router && (
+          <a href={explorerAddr(dex.router)} target="_blank" rel="noreferrer" className="glass rounded-xl px-3 py-1.5 hover:text-accent font-mono">
+            Router {dex.router.slice(0, 8)}…{dex.router.slice(-4)}
+          </a>
+        )}
+      </div>
+
+      <RouterCompare />
+
+
+
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8 animate-rise">
         <Stat label="TVL" value={fmtWzk(totalTvl)} unit="wzkLTC" tone="luxe" />
