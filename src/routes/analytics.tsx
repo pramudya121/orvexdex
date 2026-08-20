@@ -1,11 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useReadContract, useReadContracts } from "wagmi";
+import { formatUnits, parseUnits } from "viem";
 import { DEXES, explorerAddr } from "@/lib/chain";
 import { factoryAbi } from "@/lib/abis/factory";
 import { pairAbi } from "@/lib/abis/pair";
-import { findToken } from "@/lib/tokens";
+import { routerAbi } from "@/lib/abis/router";
+import { TOKENS } from "@/lib/tokens";
+import { useTokenMeta, type TokenMeta } from "@/lib/tokenMeta";
+import { TokenIcon } from "@/components/TokenIcon";
 import { fmtWzk, usePoolStats, type PoolMeta } from "@/lib/poolStats";
+
 
 export const Route = createFileRoute("/analytics")({
   component: AnalyticsPage,
