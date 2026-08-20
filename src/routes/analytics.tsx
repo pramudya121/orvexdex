@@ -50,30 +50,36 @@ function AnalyticsPage() {
   ]), [pairAddrs]);
   const meta = useReadContracts({ contracts: calls, query: { enabled: pairAddrs.length > 0, refetchInterval: 30000 } });
 
-  const metas: PoolMeta[] = useMemo(() => pairAddrs.flatMap((pair, i) => {
+  const raw = useMemo(() => pairAddrs.flatMap((pair, i) => {
     const t0 = meta.data?.[i * 3]?.result as `0x${string}` | undefined;
     const t1 = meta.data?.[i * 3 + 1]?.result as `0x${string}` | undefined;
     const r = meta.data?.[i * 3 + 2]?.result as readonly [bigint, bigint, number] | undefined;
     if (!t0 || !t1 || !r) return [];
-    return [{
-      pair, token0: t0, token1: t1, reserve0: r[0], reserve1: r[1],
-      decimals0: findToken(t0)?.decimals ?? 18,
-      decimals1: findToken(t1)?.decimals ?? 18,
-    }];
+    return [{ pair, token0: t0, token1: t1, reserve0: r[0], reserve1: r[1] }];
   }), [pairAddrs, meta.data]);
+
+  const tokenList = useMemo(() => raw.flatMap((p) => [p.token0, p.token1]), [raw]);
+  const tokenMap = useTokenMeta(tokenList);
+
+  const metas: PoolMeta[] = useMemo(() => raw.map((p) => ({
+    ...p,
+    decimals0: tokenMap.get(p.token0.toLowerCase())?.decimals ?? 18,
+    decimals1: tokenMap.get(p.token1.toLowerCase())?.decimals ?? 18,
+  })), [raw, tokenMap]);
   const stats = usePoolStats(metas);
 
   const enriched = useMemo(() => metas.map((m) => {
     const s = stats.data?.stats.get(m.pair.toLowerCase());
-    const tk0 = findToken(m.token0);
-    const tk1 = findToken(m.token1);
     return {
-      pair: m.pair, tk0, tk1,
+      pair: m.pair,
+      tk0: tokenMap.get(m.token0.toLowerCase()),
+      tk1: tokenMap.get(m.token1.toLowerCase()),
       tvl: s?.tvlWzk ?? 0n,
       vol: s?.vol24Wzk ?? 0n,
       swaps: s?.swaps24 ?? 0,
     };
-  }), [metas, stats.data]);
+  }), [metas, stats.data, tokenMap]);
+
 
   const totalTvl = enriched.reduce<bigint>((a, p) => a + p.tvl, 0n);
   const totalVol = enriched.reduce<bigint>((a, p) => a + p.vol, 0n);
