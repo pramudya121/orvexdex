@@ -155,11 +155,12 @@ function AnalyticsPage() {
                   <td className="py-2.5 pr-2">
                     <a href={explorerAddr(p.pair)} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-accent">
                       <div className="flex -space-x-2">
-                        {p.tk0 && <img src={p.tk0.logo} alt={`${p.tk0.symbol} token logo`} className="h-6 w-6 rounded-full ring-2 ring-background" />}
-                        {p.tk1 && <img src={p.tk1.logo} alt={`${p.tk1.symbol} token logo`} className="h-6 w-6 rounded-full ring-2 ring-background" />}
+                        <TokenIcon meta={p.tk0} size={24} />
+                        <TokenIcon meta={p.tk1} size={24} />
                       </div>
                       <span className="font-semibold">{p.tk0?.symbol ?? "?"}–{p.tk1?.symbol ?? "?"}</span>
                     </a>
+
                   </td>
                   <td className="text-right font-mono px-2 text-gradient-gold">{fmtWzk(p.tvl)}</td>
                   <td className="text-right font-mono px-2">{fmtWzk(p.vol)}</td>
