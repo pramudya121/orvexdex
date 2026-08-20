@@ -247,3 +247,93 @@ function ChartCard({ title, rows, max, field, tone }: {
     </div>
   );
 }
+const QUOTE_TOKENS = TOKENS.filter((t) => !t.isNative);
+
+/** Compare execution price of the same trade across every registered DEX router. */
+function RouterCompare() {
+  const [inAddr, setInAddr] = useState(QUOTE_TOKENS[0].address);
+  const [outAddr, setOutAddr] = useState(QUOTE_TOKENS[1]?.address ?? QUOTE_TOKENS[0].address);
+  const [amount, setAmount] = useState("1");
+
+  const tIn = QUOTE_TOKENS.find((t) => t.address === inAddr)!;
+  const tOut = QUOTE_TOKENS.find((t) => t.address === outAddr)!;
+  const wzk = QUOTE_TOKENS.find((t) => t.isWrapped)!;
+
+  let amountIn = 0n;
+  try { amountIn = parseUnits(amount || "0", tIn.decimals); } catch { amountIn = 0n; }
+
+  const routers = DEXES.filter((d) => !!d.router);
+  const direct = [tIn.address, tOut.address] as `0x${string}`[];
+  const hop = [tIn.address, wzk.address, tOut.address] as `0x${string}`[];
+  const useHop = tIn.address !== wzk.address && tOut.address !== wzk.address;
+
+  const contracts = useMemo(() => routers.flatMap((d) => {
+    const base = { address: d.router as `0x${string}`, abi: routerAbi, functionName: "getAmountsOut" as const };
+    return [
+      { ...base, args: [amountIn, direct] as const },
+      { ...base, args: [amountIn, useHop ? hop : direct] as const },
+    ];
+  }), [routers.length, amountIn, inAddr, outAddr, useHop]);
+
+  const q = useReadContracts({
+    contracts,
+    query: { enabled: amountIn > 0n && inAddr !== outAddr, refetchInterval: 20000 },
+  });
+
+  const results = routers.map((d, i) => {
+    const a = q.data?.[i * 2]?.result as readonly bigint[] | undefined;
+    const b = q.data?.[i * 2 + 1]?.result as readonly bigint[] | undefined;
+    const va = a ? a[a.length - 1] : 0n;
+    const vb = b ? b[b.length - 1] : 0n;
+    const best = va > vb ? va : vb;
+    return { dex: d, out: best, viaHop: vb > va && useHop };
+  });
+  const bestOut = results.reduce<bigint>((m, r) => (r.out > m ? r.out : m), 0n);
+
+  return (
+    <div className="glass-strong rounded-3xl p-6 mb-6 animate-rise">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <div>
+          <h2 className="text-lg font-bold tracking-tight">Cross-DEX Router Quotes</h2>
+          <p className="text-xs text-muted-foreground">Live getAmountsOut from every registered router.</p>
+        </div>
+        <Link to="/swap" className="text-xs text-accent hover:underline">Trade on Swap →</Link>
+      </div>
+
+      <div className="grid sm:grid-cols-3 gap-2 mb-4">
+        <input
+          value={amount}
+          onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+          placeholder="Amount"
+          className="rounded-xl bg-surface-2 px-3 py-2 text-sm font-mono outline-none focus:ring-2 focus:ring-accent/50"
+        />
+        <select value={inAddr} onChange={(e) => setInAddr(e.target.value as `0x${string}`)} className="rounded-xl bg-surface-2 px-3 py-2 text-sm outline-none">
+          {QUOTE_TOKENS.map((t) => <option key={t.address} value={t.address}>{t.symbol}</option>)}
+        </select>
+        <select value={outAddr} onChange={(e) => setOutAddr(e.target.value as `0x${string}`)} className="rounded-xl bg-surface-2 px-3 py-2 text-sm outline-none">
+          {QUOTE_TOKENS.map((t) => <option key={t.address} value={t.address}>{t.symbol}</option>)}
+        </select>
+      </div>
+
+      <div className="space-y-2">
+        {results.map((r) => {
+          const isBest = r.out > 0n && r.out === bestOut;
+          return (
+            <div key={r.dex.id} className={`flex items-center justify-between rounded-2xl px-4 py-3 transition ${isBest ? "bg-surface-2 shadow-neon" : "bg-surface-2/40"}`}>
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: r.dex.color }} />
+                {r.dex.name}
+                {r.viaHop && <span className="text-[10px] uppercase tracking-widest text-muted-foreground">via {wzk.symbol}</span>}
+                {isBest && <span className="text-[10px] uppercase tracking-widest text-gradient-gold">best</span>}
+              </div>
+              <div className="font-mono tabular-nums text-sm">
+                {r.out > 0n ? `${Number(formatUnits(r.out, tOut.decimals)).toLocaleString(undefined, { maximumFractionDigits: 6 })} ${tOut.symbol}` : "—"}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {inAddr === outAddr && <div className="text-xs text-muted-foreground mt-3">Pick two different tokens.</div>}
+    </div>
+  );
+}
