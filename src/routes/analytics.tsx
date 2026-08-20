@@ -207,7 +207,7 @@ function Stat({ label, value, unit, tone }: { label: string; value: string; unit
 
 function ChartCard({ title, rows, max, field, tone }: {
   title: string;
-  rows: { pair: string; tk0?: any; tk1?: any; tvl: bigint; vol: bigint }[];
+  rows: { pair: string; tk0?: TokenMeta; tk1?: TokenMeta; tvl: bigint; vol: bigint }[];
   max: bigint;
   field: "tvl" | "vol";
   tone: "luxe" | "gold";
