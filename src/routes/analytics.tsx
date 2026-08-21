@@ -394,8 +394,8 @@ function RouterCompare() {
     <div className="glass-strong rounded-3xl p-6 mb-6 animate-rise">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
-          <h2 className="text-lg font-bold tracking-tight">Cross-DEX Router Quotes</h2>
-          <p className="text-xs text-muted-foreground">Live getAmountsOut from every registered router.</p>
+          <h2 className="text-lg font-bold tracking-tight">Live Route Quote</h2>
+          <p className="text-xs text-muted-foreground">Real-time getAmountsOut straight from the ORVEX router.</p>
         </div>
         <Link to="/swap" className="text-xs text-accent hover:underline">Trade on Swap →</Link>
       </div>
