@@ -58,13 +58,6 @@ export const DEXES: readonly DexConfig[] = [
     router: "0x03D2D542100fa926de135a08B609c8538E45F6ee",
     color: "#c084fc",
   },
-  {
-    id: "drunkencats",
-    name: "DrunkenCats",
-    factory: "0x7D0FFa85a986CDCDD8f56dF7d1EF6ffb2A164c8C",
-    router: "0xb0e39b72824fA03b2CbD4486ddDc3630D680eA1b",
-    color: "#f59e0b",
-  },
 ] as const;
 
 export const findDex = (factory: string) =>

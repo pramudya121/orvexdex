@@ -27,7 +27,6 @@ RPC_URL = "https://liteforge.rpc.caldera.xyz/http"  # ganti sesuai chain kamu
 # ---------------------------------------------------------------------------
 DEX_FACTORIES = {
     "OrvexSwap":   "0x42e4E19020aa23947e1BE3260b7e4CCFDd246128",
-    "DrunkenCats": "0x7D0FFa854edaE7659A1989Be42Df4CCe218F4c8C",
     "GenericV2":   "0xe8aDcf45C359eB63aAf0e0a129463600151A0291",
 }
 
