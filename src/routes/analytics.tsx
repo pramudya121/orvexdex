@@ -211,7 +211,143 @@ function ChartCard({ title, rows, max, field, tone }: {
     </div>
   );
 }
+
+type PoolRow = {
+  pair: string;
+  token0: `0x${string}`;
+  token1: `0x${string}`;
+  tk0?: TokenMeta;
+  tk1?: TokenMeta;
+  tvl: bigint;
+  vol: bigint;
+  swaps: number;
+};
+
+type SortKey = "tvl" | "vol" | "swaps";
+
+/** Searchable, sortable pool explorer with one-click routing into Swap. */
+function PoolTable({ rows }: { rows: PoolRow[] }) {
+  const [q, setQ] = useState("");
+  const [sort, setSort] = useState<SortKey>("tvl");
+
+  const filtered = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    const match = (r: PoolRow) =>
+      !term ||
+      r.pair.toLowerCase().includes(term) ||
+      r.token0.toLowerCase().includes(term) ||
+      r.token1.toLowerCase().includes(term) ||
+      (r.tk0?.symbol ?? "").toLowerCase().includes(term) ||
+      (r.tk1?.symbol ?? "").toLowerCase().includes(term);
+    const out = rows.filter(match);
+    out.sort((a, b) =>
+      sort === "swaps" ? b.swaps - a.swaps : a[sort] < b[sort] ? 1 : a[sort] > b[sort] ? -1 : 0,
+    );
+    return out;
+  }, [rows, q, sort]);
+
+  const SORTS: { key: SortKey; label: string }[] = [
+    { key: "tvl", label: "TVL" },
+    { key: "vol", label: "Volume" },
+    { key: "swaps", label: "Swaps" },
+  ];
+
+  return (
+    <div className="glass-strong rounded-3xl p-6 mt-6 animate-rise">
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight">All pools</h2>
+          <p className="text-xs text-muted-foreground">{filtered.length} of {rows.length} markets</p>
+        </div>
+        <Link to="/pools" className="text-xs text-accent hover:underline">Open Pools page →</Link>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="relative flex-1 min-w-[14rem]">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search symbol or paste token / pair address…"
+            aria-label="Search pools"
+            className="w-full rounded-2xl bg-surface-2/70 border border-border px-4 py-2.5 pr-9 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-accent/30 transition"
+          />
+          {q && (
+            <button
+              onClick={() => setQ("")}
+              aria-label="Clear search"
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full text-muted-foreground hover:text-foreground hover:bg-surface-2"
+            >
+              ×
+            </button>
+          )}
+        </div>
+        <div className="flex gap-1 rounded-2xl bg-surface-2/50 p-1">
+          {SORTS.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => setSort(s.key)}
+              className={`px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-[0.15em] transition ${
+                sort === s.key ? "bg-gradient-luxe text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="overflow-x-auto custom-scroll">
+        <table className="w-full text-sm min-w-[720px]">
+          <thead>
+            <tr className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground border-b border-border">
+              <th className="text-left py-2 pr-2">Pair</th>
+              <th className="text-right py-2 px-2">TVL</th>
+              <th className="text-right py-2 px-2">24h Vol</th>
+              <th className="text-right py-2 px-2">24h Fees</th>
+              <th className="text-right py-2 px-2">Swaps</th>
+              <th className="text-right py-2 pl-2">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((p) => (
+              <tr key={p.pair} className="border-b border-border/50 hover:bg-surface-2/40 transition group">
+                <td className="py-2.5 pr-2">
+                  <a href={explorerAddr(p.pair)} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-accent">
+                    <div className="flex -space-x-2">
+                      <TokenIcon meta={p.tk0} size={24} />
+                      <TokenIcon meta={p.tk1} size={24} />
+                    </div>
+                    <span className="font-semibold">{p.tk0?.symbol ?? "?"}–{p.tk1?.symbol ?? "?"}</span>
+                  </a>
+                </td>
+                <td className="text-right font-mono px-2 text-gradient-gold tabular-nums">{fmtWzk(p.tvl)}</td>
+                <td className="text-right font-mono px-2 tabular-nums">{fmtWzk(p.vol)}</td>
+                <td className="text-right font-mono px-2 tabular-nums">{fmtWzk((p.vol * 3n) / 1000n)}</td>
+                <td className="text-right font-mono px-2 text-muted-foreground tabular-nums">{p.swaps}</td>
+                <td className="text-right pl-2">
+                  <Link
+                    to="/swap"
+                    search={{ from: p.token0, to: p.token1 }}
+                    className="press inline-flex items-center rounded-xl px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 transition"
+                  >
+                    Trade
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {rows.length === 0 && <div className="text-center text-muted-foreground text-sm py-8">No pool data yet.</div>}
+      {rows.length > 0 && filtered.length === 0 && (
+        <div className="text-center text-muted-foreground text-sm py-8">No pools match “{q}”.</div>
+      )}
+    </div>
+  );
+}
+
 const QUOTE_TOKENS = TOKENS.filter((t) => !t.isNative);
+
 
 /** Compare execution price of the same trade across every registered DEX router. */
 function RouterCompare() {
