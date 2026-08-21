@@ -72,6 +72,8 @@ function AnalyticsPage() {
     const s = stats.data?.stats.get(m.pair.toLowerCase());
     return {
       pair: m.pair,
+      token0: m.token0,
+      token1: m.token1,
       tk0: tokenMap.get(m.token0.toLowerCase()),
       tk1: tokenMap.get(m.token1.toLowerCase()),
       tvl: s?.tvlWzk ?? 0n,
@@ -150,48 +152,8 @@ function AnalyticsPage() {
         <ChartCard title="Top Pools by 24h Volume" rows={topByVol} max={maxVol} field="vol" tone="gold" />
       </div>
 
-      <div className="glass-strong rounded-3xl p-6 mt-6 animate-rise">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold tracking-tight">All pools</h2>
-          <Link to="/pools" className="text-xs text-accent hover:underline">Open Pools page →</Link>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[640px]">
-            <thead>
-              <tr className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground border-b border-border">
-                <th className="text-left py-2 pr-2">Pair</th>
-                <th className="text-right py-2 px-2">TVL</th>
-                <th className="text-right py-2 px-2">24h Vol</th>
-                <th className="text-right py-2 px-2">24h Fees</th>
-                <th className="text-right py-2 pl-2">Swaps</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...enriched].sort((a, b) => (a.tvl < b.tvl ? 1 : -1)).map((p) => (
-                <tr key={p.pair} className="border-b border-border/50 hover:bg-surface-2/40 transition">
-                  <td className="py-2.5 pr-2">
-                    <a href={explorerAddr(p.pair)} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-accent">
-                      <div className="flex -space-x-2">
-                        <TokenIcon meta={p.tk0} size={24} />
-                        <TokenIcon meta={p.tk1} size={24} />
-                      </div>
-                      <span className="font-semibold">{p.tk0?.symbol ?? "?"}–{p.tk1?.symbol ?? "?"}</span>
-                    </a>
+      <PoolTable rows={enriched} />
 
-                  </td>
-                  <td className="text-right font-mono px-2 text-gradient-gold">{fmtWzk(p.tvl)}</td>
-                  <td className="text-right font-mono px-2">{fmtWzk(p.vol)}</td>
-                  <td className="text-right font-mono px-2">{fmtWzk((p.vol * 3n) / 1000n)}</td>
-                  <td className="text-right font-mono pl-2 text-muted-foreground">{p.swaps}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {enriched.length === 0 && (
-          <div className="text-center text-muted-foreground text-sm py-8">No pool data yet.</div>
-        )}
-      </div>
     </div>
   );
 }
