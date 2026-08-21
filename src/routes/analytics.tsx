@@ -103,35 +103,37 @@ function AnalyticsPage() {
         <p className="text-sm text-muted-foreground mt-1">Live protocol metrics on LitVM · {total} pools on {dex.name}</p>
       </div>
 
-      {/* Multi-DEX selector */}
-      <div className="glass rounded-2xl p-2 mb-5 inline-flex gap-1 animate-rise">
-        {DEXES.map((d) => (
-          <button
-            key={d.id}
-            onClick={() => setDexId(d.id)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-[0.15em] transition ${
-              dexId === d.id ? "bg-gradient-luxe text-primary-foreground shadow-neon" : "text-muted-foreground hover:text-foreground"
-            }`}
-            style={dexId === d.id ? undefined : { boxShadow: `inset 0 0 0 1px ${d.color}22` }}
-          >
-            <span className="inline-block h-2 w-2 rounded-full mr-2 align-middle" style={{ background: d.color }} />
-            {d.name}
-          </button>
-        ))}
-      </div>
+      {/* DEX selector — only rendered when more than one venue is registered */}
+      {DEXES.length > 1 && (
+        <div className="glass rounded-2xl p-2 mb-5 inline-flex gap-1 animate-rise">
+          {DEXES.map((d) => (
+            <button
+              key={d.id}
+              onClick={() => setDexId(d.id)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-[0.15em] transition ${
+                dexId === d.id ? "bg-gradient-luxe text-primary-foreground shadow-neon" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <span className="inline-block h-2 w-2 rounded-full mr-2 align-middle" style={{ background: d.color }} />
+              {d.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground mb-6">
-        <a href={explorerAddr(dex.factory)} target="_blank" rel="noreferrer" className="glass rounded-xl px-3 py-1.5 hover:text-accent font-mono">
+        <a href={explorerAddr(dex.factory)} target="_blank" rel="noreferrer" className="glass rounded-xl px-3 py-1.5 hover:text-accent font-mono press">
           Factory {dex.factory.slice(0, 8)}…{dex.factory.slice(-4)}
         </a>
         {dex.router && (
-          <a href={explorerAddr(dex.router)} target="_blank" rel="noreferrer" className="glass rounded-xl px-3 py-1.5 hover:text-accent font-mono">
+          <a href={explorerAddr(dex.router)} target="_blank" rel="noreferrer" className="glass rounded-xl px-3 py-1.5 hover:text-accent font-mono press">
             Router {dex.router.slice(0, 8)}…{dex.router.slice(-4)}
           </a>
         )}
       </div>
 
       <RouterCompare />
+
 
 
 
