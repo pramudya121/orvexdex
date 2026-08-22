@@ -16,6 +16,7 @@ type Props = {
   priceImpact: number | null;
   hops: 1 | 2;
   deadlineMin: number;
+  gasCostText?: string | null;
 };
 
 export function SwapConfirmModal({
