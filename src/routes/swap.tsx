@@ -643,3 +643,12 @@ function TokenPanel({
   );
 }
 
+
+function Step({ label, done, active }: { label: string; done?: boolean; active?: boolean }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 ${done ? "text-accent" : active ? "text-primary" : "text-muted-foreground/60"}`}>
+      <span className={`h-2 w-2 rounded-full ${done ? "bg-accent" : active ? "bg-primary animate-pulse" : "bg-muted-foreground/40"}`} />
+      {label}
+    </span>
+  );
+}
