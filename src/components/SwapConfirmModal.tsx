@@ -22,7 +22,7 @@ type Props = {
 export function SwapConfirmModal({
   open, onClose, onConfirm, pending,
   tokenIn, tokenOut, amountInWei, amountOutWei,
-  slippageBps, tradeMode, priceImpact, hops, deadlineMin,
+  slippageBps, tradeMode, priceImpact, hops, deadlineMin, gasCostText,
 }: Props) {
   useEffect(() => {
     if (!open) return;
