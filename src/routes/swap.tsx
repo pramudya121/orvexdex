@@ -13,6 +13,8 @@ import { explorerAddr } from "@/lib/chain";
 import { SwapCardSkeleton } from "@/components/skeletons";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { SwapConfirmModal } from "@/components/SwapConfirmModal";
+import { useGasEstimate } from "@/lib/useGasEstimate";
+import { txErrorMessage } from "@/lib/txError";
 
 type SwapSearch = { from?: string; to?: string };
 
@@ -143,9 +145,54 @@ function SwapPage() {
   );
   const needsApproval = mode === "swap" && !tokenIn.isNative && (allowance.data as bigint | undefined ?? 0n) < effInWei;
 
+  const insufficient = balanceIn !== undefined && effInWei > 0n && effInWei > balanceIn;
+
   const { writeContractAsync, isPending } = useWriteContract();
   const [pendingHash, setPendingHash] = useState<`0x${string}` | undefined>();
   const receipt = useWaitForTransactionReceipt({ hash: pendingHash });
+
+  // ── Gas estimation for the exact action the button will perform ──
+  const gasTarget = useMemo(() => {
+    if (!address) return null;
+    if (mode === "wrap" && amountInWei > 0n)
+      return { address: ADDR.wzkLTC, abi: wzkltcAbi, functionName: "deposit", args: [] as unknown[], value: amountInWei };
+    if (mode === "unwrap" && amountInWei > 0n)
+      return { address: ADDR.wzkLTC, abi: wzkltcAbi, functionName: "withdraw", args: [amountInWei] as unknown[] };
+    if (mode === "swap" && needsApproval)
+      return { address: tokenIn.address as `0x${string}`, abi: erc20Abi, functionName: "approve", args: [ADDR.router, MAX_UINT256] as unknown[] };
+    if (mode === "swap" && path && effInWei > 0n && effOutWei > 0n) {
+      const dl = deadline(deadlineMin);
+      if (tradeMode === "exactIn") {
+        const minOut = slippageMin(effOutWei, slippageBps);
+        if (tokenIn.isNative)
+          return { address: ADDR.router, abi: routerAbi, functionName: "swapExactETHForTokens", args: [minOut, path, address, dl] as unknown[], value: amountInWei };
+        return {
+          address: ADDR.router, abi: routerAbi,
+          functionName: tokenOut.isNative ? "swapExactTokensForETH" : "swapExactTokensForTokens",
+          args: [amountInWei, minOut, path, address, dl] as unknown[],
+        };
+      }
+      const maxIn = slippageMax(effInWei, slippageBps);
+      if (tokenIn.isNative)
+        return { address: ADDR.router, abi: routerAbi, functionName: "swapETHForExactTokens", args: [amountOutWei, path, address, dl] as unknown[], value: maxIn };
+      return {
+        address: ADDR.router, abi: routerAbi,
+        functionName: tokenOut.isNative ? "swapTokensForExactETH" : "swapTokensForExactTokens",
+        args: [amountOutWei, maxIn, path, address, dl] as unknown[],
+      };
+    }
+    return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, mode, needsApproval, path, effInWei, effOutWei, amountInWei, amountOutWei, tradeMode, slippageBps, deadlineMin, tokenIn, tokenOut]);
+
+  const gas = useGasEstimate({
+    enabled: !!gasTarget && !insufficient && !pendingHash,
+    address: gasTarget?.address,
+    abi: gasTarget?.abi,
+    functionName: gasTarget?.functionName,
+    args: gasTarget?.args,
+    value: gasTarget?.value,
+  });
 
   useEffect(() => {
     if (receipt.isSuccess && pendingHash) {
@@ -160,6 +207,14 @@ function SwapPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receipt.isSuccess]);
+
+  useEffect(() => {
+    if (receipt.isError && pendingHash) {
+      toast.push({ title: "Transaction reverted", description: "The network rejected this transaction.", type: "error", hash: pendingHash });
+      setPendingHash(undefined);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [receipt.isError]);
 
   const flip = () => {
     setTokenIn(tokenOut);
@@ -202,8 +257,9 @@ function SwapPage() {
       }
       // Open confirm modal before submitting the swap
       setConfirmOpen(true);
-    } catch (e: any) {
-      toast.push({ title: "Transaction failed", description: e?.shortMessage || e?.message, type: "error" });
+    } catch (e: unknown) {
+      const { title, description, rejected } = txErrorMessage(e);
+      toast.push({ title, description, type: rejected ? "info" : "error" });
     }
   };
 
@@ -252,13 +308,14 @@ function SwapPage() {
       setPendingHash(hash);
       setConfirmOpen(false);
       toast.push({ title: "Swapping…", hash });
-    } catch (e: any) {
-      toast.push({ title: "Transaction failed", description: e?.shortMessage || e?.message, type: "error" });
+    } catch (e: unknown) {
+      const { title, description, rejected } = txErrorMessage(e);
+      toast.push({ title, description, type: rejected ? "info" : "error" });
     }
   };
 
   const userAmt = mode === "swap" && tradeMode === "exactOut" ? amountOutWei : amountInWei;
-  const disabled = !address || userAmt <= 0n || isPending || !!pendingHash || (mode === "swap" && !needsApproval && (effInWei === 0n || effOutWei === 0n));
+  const disabled = !address || userAmt <= 0n || isPending || !!pendingHash || insufficient || (mode === "swap" && !needsApproval && (effInWei === 0n || effOutWei === 0n));
 
   return (
     <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden">
@@ -424,6 +481,16 @@ function SwapPage() {
                 </a>
               </div>
             )}
+            <div className="flex justify-between gap-2">
+              <span className="shrink-0">Network fee</span>
+              <span className="text-right truncate">
+                {gas.isFetching && !gas.data ? (
+                  <span className="inline-block h-3 w-16 rounded bg-surface animate-pulse align-middle" />
+                ) : gas.data ? (
+                  <>≈ {gas.data.costText}<span className="text-muted-foreground/70"> · {gas.data.gas.toString()} gas</span></>
+                ) : "—"}
+              </span>
+            </div>
             <div className="flex justify-between pt-1 border-t border-border/50">
               <span>Mode</span>
               <span className="text-accent">{tradeMode === "exactIn" ? "Exact input" : "Exact output"}</span>
@@ -437,7 +504,31 @@ function SwapPage() {
           </div>
         )}
 
+        {insufficient && (
+          <div className="mt-3 p-3 rounded-xl bg-destructive/10 border border-destructive/40 text-xs text-destructive">
+            Insufficient {tokenIn.symbol} balance for this trade.
+          </div>
+        )}
 
+        {/* Transaction lifecycle */}
+        {pendingHash && (
+          <div className="mt-3 p-3 rounded-xl bg-surface-2/70 border border-border text-xs animate-fade-in" role="status" aria-live="polite">
+            <div className="flex items-center gap-2">
+              <span className="h-3.5 w-3.5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+              <span className="font-semibold">{receipt.isLoading ? "Waiting for confirmation…" : "Submitted"}</span>
+              <a href={explorerAddr(pendingHash)} target="_blank" rel="noreferrer" className="ml-auto font-mono hover:text-accent">
+                {pendingHash.slice(0, 8)}…{pendingHash.slice(-6)} ↗
+              </a>
+            </div>
+            <div className="mt-2 flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
+              <Step done label="Signed" />
+              <span className="flex-1 h-px bg-border" />
+              <Step active label="Pending" />
+              <span className="flex-1 h-px bg-border" />
+              <Step label="Mined" />
+            </div>
+          </div>
+        )}
 
         <button
           onClick={handleAction}
@@ -446,7 +537,7 @@ function SwapPage() {
         >
           <span className="relative z-10 inline-flex items-center justify-center gap-2">
             {(isPending || pendingHash) && <span className="h-4 w-4 rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin" />}
-            {!address ? "Connect wallet" : isPending || pendingHash ? "Confirming…" : buttonLabel}
+            {!address ? "Connect wallet" : isPending ? "Check wallet…" : pendingHash ? "Confirming…" : insufficient ? `Insufficient ${tokenIn.symbol}` : buttonLabel}
           </span>
           {!disabled && (
             <span aria-hidden className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-12 animate-[shimmer-sweep_2.6s_ease-in-out_infinite]" />
@@ -495,6 +586,7 @@ function SwapPage() {
         priceImpact={priceImpact}
         hops={route.hops as 1 | 2}
         deadlineMin={deadlineMin}
+        gasCostText={gas.data?.costText ?? null}
       />
     </div>
   );
@@ -552,3 +644,12 @@ function TokenPanel({
   );
 }
 
+
+function Step({ label, done, active }: { label: string; done?: boolean; active?: boolean }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 ${done ? "text-accent" : active ? "text-primary" : "text-muted-foreground/60"}`}>
+      <span className={`h-2 w-2 rounded-full ${done ? "bg-accent" : active ? "bg-primary animate-pulse" : "bg-muted-foreground/40"}`} />
+      {label}
+    </span>
+  );
+}

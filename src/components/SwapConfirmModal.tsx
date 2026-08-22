@@ -16,12 +16,13 @@ type Props = {
   priceImpact: number | null;
   hops: 1 | 2;
   deadlineMin: number;
+  gasCostText?: string | null;
 };
 
 export function SwapConfirmModal({
   open, onClose, onConfirm, pending,
   tokenIn, tokenOut, amountInWei, amountOutWei,
-  slippageBps, tradeMode, priceImpact, hops, deadlineMin,
+  slippageBps, tradeMode, priceImpact, hops, deadlineMin, gasCostText,
 }: Props) {
   useEffect(() => {
     if (!open) return;
@@ -113,6 +114,7 @@ export function SwapConfirmModal({
             value={hops === 2 ? `${tokenIn.symbol} → wzkLTC → ${tokenOut.symbol}` : `${tokenIn.symbol} → ${tokenOut.symbol}`}
             valueClass="text-accent"
           />
+          <Row label="Network fee" value={gasCostText ? `≈ ${gasCostText}` : "—"} />
           <Row label="Deadline" value={`${deadlineMin} min`} />
         </div>
 
