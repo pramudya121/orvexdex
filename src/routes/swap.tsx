@@ -481,6 +481,16 @@ function SwapPage() {
                 </a>
               </div>
             )}
+            <div className="flex justify-between gap-2">
+              <span className="shrink-0">Network fee</span>
+              <span className="text-right truncate">
+                {gas.isFetching && !gas.data ? (
+                  <span className="inline-block h-3 w-16 rounded bg-surface animate-pulse align-middle" />
+                ) : gas.data ? (
+                  <>≈ {gas.data.costText}<span className="text-muted-foreground/70"> · {gas.data.gas.toString()} gas</span></>
+                ) : "—"}
+              </span>
+            </div>
             <div className="flex justify-between pt-1 border-t border-border/50">
               <span>Mode</span>
               <span className="text-accent">{tradeMode === "exactIn" ? "Exact input" : "Exact output"}</span>
@@ -494,7 +504,31 @@ function SwapPage() {
           </div>
         )}
 
+        {insufficient && (
+          <div className="mt-3 p-3 rounded-xl bg-destructive/10 border border-destructive/40 text-xs text-destructive">
+            Insufficient {tokenIn.symbol} balance for this trade.
+          </div>
+        )}
 
+        {/* Transaction lifecycle */}
+        {pendingHash && (
+          <div className="mt-3 p-3 rounded-xl bg-surface-2/70 border border-border text-xs animate-fade-in" role="status" aria-live="polite">
+            <div className="flex items-center gap-2">
+              <span className="h-3.5 w-3.5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+              <span className="font-semibold">{receipt.isLoading ? "Waiting for confirmation…" : "Submitted"}</span>
+              <a href={explorerAddr(pendingHash)} target="_blank" rel="noreferrer" className="ml-auto font-mono hover:text-accent">
+                {pendingHash.slice(0, 8)}…{pendingHash.slice(-6)} ↗
+              </a>
+            </div>
+            <div className="mt-2 flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
+              <Step done label="Signed" />
+              <span className="flex-1 h-px bg-border" />
+              <Step active label="Pending" />
+              <span className="flex-1 h-px bg-border" />
+              <Step label="Mined" />
+            </div>
+          </div>
+        )}
 
         <button
           onClick={handleAction}
@@ -503,7 +537,7 @@ function SwapPage() {
         >
           <span className="relative z-10 inline-flex items-center justify-center gap-2">
             {(isPending || pendingHash) && <span className="h-4 w-4 rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin" />}
-            {!address ? "Connect wallet" : isPending || pendingHash ? "Confirming…" : buttonLabel}
+            {!address ? "Connect wallet" : isPending ? "Check wallet…" : pendingHash ? "Confirming…" : insufficient ? `Insufficient ${tokenIn.symbol}` : buttonLabel}
           </span>
           {!disabled && (
             <span aria-hidden className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-12 animate-[shimmer-sweep_2.6s_ease-in-out_infinite]" />
