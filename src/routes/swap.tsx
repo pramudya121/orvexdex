@@ -145,9 +145,54 @@ function SwapPage() {
   );
   const needsApproval = mode === "swap" && !tokenIn.isNative && (allowance.data as bigint | undefined ?? 0n) < effInWei;
 
+  const insufficient = balanceIn !== undefined && effInWei > 0n && effInWei > balanceIn;
+
   const { writeContractAsync, isPending } = useWriteContract();
   const [pendingHash, setPendingHash] = useState<`0x${string}` | undefined>();
   const receipt = useWaitForTransactionReceipt({ hash: pendingHash });
+
+  // ── Gas estimation for the exact action the button will perform ──
+  const gasTarget = useMemo(() => {
+    if (!address) return null;
+    if (mode === "wrap" && amountInWei > 0n)
+      return { address: ADDR.wzkLTC, abi: wzkltcAbi, functionName: "deposit", args: [] as unknown[], value: amountInWei };
+    if (mode === "unwrap" && amountInWei > 0n)
+      return { address: ADDR.wzkLTC, abi: wzkltcAbi, functionName: "withdraw", args: [amountInWei] as unknown[] };
+    if (mode === "swap" && needsApproval)
+      return { address: tokenIn.address as `0x${string}`, abi: erc20Abi, functionName: "approve", args: [ADDR.router, MAX_UINT256] as unknown[] };
+    if (mode === "swap" && path && effInWei > 0n && effOutWei > 0n) {
+      const dl = deadline(deadlineMin);
+      if (tradeMode === "exactIn") {
+        const minOut = slippageMin(effOutWei, slippageBps);
+        if (tokenIn.isNative)
+          return { address: ADDR.router, abi: routerAbi, functionName: "swapExactETHForTokens", args: [minOut, path, address, dl] as unknown[], value: amountInWei };
+        return {
+          address: ADDR.router, abi: routerAbi,
+          functionName: tokenOut.isNative ? "swapExactTokensForETH" : "swapExactTokensForTokens",
+          args: [amountInWei, minOut, path, address, dl] as unknown[],
+        };
+      }
+      const maxIn = slippageMax(effInWei, slippageBps);
+      if (tokenIn.isNative)
+        return { address: ADDR.router, abi: routerAbi, functionName: "swapETHForExactTokens", args: [amountOutWei, path, address, dl] as unknown[], value: maxIn };
+      return {
+        address: ADDR.router, abi: routerAbi,
+        functionName: tokenOut.isNative ? "swapTokensForExactETH" : "swapTokensForExactTokens",
+        args: [amountOutWei, maxIn, path, address, dl] as unknown[],
+      };
+    }
+    return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, mode, needsApproval, path, effInWei, effOutWei, amountInWei, amountOutWei, tradeMode, slippageBps, deadlineMin, tokenIn, tokenOut]);
+
+  const gas = useGasEstimate({
+    enabled: !!gasTarget && !insufficient && !pendingHash,
+    address: gasTarget?.address,
+    abi: gasTarget?.abi,
+    functionName: gasTarget?.functionName,
+    args: gasTarget?.args,
+    value: gasTarget?.value,
+  });
 
   useEffect(() => {
     if (receipt.isSuccess && pendingHash) {
@@ -162,6 +207,14 @@ function SwapPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receipt.isSuccess]);
+
+  useEffect(() => {
+    if (receipt.isError && pendingHash) {
+      toast.push({ title: "Transaction reverted", description: "The network rejected this transaction.", type: "error", hash: pendingHash });
+      setPendingHash(undefined);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [receipt.isError]);
 
   const flip = () => {
     setTokenIn(tokenOut);
