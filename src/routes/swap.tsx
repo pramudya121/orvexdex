@@ -307,13 +307,14 @@ function SwapPage() {
       setPendingHash(hash);
       setConfirmOpen(false);
       toast.push({ title: "Swapping…", hash });
-    } catch (e: any) {
-      toast.push({ title: "Transaction failed", description: e?.shortMessage || e?.message, type: "error" });
+    } catch (e: unknown) {
+      const { title, description, rejected } = txErrorMessage(e);
+      toast.push({ title, description, type: rejected ? "info" : "error" });
     }
   };
 
   const userAmt = mode === "swap" && tradeMode === "exactOut" ? amountOutWei : amountInWei;
-  const disabled = !address || userAmt <= 0n || isPending || !!pendingHash || (mode === "swap" && !needsApproval && (effInWei === 0n || effOutWei === 0n));
+  const disabled = !address || userAmt <= 0n || isPending || !!pendingHash || insufficient || (mode === "swap" && !needsApproval && (effInWei === 0n || effOutWei === 0n));
 
   return (
     <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden">
