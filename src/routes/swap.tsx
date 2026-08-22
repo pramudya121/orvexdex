@@ -257,8 +257,9 @@ function SwapPage() {
       }
       // Open confirm modal before submitting the swap
       setConfirmOpen(true);
-    } catch (e: any) {
-      toast.push({ title: "Transaction failed", description: e?.shortMessage || e?.message, type: "error" });
+    } catch (e: unknown) {
+      const { title, description, rejected } = txErrorMessage(e);
+      toast.push({ title, description, type: rejected ? "info" : "error" });
     }
   };
 
