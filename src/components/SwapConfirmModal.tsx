@@ -114,6 +114,7 @@ export function SwapConfirmModal({
             value={hops === 2 ? `${tokenIn.symbol} → wzkLTC → ${tokenOut.symbol}` : `${tokenIn.symbol} → ${tokenOut.symbol}`}
             valueClass="text-accent"
           />
+          <Row label="Network fee" value={gasCostText ? `≈ ${gasCostText}` : "—"} />
           <Row label="Deadline" value={`${deadlineMin} min`} />
         </div>
 
