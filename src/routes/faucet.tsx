@@ -12,15 +12,7 @@ import { faucetAbi } from "@/lib/abis/faucet";
 import { FAUCET_TOKENS } from "@/lib/tokens";
 import { fmt } from "@/lib/format";
 import { useToast } from "@/components/ui/toaster";
-
-const getErrorMessage = (error: unknown) => {
-  if (error instanceof Error) return error.message;
-  if (typeof error === "object" && error !== null) {
-    const maybeError = error as { shortMessage?: string; message?: string };
-    return maybeError.shortMessage || maybeError.message;
-  }
-  return undefined;
-};
+import { txErrorMessage } from "@/lib/txError";
 
 type FaucetReadCall = {
   address: typeof ADDR.faucet;
@@ -115,7 +107,16 @@ function FaucetPage() {
 
   const { writeContractAsync, isPending } = useWriteContract();
   const [hash, setHash] = useState<`0x${string}` | undefined>();
+  const [claimLabel, setClaimLabel] = useState<string>("");
   const receipt = useWaitForTransactionReceipt({ hash });
+
+  // 1s ticker so cooldown countdowns update live (client-only)
+  const [nowSec, setNowSec] = useState<number | null>(null);
+  useEffect(() => {
+    setNowSec(Math.floor(Date.now() / 1000));
+    const id = setInterval(() => setNowSec(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(id);
+  }, []);
   const readsPerToken = address ? 5 : 3;
   const faucetTokenAddress = (tokenListIndex: number) =>
     reads.data?.[readsPerToken * tokenListIndex]?.result as string | undefined;
@@ -151,6 +152,14 @@ function FaucetPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receipt.isSuccess]);
 
+  useEffect(() => {
+    if (receipt.isError && hash) {
+      toast.push({ title: "Claim reverted", description: "The network rejected this claim.", type: "error", hash });
+      setHash(undefined);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [receipt.isError]);
+
   const claim = async (idx: number) => {
     const tokenListIndex = FAUCET_TOKENS.findIndex((t) => t.faucetIndex === idx);
     const tokenAddress = faucetTokenAddress(tokenListIndex);
@@ -174,13 +183,11 @@ function FaucetPage() {
         args: [idx],
       });
       setHash(h);
+      setClaimLabel(FAUCET_TOKENS[tokenListIndex]?.symbol ?? "token");
       toast.push({ title: "Claiming…", hash: h });
     } catch (e: unknown) {
-      toast.push({
-        title: "Claim failed",
-        description: getErrorMessage(e),
-        type: "error",
-      });
+      const { title, description, rejected } = txErrorMessage(e);
+      toast.push({ title, description, type: rejected ? "info" : "error" });
     }
   };
 
@@ -205,9 +212,11 @@ function FaucetPage() {
         functionName: "claimAll",
       });
       setHash(h);
+      setClaimLabel("all tokens");
       toast.push({ title: "Claiming all…", hash: h });
     } catch (e: unknown) {
-      toast.push({ title: "Failed", description: getErrorMessage(e), type: "error" });
+      const { title, description, rejected } = txErrorMessage(e);
+      toast.push({ title, description, type: rejected ? "info" : "error" });
     }
   };
 
@@ -400,9 +409,11 @@ function FaucetPage() {
           const userCnt = address
             ? (reads.data?.[off + 4]?.result as bigint | undefined)
             : undefined;
-          const now = BigInt(Math.floor(Date.now() / 1000));
-          const ready = !last || now >= last + cd;
-          const wait = ready ? 0 : Number(last! + cd - now);
+          const now = BigInt(nowSec ?? 0);
+          const ready = nowSec === null ? false : !last || last === 0n || now >= last + cd;
+          const wait = ready || nowSec === null ? 0 : Math.max(0, Number(last! + cd - now));
+          const cdTotal = Number(cd) || 1;
+          const progress = ready ? 100 : Math.min(100, ((cdTotal - wait) / cdTotal) * 100);
           const remaining = max && userCnt !== undefined ? max - userCnt : undefined;
           return (
             <div
@@ -467,7 +478,7 @@ function FaucetPage() {
                   : !tokenReady
                     ? "Token not set"
                     : !ready
-                      ? `Wait ${wait}s`
+                      ? `Wait ${formatWait(wait)}`
                       : !captchaOk
                         ? "Verify captcha"
                         : "Claim"}
