@@ -586,6 +586,7 @@ function SwapPage() {
         priceImpact={priceImpact}
         hops={route.hops as 1 | 2}
         deadlineMin={deadlineMin}
+        gasCostText={gas.data?.costText ?? null}
       />
     </div>
   );
