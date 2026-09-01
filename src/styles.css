@@ -90,6 +90,23 @@
     background-attachment: fixed;
     min-height: 100vh;
   }
+  .app-main {
+    position: relative;
+    isolation: isolate;
+  }
+  .app-main::before {
+    content: "";
+    position: fixed;
+    inset: 64px 0 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      linear-gradient(to bottom, transparent 0%, color-mix(in oklab, var(--surface) 28%, transparent) 100%),
+      linear-gradient(color-mix(in oklab, var(--accent) 4%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in oklab, var(--accent) 4%, transparent) 1px, transparent 1px);
+    background-size: auto, 64px 64px, 64px 64px;
+    mask-image: linear-gradient(to bottom, black, transparent 90%);
+  }
 }
 
 @layer utilities {
@@ -220,6 +237,18 @@
       0 0 0 1px oklch(0.78 0.18 220 / 0.35);
   }
 
+  .faucet-parallax-particle {
+    transform: translate3d(calc(var(--mx, 0) * 10px), calc(var(--my, 0) * 8px), 0);
+    transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .faucet-tilt { perspective: 1100px; }
+  .faucet-cube { animation: faucet-hover 5s ease-in-out infinite; }
+  .faucet-orbit-reverse { animation: spin-slow 24s linear infinite reverse; }
+  @keyframes faucet-hover {
+    0%, 100% { translate: 0 0; }
+    50% { translate: 0 -8px; }
+  }
+
   @keyframes border-flow {
     0% { background-position: 0% 50%; }
     100% { background-position: 200% 50%; }
@@ -318,5 +347,17 @@
     background-clip: text;
     color: transparent;
     animation: brand-sheen 7s linear infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faucet-parallax-particle,
+  .faucet-cube,
+  .faucet-orbit-reverse,
+  .faucet-tilt {
+    animation: none !important;
+    transform: none !important;
+    translate: none !important;
+    transition: none !important;
   }
 }
