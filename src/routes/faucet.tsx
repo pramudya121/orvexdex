@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   useAccount,
@@ -13,6 +13,13 @@ import { FAUCET_TOKENS } from "@/lib/tokens";
 import { fmt } from "@/lib/format";
 import { useToast } from "@/components/ui/toaster";
 import { txErrorMessage } from "@/lib/txError";
+import { factoryAbi } from "@/lib/abis/factory";
+import { pairAbi } from "@/lib/abis/pair";
+import { fmtWzk } from "@/lib/poolStats";
+import { Tilt, HeroParallax } from "@/components/landing/HeroFx";
+import { Button } from "@/components/ui/button";
+import { ArrowUpRight, CheckCircle2, Droplets, LoaderCircle, ShieldCheck } from "lucide-react";
+import type { Token } from "@/lib/tokens";
 
 type FaucetReadCall = {
   address: typeof ADDR.faucet;
@@ -20,6 +27,8 @@ type FaucetReadCall = {
   functionName: "tokens" | "claimAmounts" | "maxClaims" | "lastClaimed" | "userClaimCount";
   args: readonly [bigint] | readonly [`0x${string}`, number];
 };
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 export const Route = createFileRoute("/faucet")({
   component: FaucetPage,
@@ -58,8 +67,6 @@ function FaucetPage() {
     functionName: "cooldown",
     query: { refetchInterval: 30000 },
   });
-  const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-
   const calls = useMemo(() => {
     const out: FaucetReadCall[] = [];
     FAUCET_TOKENS.forEach((t) => {
@@ -232,7 +239,7 @@ function FaucetPage() {
     totalDistributed > 0n ? `${(Number(totalDistributed / 10n ** 18n) / 1e6).toFixed(2)}M` : "—";
 
   return (
-    <div className="relative max-w-6xl mx-auto px-4 py-10">
+    <div className="relative max-w-6xl mx-auto px-4 py-8 md:py-12">
       {/* Aurora backdrop */}
       <div className="pointer-events-none absolute inset-x-0 -top-10 h-[520px] overflow-hidden -z-10">
         <div
@@ -247,21 +254,27 @@ function FaucetPage() {
       </div>
 
       {/* HERO */}
-      <div className="relative glass-strong rounded-[2rem] p-8 md:p-12 mb-8 overflow-hidden animate-rise">
+      <div id="faucet-hero" className="relative glass-strong rounded-3xl p-7 md:p-12 mb-8 overflow-hidden animate-rise isolate">
+        <HeroParallax targetSelector="#faucet-hero" />
         <div className="absolute inset-0 -z-0 opacity-40 grid-bg" />
         <FloatingCoins />
-        <div className="relative text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent text-xs font-semibold tracking-[0.25em] uppercase mb-6">
-            💧 Claim Free Crypto Every Hour
+        <div className="relative grid items-center gap-8 md:grid-cols-[1fr_220px]">
+          <div className="text-center md:text-left">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent text-xs font-semibold tracking-[0.2em] uppercase mb-6">
+              <Droplets className="h-3.5 w-3.5" aria-hidden="true" /> Testnet token station
+            </div>
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-black leading-[1.05]">
+              Fuel your next
+              <br />
+              <span className="text-gradient-luxe">on-chain move</span>
+            </h1>
+            <p className="text-muted-foreground mt-4 text-base md:text-lg max-w-2xl">
+              Claim test assets, inspect their live ORVEX liquidity, then trade or provide liquidity on LitVM.
+            </p>
           </div>
-          <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-[1.05]">
-            Get <span className="text-gradient-luxe">Free Tokens</span>
-            <br />
-            Instantly
-          </h1>
-          <p className="text-muted-foreground mt-4 text-lg">
-            Real on-chain test tokens on LitVM LiteForge Testnet
-          </p>
+          <Tilt className="hidden md:block faucet-tilt">
+            <Faucet3D />
+          </Tilt>
         </div>
       </div>
 
@@ -312,6 +325,27 @@ function FaucetPage() {
               Faucet not ready: {FAUCET_TOKENS.length - configuredTokenCount} token index(es) are still
               empty in the contract. The owner must call `setToken` in the Admin page, then refill the
               faucet token balances.
+            </div>
+          )}
+
+          {hash && (
+            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 mb-5" role="status" aria-live="polite">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Transaction status</div>
+                  <div className="font-semibold mt-1">Claiming {claimLabel}</div>
+                </div>
+                {receipt.isSuccess ? (
+                  <CheckCircle2 className="h-5 w-5 text-accent" aria-hidden="true" />
+                ) : (
+                  <LoaderCircle className="h-5 w-5 text-primary animate-spin" aria-hidden="true" />
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <TxStep label="Signed" done />
+                <TxStep label="Pending" done={receipt.isLoading || receipt.isSuccess} active={receipt.isLoading} />
+                <TxStep label="Mined" done={receipt.isSuccess} active={receipt.isSuccess} />
+              </div>
             </div>
           )}
 
@@ -375,10 +409,10 @@ function FaucetPage() {
             </div>
           </div>
 
-          <button
+          <Button
             onClick={claimAll}
             disabled={!address || isPending || !!hash || !captchaOk || !faucetReady}
-            className="w-full py-4 rounded-2xl bg-gradient-luxe text-primary-foreground font-bold text-lg shadow-neon hover:shadow-gold hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:translate-y-0"
+            className="w-full h-14 rounded-xl bg-gradient-luxe text-primary-foreground font-bold text-base shadow-neon hover:shadow-gold hover:-translate-y-0.5 transition-all disabled:translate-y-0"
           >
             {!address
               ? "Connect Wallet"
@@ -389,7 +423,7 @@ function FaucetPage() {
                   : !captchaOk
                     ? "🔒 Verify captcha"
                     : "💧 Claim All Now"}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -411,7 +445,8 @@ function FaucetPage() {
             : undefined;
           const now = BigInt(nowSec ?? 0);
           const ready = nowSec === null ? false : !last || last === 0n || now >= last + cd;
-          const wait = ready || nowSec === null ? 0 : Math.max(0, Number(last! + cd - now));
+          const cooldownEnd = (last ?? 0n) + cd;
+          const wait = ready || nowSec === null ? 0 : Math.max(0, Number(cooldownEnd - now));
           const cdTotal = Number(cd) || 1;
           const progress = ready ? 100 : Math.min(100, ((cdTotal - wait) / cdTotal) * 100);
           const remaining = max && userCnt !== undefined ? max - userCnt : undefined;
@@ -468,10 +503,25 @@ function FaucetPage() {
                   </>
                 )}
               </div>
-              <button
-                onClick={() => claim(t.faucetIndex!)}
+              <PoolLiquidity token={t} />
+              {address && (
+                <div className="mb-4" aria-label={ready ? "Claim cooldown complete" : `Claim cooldown ${formatWait(wait)} remaining`}>
+                  <div className="flex justify-between text-[10px] uppercase tracking-[0.14em] text-muted-foreground mb-1.5">
+                    <span>Wallet cooldown</span>
+                    <span className={ready ? "text-accent" : "text-foreground"}>{ready ? "Ready" : formatWait(wait)}</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-surface-2 overflow-hidden">
+                    <div className="h-full rounded-full bg-gradient-luxe transition-[width] duration-700" style={{ width: `${progress}%` }} />
+                  </div>
+                </div>
+              )}
+              <Button
+                onClick={() => {
+                  if (t.faucetIndex !== undefined) claim(t.faucetIndex);
+                }}
                 disabled={!address || isPending || !!hash || !ready || !captchaOk || !tokenReady}
-                className="w-full py-3 rounded-xl bg-surface-2 hover:bg-gradient-brand hover:text-primary-foreground border border-border hover:border-transparent transition font-semibold disabled:opacity-40"
+                variant="secondary"
+                className="w-full h-11 rounded-xl border border-border hover:bg-primary hover:text-primary-foreground hover:border-primary transition font-semibold"
               >
                 {!address
                   ? "Connect wallet"
@@ -482,7 +532,7 @@ function FaucetPage() {
                       : !captchaOk
                         ? "Verify captcha"
                         : "Claim"}
-              </button>
+              </Button>
             </div>
           );
         })}
@@ -523,13 +573,13 @@ function StatCard({
 }
 
 function FloatingCoins() {
-  const coins = ["💎", "🪙", "💰", "✨", "💧", "🌟"];
+  const coins = ["◇", "◈", "✦", "◆", "●", "✧"];
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {coins.map((c, i) => (
         <div
           key={i}
-          className="absolute text-3xl md:text-4xl opacity-40 animate-float"
+          className="absolute text-xl md:text-3xl text-primary/25 animate-float faucet-parallax-particle"
           style={{
             left: `${(i * 17 + 6) % 95}%`,
             top: `${(i * 23 + 10) % 80}%`,
@@ -544,25 +594,90 @@ function FloatingCoins() {
   );
 }
 
-function Faucet3DUnused() {
+function Faucet3D() {
   return (
-    <div className="relative inline-block" style={{ perspective: "1000px" }}>
+    <div className="relative h-52 w-52 mx-auto" aria-hidden="true">
+      <div className="absolute inset-5 rounded-full border border-accent/30 animate-spin-slow" />
+      <div className="absolute inset-0 rounded-full border border-primary/20 faucet-orbit-reverse" />
       <div
-        className="relative h-32 w-32 mx-auto"
-        style={{ transformStyle: "preserve-3d", transform: "rotateX(15deg) rotateY(-10deg)" }}
+        className="absolute inset-10 faucet-cube"
+        style={{ transformStyle: "preserve-3d", transform: "rotateX(14deg) rotateY(-12deg)" }}
       >
-        <div className="absolute inset-0 rounded-3xl bg-gradient-brand shadow-neon animate-pulse-glow" />
-        <div className="absolute inset-2 rounded-2xl glass-strong flex items-center justify-center text-5xl">
-          💧
+        <div className="absolute inset-0 rounded-2xl bg-gradient-luxe shadow-neon animate-pulse-glow" />
+        <div className="absolute inset-2 rounded-xl glass-strong flex flex-col items-center justify-center">
+          <Droplets className="h-10 w-10 text-accent" />
+          <span className="mt-2 text-[9px] uppercase tracking-[0.24em] text-muted-foreground">ORVEX fuel</span>
         </div>
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="absolute left-1/2 top-full -translate-x-1/2 h-3 w-3 rounded-full bg-accent shadow-cyan animate-drip"
+            className="absolute left-1/2 top-full -translate-x-1/2 h-2.5 w-2.5 rounded-full bg-accent shadow-cyan animate-drip"
             style={{ animationDelay: `${i * 0.8}s` }}
           />
         ))}
       </div>
+    </div>
+  );
+}
+
+function PoolLiquidity({ token }: { token: Token }) {
+  const isWrapped = token.address.toLowerCase() === ADDR.wzkLTC.toLowerCase();
+  const pair = useReadContract({
+    address: ADDR.factory,
+    abi: factoryAbi,
+    functionName: "getPair",
+    args: [token.address, ADDR.wzkLTC],
+    query: { enabled: !isWrapped, refetchInterval: 15_000 },
+  });
+  const pairAddress = pair.data as `0x${string}` | undefined;
+  const hasPool = !!pairAddress && pairAddress.toLowerCase() !== ZERO_ADDRESS;
+  const pool = useReadContracts({
+    contracts: hasPool
+      ? [
+          { address: pairAddress, abi: pairAbi, functionName: "token0" as const },
+          { address: pairAddress, abi: pairAbi, functionName: "getReserves" as const },
+        ]
+      : [],
+    query: { enabled: hasPool, refetchInterval: 15_000 },
+  });
+  const token0 = pool.data?.[0]?.result as string | undefined;
+  const reserves = pool.data?.[1]?.result as readonly [bigint, bigint, number] | undefined;
+  const wrappedReserve = reserves && token0
+    ? (token0.toLowerCase() === ADDR.wzkLTC.toLowerCase() ? reserves[0] : reserves[1])
+    : undefined;
+  const liquidity = wrappedReserve !== undefined ? wrappedReserve * 2n : undefined;
+
+  return (
+    <div className="rounded-xl border border-accent/20 bg-accent/5 p-3 mb-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="h-8 w-8 shrink-0 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center">
+            <Droplets className="h-4 w-4 text-accent" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">ORVEX pool liquidity</div>
+            <div className="font-semibold tabular-nums">
+              {isWrapped ? "Base routing asset" : pool.isLoading || pair.isLoading ? "Loading on-chain…" : hasPool ? `${fmtWzk(liquidity)} wzkLTC` : "Pool not created"}
+            </div>
+          </div>
+        </div>
+        <Button asChild size="icon" variant="ghost" className="shrink-0 rounded-lg" title="View liquidity pools">
+          <Link to="/pools" aria-label={`View ${token.symbol} liquidity pool`}>
+            <ArrowUpRight className="h-4 w-4" />
+          </Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function TxStep({ label, done, active }: { label: string; done: boolean; active?: boolean }) {
+  return (
+    <div className={`rounded-lg border px-2 py-2 text-center ${done ? "border-accent/30 bg-accent/10 text-accent" : "border-border text-muted-foreground"}`}>
+      <span className="inline-flex items-center gap-1.5">
+        {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : active ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+        {label}
+      </span>
     </div>
   );
 }

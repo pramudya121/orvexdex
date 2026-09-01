@@ -169,7 +169,7 @@ function RootComponent() {
           <div className="min-h-screen flex flex-col">
             <Header />
             <WrongNetworkBanner />
-            <main className="flex-1">
+            <main className="app-main flex-1">
               <Outlet />
             </main>
             <Footer />
