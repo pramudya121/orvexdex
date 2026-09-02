@@ -503,7 +503,7 @@ function FaucetPage() {
                   </>
                 )}
               </div>
-              <PoolLiquidity token={t} />
+              <FaucetReserve token={t} perClaim={amt as bigint | undefined} />
               {address && (
                 <div className="mb-4" aria-label={ready ? "Claim cooldown complete" : `Claim cooldown ${formatWait(wait)} remaining`}>
                   <div className="flex justify-between text-[10px] uppercase tracking-[0.14em] text-muted-foreground mb-1.5">
