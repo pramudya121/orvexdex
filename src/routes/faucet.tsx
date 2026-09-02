@@ -13,9 +13,8 @@ import { FAUCET_TOKENS } from "@/lib/tokens";
 import { fmt } from "@/lib/format";
 import { useToast } from "@/components/ui/toaster";
 import { txErrorMessage } from "@/lib/txError";
-import { factoryAbi } from "@/lib/abis/factory";
-import { pairAbi } from "@/lib/abis/pair";
-import { fmtWzk } from "@/lib/poolStats";
+import { erc20Abi } from "@/lib/abis/wzkltc";
+
 import { Tilt, HeroParallax } from "@/components/landing/HeroFx";
 import { Button } from "@/components/ui/button";
 import { ArrowUpRight, CheckCircle2, Droplets, LoaderCircle, ShieldCheck } from "lucide-react";
