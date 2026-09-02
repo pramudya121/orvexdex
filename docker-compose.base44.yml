@@ -1,0 +1,17 @@
+services:
+  web:
+    image: oven/bun:1.2
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - bun_cache:/root/.bun
+    ports:
+      - "3000:5173"
+    env_file:
+      - .env
+      - /run/base44/app.env
+    command: sh -c "bun install --frozen-lockfile && bun run dev -- --host 0.0.0.0 --port 5173"
+    restart: unless-stopped
+
+volumes:
+  bun_cache:

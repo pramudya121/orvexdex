@@ -1,0 +1,17 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    {
+      "name": "SUPABASE_SERVICE_ROLE_KEY",
+      "description": "Supabase service role key for server-side admin operations (bypasses RLS). Obtain from the Supabase dashboard → Settings → API → service_role key. Not required to boot — only needed for /admin routes.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "LOVABLE_AI_GATEWAY_API_KEY",
+      "description": "API key for the Lovable AI Gateway used by the /ai chat feature. Obtain from Lovable Cloud. Not required to boot — only needed for AI chat server functions.",
+      "requiredAtBoot": false
+    }
+  ]
+}
