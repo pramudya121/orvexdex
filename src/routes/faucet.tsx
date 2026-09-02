@@ -626,32 +626,19 @@ function Faucet3D() {
   );
 }
 
-function PoolLiquidity({ token }: { token: Token }) {
-  const isWrapped = token.address.toLowerCase() === ADDR.wzkLTC.toLowerCase();
-  const pair = useReadContract({
-    address: ADDR.factory,
-    abi: factoryAbi,
-    functionName: "getPair",
-    args: [token.address, ADDR.wzkLTC],
-    query: { enabled: !isWrapped, refetchInterval: 15_000 },
+function FaucetReserve({ token, perClaim }: { token: Token; perClaim?: bigint }) {
+  const bal = useReadContract({
+    address: token.address,
+    abi: erc20Abi,
+    functionName: "balanceOf",
+    args: [ADDR.faucet],
+    query: { refetchInterval: 12_000 },
   });
-  const pairAddress = pair.data as `0x${string}` | undefined;
-  const hasPool = !!pairAddress && pairAddress.toLowerCase() !== ZERO_ADDRESS;
-  const pool = useReadContracts({
-    contracts: hasPool
-      ? [
-          { address: pairAddress, abi: pairAbi, functionName: "token0" as const },
-          { address: pairAddress, abi: pairAbi, functionName: "getReserves" as const },
-        ]
-      : [],
-    query: { enabled: hasPool, refetchInterval: 15_000 },
-  });
-  const token0 = pool.data?.[0]?.result as string | undefined;
-  const reserves = pool.data?.[1]?.result as readonly [bigint, bigint, number] | undefined;
-  const wrappedReserve = reserves && token0
-    ? (token0.toLowerCase() === ADDR.wzkLTC.toLowerCase() ? reserves[0] : reserves[1])
-    : undefined;
-  const liquidity = wrappedReserve !== undefined ? wrappedReserve * 2n : undefined;
+  const balance = bal.data as bigint | undefined;
+  const claimsLeft =
+    balance !== undefined && perClaim && perClaim > 0n ? balance / perClaim : undefined;
+  const pct =
+    claimsLeft !== undefined ? Math.min(100, Number(claimsLeft > 100n ? 100n : claimsLeft)) : 0;
 
   return (
     <div className="rounded-xl border border-accent/20 bg-accent/5 p-3 mb-4">
@@ -661,21 +648,40 @@ function PoolLiquidity({ token }: { token: Token }) {
             <Droplets className="h-4 w-4 text-accent" aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">ORVEX pool liquidity</div>
-            <div className="font-semibold tabular-nums">
-              {isWrapped ? "Base routing asset" : pool.isLoading || pair.isLoading ? "Loading on-chain…" : hasPool ? `${fmtWzk(liquidity)} wzkLTC` : "Pool not created"}
+            <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+              Faucet reserve
+            </div>
+            <div className="font-semibold tabular-nums truncate">
+              {bal.isLoading
+                ? "Loading on-chain…"
+                : balance === undefined
+                  ? "—"
+                  : `${fmt(balance, token.decimals)} ${token.symbol}`}
             </div>
           </div>
         </div>
-        <Button asChild size="icon" variant="ghost" className="shrink-0 rounded-lg" title="View liquidity pools">
-          <Link to="/pools" aria-label={`View ${token.symbol} liquidity pool`}>
-            <ArrowUpRight className="h-4 w-4" />
-          </Link>
-        </Button>
+        <div className="text-right shrink-0">
+          <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+            Claims left
+          </div>
+          <div className="font-mono text-sm">
+            {claimsLeft === undefined ? "—" : claimsLeft > 999n ? "999+" : claimsLeft.toString()}
+          </div>
+        </div>
       </div>
+      <div className="mt-2.5 h-1.5 rounded-full bg-surface-2 overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-[width] duration-700 ${balance === 0n ? "bg-destructive" : "bg-gradient-luxe"}`}
+          style={{ width: `${balance === 0n ? 100 : pct}%` }}
+        />
+      </div>
+      {balance === 0n && (
+        <div className="mt-1.5 text-[11px] text-destructive">Faucet empty — needs refill</div>
+      )}
     </div>
   );
 }
+
 
 function TxStep({ label, done, active }: { label: string; done: boolean; active?: boolean }) {
   return (
