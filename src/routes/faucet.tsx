@@ -7,7 +7,7 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
 } from "wagmi";
-import { ADDR } from "@/lib/chain";
+import { ADDR, explorerTx } from "@/lib/chain";
 import { faucetAbi } from "@/lib/abis/faucet";
 import { FAUCET_TOKENS } from "@/lib/tokens";
 import { fmt } from "@/lib/format";
@@ -17,7 +17,7 @@ import { erc20Abi } from "@/lib/abis/wzkltc";
 
 import { Tilt, HeroParallax } from "@/components/landing/HeroFx";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Droplets, LoaderCircle, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Droplets, LoaderCircle, ShieldCheck, XCircle } from "lucide-react";
 import type { Token } from "@/lib/tokens";
 
 type FaucetReadCall = {
@@ -111,6 +111,22 @@ function FaucetPage() {
     query: { enabled: calls.length > 0, refetchInterval: 12000 },
   });
 
+  // Faucet token reserve balances (for eligibility checks)
+  const reserveCalls = useMemo(
+    () =>
+      FAUCET_TOKENS.map((t) => ({
+        address: t.address as `0x${string}`,
+        abi: erc20Abi,
+        functionName: "balanceOf" as const,
+        args: [ADDR.faucet] as const,
+      })),
+    [],
+  );
+  const reserveReads = useReadContracts({
+    contracts: reserveCalls,
+    query: { enabled: reserveCalls.length > 0, refetchInterval: 12_000 },
+  });
+
   const { writeContractAsync, isPending } = useWriteContract();
   const [hash, setHash] = useState<`0x${string}` | undefined>();
   const [claimLabel, setClaimLabel] = useState<string>("");
@@ -151,8 +167,8 @@ function FaucetPage() {
   useEffect(() => {
     if (receipt.isSuccess && hash) {
       toast.push({ title: "Claim successful", type: "success", hash });
-      setHash(undefined);
       reads.refetch();
+      reserveReads.refetch();
       refreshCaptcha();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -161,7 +177,6 @@ function FaucetPage() {
   useEffect(() => {
     if (receipt.isError && hash) {
       toast.push({ title: "Claim reverted", description: "The network rejected this claim.", type: "error", hash });
-      setHash(undefined);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receipt.isError]);
@@ -227,6 +242,32 @@ function FaucetPage() {
   };
 
   const cd = (cooldown.data as bigint | undefined) ?? 0n;
+
+  function dismissTx() {
+    setHash(undefined);
+    setClaimLabel("");
+  }
+
+  // Aggregate eligibility for Claim All
+  const anyCooldownActive = FAUCET_TOKENS.some((_, i) => {
+    if (!address || nowSec === null) return false;
+    const off = readsPerToken * i;
+    const last = reads.data?.[off + 3]?.result as bigint | undefined;
+    const nowBig = BigInt(nowSec);
+    return last !== undefined && last !== 0n && nowBig < last + cd;
+  });
+  const anyMaxReached = FAUCET_TOKENS.some((_, i) => {
+    if (!address) return false;
+    const off = readsPerToken * i;
+    const max = reads.data?.[off + 2]?.result as bigint | undefined;
+    const userCnt = reads.data?.[off + 4]?.result as bigint | undefined;
+    return max !== undefined && userCnt !== undefined && userCnt >= max;
+  });
+  const anyReserveLow = FAUCET_TOKENS.some((_, i) => {
+    const bal = reserveReads.data?.[i]?.result as bigint | undefined;
+    const amt = reads.data?.[readsPerToken * i + 1]?.result as bigint | undefined;
+    return bal !== undefined && amt !== undefined && amt > 0n && bal < amt;
+  });
 
   const totalDistributed = FAUCET_TOKENS.reduce((acc, _t, i) => {
     const off = readsPerToken * i;
@@ -332,19 +373,42 @@ function FaucetPage() {
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div>
                   <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Transaction status</div>
-                  <div className="font-semibold mt-1">Claiming {claimLabel}</div>
+                  <div className="font-semibold mt-1">
+                    {receipt.isError ? "Claim failed" : receipt.isSuccess ? "Claim confirmed" : `Claiming ${claimLabel}`}
+                  </div>
                 </div>
-                {receipt.isSuccess ? (
-                  <CheckCircle2 className="h-5 w-5 text-accent" aria-hidden="true" />
-                ) : (
-                  <LoaderCircle className="h-5 w-5 text-primary animate-spin" aria-hidden="true" />
-                )}
+                <div className="flex items-center gap-2">
+                  {receipt.isSuccess ? (
+                    <CheckCircle2 className="h-5 w-5 text-accent" aria-hidden="true" />
+                  ) : receipt.isError ? (
+                    <XCircle className="h-5 w-5 text-destructive" aria-hidden="true" />
+                  ) : (
+                    <LoaderCircle className="h-5 w-5 text-primary animate-spin" aria-hidden="true" />
+                  )}
+                  {(receipt.isSuccess || receipt.isError) && (
+                    <button
+                      onClick={dismissTx}
+                      className="text-xs text-muted-foreground hover:text-foreground transition px-2 py-1 rounded hover:bg-surface-2"
+                      aria-label="Dismiss transaction status"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-xs">
+              <div className="grid grid-cols-3 gap-2 text-xs mb-3">
                 <TxStep label="Signed" done />
-                <TxStep label="Pending" done={receipt.isLoading || receipt.isSuccess} active={receipt.isLoading} />
-                <TxStep label="Mined" done={receipt.isSuccess} active={receipt.isSuccess} />
+                <TxStep label="Pending" done={receipt.isLoading || receipt.isSuccess || receipt.isError} active={receipt.isLoading} failed={receipt.isError} />
+                <TxStep label="Mined" done={receipt.isSuccess} active={receipt.isSuccess} failed={receipt.isError} />
               </div>
+              <a
+                href={explorerTx(hash)}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-accent hover:opacity-80 transition font-mono break-all"
+              >
+                {hash.slice(0, 10)}…{hash.slice(-8)} ↗
+              </a>
             </div>
           )}
 
@@ -410,7 +474,7 @@ function FaucetPage() {
 
           <Button
             onClick={claimAll}
-            disabled={!address || isPending || !!hash || !captchaOk || !faucetReady}
+            disabled={!address || isPending || !!hash || !captchaOk || !faucetReady || anyMaxReached || anyReserveLow || anyCooldownActive}
             className="w-full h-14 rounded-xl bg-gradient-luxe text-primary-foreground font-bold text-base shadow-neon hover:shadow-gold hover:-translate-y-0.5 transition-all disabled:translate-y-0"
           >
             {!address
@@ -421,7 +485,13 @@ function FaucetPage() {
                   ? "Faucet not set"
                   : !captchaOk
                     ? "🔒 Verify captcha"
-                    : "💧 Claim All Now"}
+                    : anyMaxReached
+                      ? "Max claims reached"
+                      : anyReserveLow
+                        ? "Insufficient reserve"
+                        : anyCooldownActive
+                          ? "Cooldown active"
+                          : "💧 Claim All Now"}
           </Button>
         </div>
       </div>
@@ -449,6 +519,9 @@ function FaucetPage() {
           const cdTotal = Number(cd) || 1;
           const progress = ready ? 100 : Math.min(100, ((cdTotal - wait) / cdTotal) * 100);
           const remaining = max && userCnt !== undefined ? max - userCnt : undefined;
+          const reserveBalance = reserveReads.data?.[i]?.result as bigint | undefined;
+          const reserveSufficient = reserveBalance === undefined || (amt ?? 0n) === 0n || reserveBalance >= (amt ?? 0n);
+          const maxedOut = max !== undefined && userCnt !== undefined && userCnt >= max;
           return (
             <div
               key={t.address}
@@ -518,7 +591,7 @@ function FaucetPage() {
                 onClick={() => {
                   if (t.faucetIndex !== undefined) claim(t.faucetIndex);
                 }}
-                disabled={!address || isPending || !!hash || !ready || !captchaOk || !tokenReady}
+                disabled={!address || isPending || !!hash || !ready || !captchaOk || !tokenReady || maxedOut || !reserveSufficient}
                 variant="secondary"
                 className="w-full h-11 rounded-xl border border-border hover:bg-primary hover:text-primary-foreground hover:border-primary transition font-semibold"
               >
@@ -528,9 +601,13 @@ function FaucetPage() {
                     ? "Token not set"
                     : !ready
                       ? `Wait ${formatWait(wait)}`
-                      : !captchaOk
-                        ? "Verify captcha"
-                        : "Claim"}
+                      : maxedOut
+                        ? "Max claims reached"
+                        : !reserveSufficient
+                          ? "Insufficient reserve"
+                          : !captchaOk
+                            ? "Verify captcha"
+                            : "Claim"}
               </Button>
             </div>
           );
@@ -681,12 +758,11 @@ function FaucetReserve({ token, perClaim }: { token: Token; perClaim?: bigint })
   );
 }
 
-
-function TxStep({ label, done, active }: { label: string; done: boolean; active?: boolean }) {
+function TxStep({ label, done, active, failed }: { label: string; done: boolean; active?: boolean; failed?: boolean }) {
   return (
-    <div className={`rounded-lg border px-2 py-2 text-center ${done ? "border-accent/30 bg-accent/10 text-accent" : "border-border text-muted-foreground"}`}>
+    <div className={`rounded-lg border px-2 py-2 text-center ${failed ? "border-destructive/30 bg-destructive/10 text-destructive" : done ? "border-accent/30 bg-accent/10 text-accent" : "border-border text-muted-foreground"}`}>
       <span className="inline-flex items-center gap-1.5">
-        {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : active ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+        {failed ? <XCircle className="h-3.5 w-3.5" /> : done ? <CheckCircle2 className="h-3.5 w-3.5" /> : active ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
         {label}
       </span>
     </div>
