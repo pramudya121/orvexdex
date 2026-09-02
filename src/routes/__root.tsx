@@ -16,6 +16,7 @@ import { RouteProgress } from "@/components/layout/RouteProgress";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { CommandPalette } from "@/components/CommandPalette";
 import { WrongNetworkBanner } from "@/components/layout/WrongNetworkBanner";
+import { AutoNetworkSwitch } from "@/components/layout/AutoNetworkSwitch";
 import { PwaRegister } from "@/components/layout/PwaRegister";
 import { Button } from "@/components/ui/button";
 

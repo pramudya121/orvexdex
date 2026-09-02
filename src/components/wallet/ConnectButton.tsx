@@ -464,12 +464,6 @@ export function ConnectButton() {
   }, [detected, address, isConnected]);
 
   useEffect(() => {
-    if (wrong) {
-      try { switchChain({ chainId: litvm.id }); } catch { /* noop */ }
-    }
-  }, [wrong, switchChain]);
-
-  useEffect(() => {
     if (!switcherOpen) return;
     const onDocClick = (e: MouseEvent) => {
       const t = e.target as Node;
