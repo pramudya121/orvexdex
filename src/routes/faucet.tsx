@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   useAccount,
@@ -17,7 +17,7 @@ import { erc20Abi } from "@/lib/abis/wzkltc";
 
 import { Tilt, HeroParallax } from "@/components/landing/HeroFx";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, CheckCircle2, Droplets, LoaderCircle, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Droplets, LoaderCircle, ShieldCheck } from "lucide-react";
 import type { Token } from "@/lib/tokens";
 
 type FaucetReadCall = {
