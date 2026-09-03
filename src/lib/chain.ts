@@ -36,6 +36,8 @@ export const ADDR = {
   aiExecutionController: "0x163ee8a51a9Cd0D24A10D7bD336E5f94845fE8AA",
   multiTokenVault: "0x10A15b2cd5a2C664C4554636b45E7c297B21d5Db",
   aiTradingAgent: "0x6A14dB4B430F28741Cef47E7AAabe0e9c6409e39",
+  casino: "0x097D9B8aD5bAa267e9841449c70442cDf45a06e3",
+  mockVrf: "0xBe71199c8237D143AdFaee0dACB99c7f0e5f7618",
 } as const;
 
 export const DOMAIN_TLD = "orvex";
