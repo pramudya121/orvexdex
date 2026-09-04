@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminAggregatorRouteImport } from './routes/admin-aggregator'
+import { Route as AdminCasinoRouteImport } from './routes/admin-casino'
 import { Route as AdminFarmRouteImport } from './routes/admin-farm'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
@@ -41,6 +42,11 @@ const AdminRoute = AdminRouteImport.update({
 const AdminAggregatorRoute = AdminAggregatorRouteImport.update({
   id: '/admin-aggregator',
   path: '/admin-aggregator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCasinoRoute = AdminCasinoRouteImport.update({
+  id: '/admin-casino',
+  path: '/admin-casino',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminFarmRoute = AdminFarmRouteImport.update({
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/admin-aggregator': typeof AdminAggregatorRoute
+  '/admin-casino': typeof AdminCasinoRoute
   '/admin-farm': typeof AdminFarmRoute
   '/ai': typeof AiRoute
   '/analytics': typeof AnalyticsRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/admin-aggregator': typeof AdminAggregatorRoute
+  '/admin-casino': typeof AdminCasinoRoute
   '/admin-farm': typeof AdminFarmRoute
   '/ai': typeof AiRoute
   '/analytics': typeof AnalyticsRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/admin-aggregator': typeof AdminAggregatorRoute
+  '/admin-casino': typeof AdminCasinoRoute
   '/admin-farm': typeof AdminFarmRoute
   '/ai': typeof AiRoute
   '/analytics': typeof AnalyticsRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin-aggregator'
+    | '/admin-casino'
     | '/admin-farm'
     | '/ai'
     | '/analytics'
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin-aggregator'
+    | '/admin-casino'
     | '/admin-farm'
     | '/ai'
     | '/analytics'
@@ -226,6 +237,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin-aggregator'
+    | '/admin-casino'
     | '/admin-farm'
     | '/ai'
     | '/analytics'
@@ -247,6 +259,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AdminAggregatorRoute: typeof AdminAggregatorRoute
+  AdminCasinoRoute: typeof AdminCasinoRoute
   AdminFarmRoute: typeof AdminFarmRoute
   AiRoute: typeof AiRoute
   AnalyticsRoute: typeof AnalyticsRoute
@@ -285,6 +298,13 @@ declare module '@tanstack/react-router' {
       path: '/admin-aggregator'
       fullPath: '/admin-aggregator'
       preLoaderRoute: typeof AdminAggregatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-casino': {
+      id: '/admin-casino'
+      path: '/admin-casino'
+      fullPath: '/admin-casino'
+      preLoaderRoute: typeof AdminCasinoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin-farm': {
@@ -399,6 +419,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AdminAggregatorRoute: AdminAggregatorRoute,
+  AdminCasinoRoute: AdminCasinoRoute,
   AdminFarmRoute: AdminFarmRoute,
   AiRoute: AiRoute,
   AnalyticsRoute: AnalyticsRoute,
