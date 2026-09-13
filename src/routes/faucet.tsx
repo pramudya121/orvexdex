@@ -5,7 +5,7 @@ import {
   useReadContract,
   useReadContracts,
   useWriteContract,
-  useWaitForTransactionReceipt,
+  usePublicClient,
 } from "wagmi";
 import { ADDR } from "@/lib/chain";
 import { faucetAbi } from "@/lib/abis/faucet";
