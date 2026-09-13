@@ -5,7 +5,7 @@ import {
   useReadContract,
   useReadContracts,
   useWriteContract,
-  useWaitForTransactionReceipt,
+  usePublicClient,
 } from "wagmi";
 import { ADDR } from "@/lib/chain";
 import { faucetAbi } from "@/lib/abis/faucet";
@@ -111,10 +111,22 @@ function FaucetPage() {
     query: { enabled: calls.length > 0, refetchInterval: 12000 },
   });
 
+  // Live faucet reserves (ERC20 balance held by the faucet contract)
+  const reserves = useReadContracts({
+    contracts: FAUCET_TOKENS.map((t) => ({
+      address: t.address,
+      abi: erc20Abi,
+      functionName: "balanceOf" as const,
+      args: [ADDR.faucet] as const,
+    })),
+    query: { refetchInterval: 12000 },
+  });
+
+  const publicClient = usePublicClient();
   const { writeContractAsync, isPending } = useWriteContract();
   const [hash, setHash] = useState<`0x${string}` | undefined>();
   const [claimLabel, setClaimLabel] = useState<string>("");
-  const receipt = useWaitForTransactionReceipt({ hash });
+  const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
 
   // 1s ticker so cooldown countdowns update live (client-only)
   const [nowSec, setNowSec] = useState<number | null>(null);
@@ -148,50 +160,59 @@ function FaucetPage() {
     setVerified(false);
   }
 
-  useEffect(() => {
-    if (receipt.isSuccess && hash) {
-      toast.push({ title: "Claim successful", type: "success", hash });
-      setHash(undefined);
-      reads.refetch();
-      refreshCaptcha();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [receipt.isSuccess]);
-
-  useEffect(() => {
-    if (receipt.isError && hash) {
-      toast.push({ title: "Claim reverted", description: "The network rejected this claim.", type: "error", hash });
-      setHash(undefined);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [receipt.isError]);
-
   const claimAll = async () => {
-    if (!faucetReady) {
-      toast.push({
-        title: "Faucet not ready",
-        description:
-          "All token indexes must be set via Admin before Claim All can succeed.",
-        type: "error",
-      });
-      return;
-    }
     if (!captchaOk) {
       toast.push({ title: "Please verify the captcha first", type: "error" });
       return;
     }
-    try {
-      const h = await writeContractAsync({
-        address: ADDR.faucet,
-        abi: faucetAbi,
-        functionName: "claimAll",
+    const targets = tokenStatuses
+      .map((s, i) => ({ s, i }))
+      .filter(({ s }) => s.claimable);
+    if (targets.length === 0) {
+      toast.push({
+        title: "Nothing to claim right now",
+        description: "Every token is either on cooldown, unset, or out of reserve.",
+        type: "info",
       });
-      setHash(h);
-      setClaimLabel("all tokens");
-      toast.push({ title: "Claiming all…", hash: h });
-    } catch (e: unknown) {
-      const { title, description, rejected } = txErrorMessage(e);
-      toast.push({ title, description, type: rejected ? "info" : "error" });
+      return;
+    }
+    setBatch({ done: 0, total: targets.length });
+    let ok = 0;
+    for (const { s, i } of targets) {
+      try {
+        setClaimLabel(s.symbol);
+        const h = await writeContractAsync({
+          address: ADDR.faucet,
+          abi: faucetAbi,
+          functionName: "claim",
+          args: [FAUCET_TOKENS[i].faucetIndex!],
+        });
+        setHash(h);
+        if (publicClient) await publicClient.waitForTransactionReceipt({ hash: h });
+        ok += 1;
+        setBatch((b) => (b ? { ...b, done: b.done + 1 } : b));
+      } catch (e: unknown) {
+        const { title, description, rejected } = txErrorMessage(e);
+        toast.push({
+          title: `${s.symbol}: ${title}`,
+          description,
+          type: rejected ? "info" : "error",
+        });
+        if (rejected) break;
+      }
+    }
+    setBatch(null);
+    setHash(undefined);
+    setClaimLabel("");
+    if (ok > 0) {
+      toast.push({
+        title: `Claimed ${ok} token${ok > 1 ? "s" : ""}`,
+        description: "Tokens have been sent to your wallet.",
+        type: "success",
+      });
+      reads.refetch();
+      reserves.refetch();
+      refreshCaptcha();
     }
   };
 
@@ -209,11 +230,15 @@ function FaucetPage() {
       const now = BigInt(nowSec ?? 0);
       const ready = nowSec === null ? false : !last || last === 0n || now >= last + cd;
       const remaining = max && userCnt !== undefined ? max - userCnt : undefined;
-      return { symbol: t.symbol, tokenReady, amt, max, last, userCnt, ready, remaining };
+      const reserve = reserves.data?.[i]?.result as bigint | undefined;
+      const funded = reserve !== undefined && amt !== undefined ? reserve >= amt : false;
+      const claimable =
+        tokenReady && ready && funded && (remaining === undefined || remaining > 0n);
+      return { symbol: t.symbol, tokenReady, amt, max, last, userCnt, ready, remaining, reserve, funded, claimable };
     });
-  }, [reads.data, address, nowSec, cd]);
+  }, [reads.data, reserves.data, address, nowSec, cd, readsPerToken]);
 
-  const allReady = faucetReady && tokenStatuses.every((s) => s.tokenReady && s.ready && (s.remaining === undefined || s.remaining > 0n));
+  const claimableCount = tokenStatuses.filter((s) => s.claimable).length;
 
   const totalDistributed = FAUCET_TOKENS.reduce((acc, _t, i) => {
     const off = readsPerToken * i;
