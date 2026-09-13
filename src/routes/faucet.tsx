@@ -397,7 +397,7 @@ function FaucetPage() {
 
           <Button
             onClick={claimAll}
-            disabled={!address || isPending || !!hash || !captchaOk || !faucetReady}
+            disabled={!address || isPending || !!hash || !captchaOk || !faucetReady || !allReady}
             className="w-full h-14 rounded-xl bg-gradient-luxe text-primary-foreground font-bold text-base shadow-neon hover:shadow-gold hover:-translate-y-0.5 transition-all disabled:translate-y-0"
           >
             {!address
@@ -406,15 +406,17 @@ function FaucetPage() {
                 ? "Confirming…"
                 : !faucetReady
                   ? "Faucet not set"
-                  : !captchaOk
-                    ? "🔒 Verify captcha"
-                    : "💧 Claim All Now"}
+                  : !allReady
+                    ? "⏳ Wait for cooldown"
+                    : !captchaOk
+                      ? "🔒 Verify captcha"
+                      : "💧 Claim All Now"}
           </Button>
         </div>
       </div>
 
       <div className="flex items-center gap-3 mb-4">
-        <h2 className="text-xl font-bold tracking-tight">Per-token Claims</h2>
+        <h2 className="text-xl font-bold tracking-tight">Faucet Assets</h2>
         <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
       </div>
 
@@ -501,24 +503,6 @@ function FaucetPage() {
                   </div>
                 </div>
               )}
-              <Button
-                onClick={() => {
-                  if (t.faucetIndex !== undefined) claim(t.faucetIndex);
-                }}
-                disabled={!address || isPending || !!hash || !ready || !captchaOk || !tokenReady}
-                variant="secondary"
-                className="w-full h-11 rounded-xl border border-border hover:bg-primary hover:text-primary-foreground hover:border-primary transition font-semibold"
-              >
-                {!address
-                  ? "Connect wallet"
-                  : !tokenReady
-                    ? "Token not set"
-                    : !ready
-                      ? `Wait ${formatWait(wait)}`
-                      : !captchaOk
-                        ? "Verify captcha"
-                        : "Claim"}
-              </Button>
             </div>
           );
         })}
