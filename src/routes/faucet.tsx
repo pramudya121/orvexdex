@@ -111,10 +111,22 @@ function FaucetPage() {
     query: { enabled: calls.length > 0, refetchInterval: 12000 },
   });
 
+  // Live faucet reserves (ERC20 balance held by the faucet contract)
+  const reserves = useReadContracts({
+    contracts: FAUCET_TOKENS.map((t) => ({
+      address: t.address,
+      abi: erc20Abi,
+      functionName: "balanceOf" as const,
+      args: [ADDR.faucet] as const,
+    })),
+    query: { refetchInterval: 12000 },
+  });
+
+  const publicClient = usePublicClient();
   const { writeContractAsync, isPending } = useWriteContract();
   const [hash, setHash] = useState<`0x${string}` | undefined>();
   const [claimLabel, setClaimLabel] = useState<string>("");
-  const receipt = useWaitForTransactionReceipt({ hash });
+  const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
 
   // 1s ticker so cooldown countdowns update live (client-only)
   const [nowSec, setNowSec] = useState<number | null>(null);
