@@ -166,37 +166,6 @@ function FaucetPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receipt.isError]);
 
-  const claim = async (idx: number) => {
-    const tokenListIndex = FAUCET_TOKENS.findIndex((t) => t.faucetIndex === idx);
-    const tokenAddress = faucetTokenAddress(tokenListIndex);
-    if (!tokenAddress || tokenAddress.toLowerCase() === ZERO_ADDRESS) {
-      toast.push({
-        title: "Faucet token not set",
-        description: "The owner needs to run setToken for this token index in the Admin page.",
-        type: "error",
-      });
-      return;
-    }
-    if (!captchaOk) {
-      toast.push({ title: "Please verify the captcha first", type: "error" });
-      return;
-    }
-    try {
-      const h = await writeContractAsync({
-        address: ADDR.faucet,
-        abi: faucetAbi,
-        functionName: "claim",
-        args: [idx],
-      });
-      setHash(h);
-      setClaimLabel(FAUCET_TOKENS[tokenListIndex]?.symbol ?? "token");
-      toast.push({ title: "Claiming…", hash: h });
-    } catch (e: unknown) {
-      const { title, description, rejected } = txErrorMessage(e);
-      toast.push({ title, description, type: rejected ? "info" : "error" });
-    }
-  };
-
   const claimAll = async () => {
     if (!faucetReady) {
       toast.push({
@@ -227,6 +196,24 @@ function FaucetPage() {
   };
 
   const cd = (cooldown.data as bigint | undefined) ?? 0n;
+
+  const tokenStatuses = useMemo(() => {
+    return FAUCET_TOKENS.map((t, i) => {
+      const off = readsPerToken * i;
+      const contractToken = reads.data?.[off]?.result as string | undefined;
+      const tokenReady = !!contractToken && contractToken.toLowerCase() !== ZERO_ADDRESS;
+      const amt = reads.data?.[off + 1]?.result as bigint | undefined;
+      const max = reads.data?.[off + 2]?.result as bigint | undefined;
+      const last = address ? (reads.data?.[off + 3]?.result as bigint | undefined) : undefined;
+      const userCnt = address ? (reads.data?.[off + 4]?.result as bigint | undefined) : undefined;
+      const now = BigInt(nowSec ?? 0);
+      const ready = nowSec === null ? false : !last || last === 0n || now >= last + cd;
+      const remaining = max && userCnt !== undefined ? max - userCnt : undefined;
+      return { symbol: t.symbol, tokenReady, amt, max, last, userCnt, ready, remaining };
+    });
+  }, [reads.data, address, nowSec, cd]);
+
+  const allReady = faucetReady && tokenStatuses.every((s) => s.tokenReady && s.ready && (s.remaining === undefined || s.remaining > 0n));
 
   const totalDistributed = FAUCET_TOKENS.reduce((acc, _t, i) => {
     const off = readsPerToken * i;
@@ -410,7 +397,7 @@ function FaucetPage() {
 
           <Button
             onClick={claimAll}
-            disabled={!address || isPending || !!hash || !captchaOk || !faucetReady}
+            disabled={!address || isPending || !!hash || !captchaOk || !faucetReady || !allReady}
             className="w-full h-14 rounded-xl bg-gradient-luxe text-primary-foreground font-bold text-base shadow-neon hover:shadow-gold hover:-translate-y-0.5 transition-all disabled:translate-y-0"
           >
             {!address
@@ -419,15 +406,17 @@ function FaucetPage() {
                 ? "Confirming…"
                 : !faucetReady
                   ? "Faucet not set"
-                  : !captchaOk
-                    ? "🔒 Verify captcha"
-                    : "💧 Claim All Now"}
+                  : !allReady
+                    ? "⏳ Wait for cooldown"
+                    : !captchaOk
+                      ? "🔒 Verify captcha"
+                      : "💧 Claim All Now"}
           </Button>
         </div>
       </div>
 
       <div className="flex items-center gap-3 mb-4">
-        <h2 className="text-xl font-bold tracking-tight">Per-token Claims</h2>
+        <h2 className="text-xl font-bold tracking-tight">Faucet Assets</h2>
         <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
       </div>
 
@@ -514,24 +503,6 @@ function FaucetPage() {
                   </div>
                 </div>
               )}
-              <Button
-                onClick={() => {
-                  if (t.faucetIndex !== undefined) claim(t.faucetIndex);
-                }}
-                disabled={!address || isPending || !!hash || !ready || !captchaOk || !tokenReady}
-                variant="secondary"
-                className="w-full h-11 rounded-xl border border-border hover:bg-primary hover:text-primary-foreground hover:border-primary transition font-semibold"
-              >
-                {!address
-                  ? "Connect wallet"
-                  : !tokenReady
-                    ? "Token not set"
-                    : !ready
-                      ? `Wait ${formatWait(wait)}`
-                      : !captchaOk
-                        ? "Verify captcha"
-                        : "Claim"}
-              </Button>
             </div>
           );
         })}
