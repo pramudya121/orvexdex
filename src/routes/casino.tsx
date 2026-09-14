@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import {
   useAccount,
   useBalance,
@@ -303,7 +303,7 @@ function CasinoPage() {
           <Stat label="House bankroll" value={`${fmtEth(bank.data as bigint | undefined)} zkLTC`} />
           <Stat label="Min bet" value={`${fmtEth(minBet.data as bigint | undefined)} zkLTC`} />
           <Stat label="Max bet" value={`${fmtEth(maxBet.data as bigint | undefined)} zkLTC`} />
-          <Stat label="House edge" value={houseEdge.data !== undefined ? `${Number(houseEdge.data as bigint) / 100}%` : "—"} />
+          <Stat label="House edge" value={houseEdge.data !== undefined ? `${Number(houseEdge.data as bigint)}%` : "—"} />
         </div>
         {isPaused && (
           <div className="relative mt-4 rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm">
@@ -457,11 +457,24 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
+const LazyCasinoStage3D = lazy(() =>
+  import("@/components/casino/CasinoStage3D").then((m) => ({ default: m.CasinoStage3D })),
+);
+
 function GameStage({ game, choice, rolling, result }: { game: GameDef; choice: number; rolling: boolean; result: Result }) {
   const label = game.choices.find((c) => c.value === choice);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border bg-surface/50 h-56 flex items-center justify-center grid-bg">
       <div className="absolute inset-0 bg-gradient-glow opacity-60 pointer-events-none" aria-hidden />
+      {mounted && (
+        <div className="absolute inset-0 motion-reduce:hidden" aria-hidden>
+          <Suspense fallback={null}>
+            <LazyCasinoStage3D game={game.id} rolling={rolling} won={result?.won} />
+          </Suspense>
+        </div>
+      )}
       {result ? (
         <div className="relative text-center animate-rise space-y-2">
           <div className="text-6xl">{result.won ? "🎉" : "💀"}</div>
