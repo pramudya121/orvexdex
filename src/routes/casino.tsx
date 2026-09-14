@@ -303,7 +303,7 @@ function CasinoPage() {
           <Stat label="House bankroll" value={`${fmtEth(bank.data as bigint | undefined)} zkLTC`} />
           <Stat label="Min bet" value={`${fmtEth(minBet.data as bigint | undefined)} zkLTC`} />
           <Stat label="Max bet" value={`${fmtEth(maxBet.data as bigint | undefined)} zkLTC`} />
-          <Stat label="House edge" value={houseEdge.data !== undefined ? `${Number(houseEdge.data as bigint) / 100}%` : "—"} />
+          <Stat label="House edge" value={houseEdge.data !== undefined ? `${Number(houseEdge.data as bigint)}%` : "—"} />
         </div>
         {isPaused && (
           <div className="relative mt-4 rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm">
