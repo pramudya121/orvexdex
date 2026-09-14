@@ -339,23 +339,31 @@ function FaucetPage() {
             </div>
           )}
 
-          {hash && (
+          {batch && (
             <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 mb-5" role="status" aria-live="polite">
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div>
                   <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Transaction status</div>
-                  <div className="font-semibold mt-1">Claiming {claimLabel}</div>
+                  <div className="font-semibold mt-1">
+                    Claiming {claimLabel || "tokens"} · {batch.done}/{batch.total}
+                  </div>
                 </div>
-                {receipt.isSuccess ? (
+                {batch.done === batch.total ? (
                   <CheckCircle2 className="h-5 w-5 text-accent" aria-hidden="true" />
                 ) : (
                   <LoaderCircle className="h-5 w-5 text-primary animate-spin" aria-hidden="true" />
                 )}
               </div>
+              <div className="h-1.5 rounded-full bg-surface-2 overflow-hidden mb-3">
+                <div
+                  className="h-full rounded-full bg-gradient-luxe transition-[width] duration-500"
+                  style={{ width: `${(batch.done / batch.total) * 100}%` }}
+                />
+              </div>
               <div className="grid grid-cols-3 gap-2 text-xs">
-                <TxStep label="Signed" done />
-                <TxStep label="Pending" done={receipt.isLoading || receipt.isSuccess} active={receipt.isLoading} />
-                <TxStep label="Mined" done={receipt.isSuccess} active={receipt.isSuccess} />
+                <TxStep label="Signed" done={!!hash} active={!hash} />
+                <TxStep label="Pending" done={!!hash} active={!!hash && batch.done < batch.total} />
+                <TxStep label="Mined" done={batch.done > 0} active={batch.done === batch.total} />
               </div>
             </div>
           )}
