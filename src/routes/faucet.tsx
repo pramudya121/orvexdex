@@ -430,21 +430,23 @@ function FaucetPage() {
 
           <Button
             onClick={claimAll}
-            disabled={!address || isPending || !!hash || !captchaOk || !faucetReady || !allReady}
+            disabled={!address || isPending || !!batch || !captchaOk || claimableCount === 0}
             className="w-full h-14 rounded-xl bg-gradient-luxe text-primary-foreground font-bold text-base shadow-neon hover:shadow-gold hover:-translate-y-0.5 transition-all disabled:translate-y-0"
           >
             {!address
               ? "Connect Wallet"
-              : isPending || hash
+              : isPending || batch
                 ? "Confirming…"
-                : !faucetReady
-                  ? "Faucet not set"
-                  : !allReady
-                    ? "⏳ Wait for cooldown"
-                    : !captchaOk
-                      ? "🔒 Verify captcha"
-                      : "💧 Claim All Now"}
+                : !captchaOk
+                  ? "🔒 Verify captcha"
+                  : claimableCount === 0
+                    ? "⏳ Nothing claimable yet"
+                    : `💧 Claim All (${claimableCount})`}
           </Button>
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            One button claims every eligible token. Tokens on cooldown or out of reserve are skipped
+            automatically.
+          </p>
         </div>
       </div>
 
