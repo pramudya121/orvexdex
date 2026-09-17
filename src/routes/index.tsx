@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
   component: Landing,
   head: () => ({
     links: [
-      { rel: "preload", as: "image", href: heroNeon, fetchpriority: "high" } as any,
+      { rel: "preload", as: "image", href: heroNeon, fetchPriority: "high" } as any,
       { rel: "canonical", href: "https://orvexdex.lovable.app/" },
     ],
     meta: [
