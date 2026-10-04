@@ -23,7 +23,7 @@ export function useCasino(opts: { onSettled?: (r: CasinoResult) => void; onError
   const amounts = useRef(new Map<string, bigint>());
   const cbs = useRef(opts);
   cbs.current = opts;
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => () => clearTimeout(timer.current), []);
 
