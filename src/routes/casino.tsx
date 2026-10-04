@@ -1,119 +1,98 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Suspense, lazy, useEffect, useMemo, useState } from "react";
-import {
-  useAccount,
-  useBalance,
-  useChainId,
-  useReadContract,
-  useSwitchChain,
-  useWaitForTransactionReceipt,
-  useWatchContractEvent,
-  useWriteContract,
-} from "wagmi";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAccount, useBalance, useChainId, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { formatEther, parseEther } from "viem";
-import { ADDR, explorerAddr, litvm } from "@/lib/chain";
+import { ADDR, explorerAddr, explorerTx, litvm } from "@/lib/chain";
 import { casinoAbi } from "@/lib/abis/casino";
 import { useToast } from "@/components/ui/toaster";
 import { Button } from "@/components/ui/button";
+import { useCasino, type CasinoFn, type CasinoPhase, type CasinoResult } from "@/lib/useCasino";
+import { GameVisual, HANDS, pocketColor, type GameId } from "@/components/casino/GameVisuals";
 
 export const Route = createFileRoute("/casino")({
   component: CasinoPage,
   head: () => ({
     meta: [
       { title: "ORVEX Casino — Provably Random On-Chain Games" },
-      { name: "description", content: "Play CoinFlip, Dice, Roulette, Rock-Paper-Scissors and High/Low on LitVM with on-chain randomness and instant payouts." },
+      { name: "description", content: "Play Coin Flip, Dice, Roulette, Rock-Paper-Scissors and Hi-Lo on LitVM with on-chain randomness and instant payouts." },
       { property: "og:title", content: "ORVEX Casino — On-Chain Games" },
-      { property: "og:description", content: "Five on-chain casino games powered by VRF randomness on LitVM LiteForge." },
+      { property: "og:description", content: "Five neon on-chain casino games powered by VRF randomness on LitVM LiteForge." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
 });
 
-type GameId = "coinflip" | "dice" | "roulette" | "rps" | "highlow";
-
-type GameDef = {
-  id: GameId;
-  name: string;
-  fn: "playCoinFlip" | "playDice" | "playRoulette" | "playRPS" | "playHighLow";
-  emoji: string;
-  tagline: string;
-  meme: string;
-  odds: string;
-  choices: { value: number; label: string; emoji?: string }[];
-};
+type Tone = "emerald" | "volt" | "blaze";
+type GameDef = { id: GameId; name: string; fn: CasinoFn; emoji: string; tagline: string; mult: string; tone: Tone; choices: { value: number; label: string; emoji?: string }[] };
 
 const GAMES: GameDef[] = [
-  {
-    id: "coinflip",
-    name: "Coin Flip",
-    fn: "playCoinFlip",
-    emoji: "🪙",
-    tagline: "50/50. No strategy. Pure vibes.",
-    meme: "\"It's just a coin bro, how bad can it be\" — anon, 3 flips later",
-    odds: "~2x",
-    choices: [
-      { value: 0, label: "Heads", emoji: "👑" },
-      { value: 1, label: "Tails", emoji: "🪶" },
-    ],
-  },
-  {
-    id: "dice",
-    name: "Dice Roll",
-    fn: "playDice",
-    emoji: "🎲",
-    tagline: "Call your number, roll the chain.",
-    meme: "Statistically you're fine. Emotionally, not so much.",
-    odds: "~6x",
-    choices: [1, 2, 3, 4, 5, 6].map((n) => ({ value: n, label: String(n), emoji: ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"][n - 1] })),
-  },
-  {
-    id: "roulette",
-    name: "Roulette",
-    fn: "playRoulette",
-    emoji: "🎡",
-    tagline: "Pick a pocket 0–36. Watch it spin.",
-    meme: "Red? Black? Nah — I pick 17 because it's my ex's birthday.",
-    odds: "up to ~36x",
-    choices: Array.from({ length: 37 }, (_, i) => ({ value: i, label: String(i) })),
-  },
-  {
-    id: "rps",
-    name: "Rock Paper Scissors",
-    fn: "playRPS",
-    emoji: "✊",
-    tagline: "Beat the house hand.",
-    meme: "The blockchain always plays paper. (It doesn't. Probably.)",
-    odds: "~3x",
-    choices: [
-      { value: 0, label: "Rock", emoji: "✊" },
-      { value: 1, label: "Paper", emoji: "✋" },
-      { value: 2, label: "Scissors", emoji: "✌️" },
-    ],
-  },
-  {
-    id: "highlow",
-    name: "High / Low",
-    fn: "playHighLow",
-    emoji: "📈",
-    tagline: "Will the roll land high or low?",
-    meme: "Number go up. Sometimes. Statistically half the time.",
-    odds: "~2x",
-    choices: [
-      { value: 0, label: "Low", emoji: "📉" },
-      { value: 1, label: "High", emoji: "📈" },
-    ],
-  },
+  { id: "coinflip", name: "Coin Flip", fn: "playCoinFlip", emoji: "🪙", tagline: "ORVEX crown vs crypto skull. 50/50, pure vibes.", mult: "2x", tone: "emerald", choices: [{ value: 0, label: "Crown", emoji: "👑" }, { value: 1, label: "Skull", emoji: "💀" }] },
+  { id: "dice", name: "Dice Roll", fn: "playDice", emoji: "🎲", tagline: "Call your face, roll the chain.", mult: "6x", tone: "volt", choices: [1, 2, 3, 4, 5, 6].map((n) => ({ value: n, label: String(n), emoji: ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"][n - 1] })) },
+  { id: "roulette", name: "Roulette", fn: "playRoulette", emoji: "🎡", tagline: "European wheel. Pick a pocket 0–36.", mult: "36x", tone: "blaze", choices: Array.from({ length: 37 }, (_, i) => ({ value: i, label: String(i) })) },
+  { id: "rps", name: "Rock Paper Scissors", fn: "playRPS", emoji: "✊", tagline: "Cyber hands. Beat the house.", mult: "3x", tone: "emerald", choices: [{ value: 0, label: "Rock", emoji: "✊" }, { value: 1, label: "Paper", emoji: "✋" }, { value: 2, label: "Scissors", emoji: "✌️" }] },
+  { id: "highlow", name: "Hi-Lo", fn: "playHighLow", emoji: "🃏", tagline: "Higher or lower than the 7?", mult: "2x", tone: "volt", choices: [{ value: 0, label: "Lower", emoji: "▼" }, { value: 1, label: "Higher", emoji: "▲" }] },
+];
+
+const TONE: Record<Tone, { text: string; glow: string; bg: string }> = {
+  emerald: { text: "text-emerald", glow: "glow-emerald", bg: "bg-emerald" },
+  volt: { text: "text-volt", glow: "glow-volt", bg: "bg-volt" },
+  blaze: { text: "text-blaze", glow: "glow-blaze", bg: "bg-blaze" },
+};
+
+const VIP = [
+  { name: "Bronze", min: 0 },
+  { name: "Silver", min: 0.5 },
+  { name: "Gold", min: 2 },
+  { name: "Platinum", min: 10 },
+  { name: "Diamond", min: 50 },
 ];
 
 function fmtEth(v?: bigint, max = 4) {
   if (v === undefined) return "—";
-  const s = formatEther(v);
-  const [i, d] = s.split(".");
+  const [i, d] = formatEther(v).split(".");
   return d ? `${i}.${d.slice(0, max)}` : i;
 }
+const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
-type Result = { won: boolean; payout: bigint; randomResult: bigint; requestId: bigint } | null;
+/** Map the settled result into the game's visual space, always consistent with the won flag. */
+function outcomeFor(game: GameId, choice: number, r: CasinoResult): number {
+  const n = r.randomResult;
+  switch (game) {
+    case "coinflip": return r.won ? choice : 1 - choice;
+    case "dice": return r.won ? choice : ((choice + Number(n % 5n)) % 6) + 1;
+    case "roulette": return r.won ? choice : (choice + 1 + Number(n % 36n)) % 37;
+    case "rps": return r.won ? (choice + 2) % 3 : n % 2n === 0n ? (choice + 1) % 3 : choice;
+    case "highlow": {
+      const hi = 8 + Number(n % 6n), lo = 1 + Number(n % 6n);
+      return (choice === 1) === r.won ? hi : lo;
+    }
+  }
+}
+
+function useSfx(on: boolean) {
+  const ctx = useRef<AudioContext | null>(null);
+  return useCallback(
+    (kind: "click" | "win" | "lose" | "spin") => {
+      if (!on || typeof window === "undefined") return;
+      ctx.current ??= new AudioContext();
+      const c = ctx.current;
+      const notes = { click: [660], spin: [330, 440], win: [523, 659, 784, 1046], lose: [300, 220] }[kind];
+      notes.forEach((f, i) => {
+        const o = c.createOscillator(), g = c.createGain();
+        o.type = kind === "lose" ? "sawtooth" : "triangle";
+        o.frequency.value = f;
+        const t = c.currentTime + i * 0.09;
+        g.gain.setValueAtTime(0.08, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+        o.connect(g).connect(c.destination);
+        o.start(t);
+        o.stop(t + 0.2);
+      });
+    },
+    [on],
+  );
+}
 
 function CasinoPage() {
   const toast = useToast();
@@ -123,11 +102,21 @@ function CasinoPage() {
   const balance = useBalance({ address });
 
   const [game, setGame] = useState<GameDef>(GAMES[0]);
-  const [choice, setChoice] = useState<number>(0);
+  const [choice, setChoice] = useState(0);
   const [amount, setAmount] = useState("0.01");
-  const [rolling, setRolling] = useState(false);
-  const [result, setResult] = useState<Result>(null);
-  const [feed, setFeed] = useState<{ player: string; won: boolean; payout: bigint; id: string }[]>([]);
+  const [sound, setSound] = useState(false);
+  const [wagered, setWagered] = useState(0);
+  const [tab, setTab] = useState<"all" | "mine" | "high">("all");
+  const [outcome, setOutcome] = useState<number | null>(null);
+  const gameRef = useRef({ game, choice });
+  gameRef.current = { game, choice };
+  const sfx = useSfx(sound);
+
+  useEffect(() => {
+    setSound(localStorage.getItem("orvex-casino-sound") === "1");
+    setWagered(Number(localStorage.getItem("orvex-casino-wagered") || 0));
+  }, []);
+  useEffect(() => localStorage.setItem("orvex-casino-sound", sound ? "1" : "0"), [sound]);
 
   const read = { address: ADDR.casino as `0x${string}`, abi: casinoAbi } as const;
   const minBet = useReadContract({ ...read, functionName: "minBet", query: { refetchInterval: 20_000 } });
@@ -136,112 +125,51 @@ function CasinoPage() {
   const paused = useReadContract({ ...read, functionName: "paused", query: { refetchInterval: 15_000 } });
   const bank = useReadContract({ ...read, functionName: "getContractBalance", query: { refetchInterval: 12_000 } });
   const owner = useReadContract({ ...read, functionName: "owner" });
-  const pending = useReadContract({
-    ...read,
-    functionName: "pendingWithdrawals",
-    args: address ? [address] : undefined,
-    query: { enabled: !!address, refetchInterval: 12_000 },
-  });
-
+  const pending = useReadContract({ ...read, functionName: "pendingWithdrawals", args: address ? [address] : undefined, query: { enabled: !!address, refetchInterval: 12_000 } });
   const isOwner = !!address && !!owner.data && (owner.data as string).toLowerCase() === address.toLowerCase();
+  const { writeContractAsync } = useWriteContract();
 
-  const { writeContractAsync, isPending } = useWriteContract();
-  const [hash, setHash] = useState<`0x${string}` | undefined>();
-  const receipt = useWaitForTransactionReceipt({ hash });
-
-  useWatchContractEvent({
-    ...read,
-    eventName: "BetSettled",
-    onLogs(logs) {
-      for (const log of logs) {
-        const a = (log as any).args as { player?: string; won?: boolean; payout?: bigint; randomResult?: bigint; requestId?: bigint };
-        if (!a?.player) continue;
-        setFeed((f) => [{ player: a.player!, won: !!a.won, payout: a.payout ?? 0n, id: `${log.transactionHash}-${a.requestId}` }, ...f].slice(0, 12));
-        if (address && a.player.toLowerCase() === address.toLowerCase()) {
-          setRolling(false);
-          setResult({ won: !!a.won, payout: a.payout ?? 0n, randomResult: a.randomResult ?? 0n, requestId: a.requestId ?? 0n });
-          toast.push({
-            title: a.won ? `You won ${fmtEth(a.payout)} zkLTC 🎉` : "House wins this round 😵",
-            type: a.won ? "success" : "error",
-          });
-          pending.refetch();
-          bank.refetch();
-          balance.refetch();
-        }
-      }
+  const { phase, hash, result, feed, placeBet, reset, busy } = useCasino({
+    onSettled: (r) => {
+      const { game: g, choice: c } = gameRef.current;
+      setOutcome(outcomeFor(g.id, c, r));
+      sfx(r.won ? "win" : "lose");
+      toast.push({ title: r.won ? `You won ${fmtEth(r.payout)} zkLTC 🎉` : "House wins this round 😵", type: r.won ? "success" : "error" });
+      pending.refetch(); bank.refetch(); balance.refetch();
     },
+    onError: (msg) => toast.push({ title: "Bet not completed", description: msg, type: "error" }),
   });
 
-  useEffect(() => {
-    if (receipt.isSuccess && hash) {
-      toast.push({ title: "Bet confirmed on-chain", type: "success", hash });
-      setHash(undefined);
-      balance.refetch();
-      bank.refetch();
-      // settlement arrives via BetSettled; stop spinner after a grace period
-      const t = setTimeout(() => setRolling(false), 20_000);
-      return () => clearTimeout(t);
-    }
-    if (receipt.isError && hash) {
-      setHash(undefined);
-      setRolling(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [receipt.isSuccess, receipt.isError]);
-
-  const value = useMemo(() => {
-    try {
-      return amount ? parseEther(amount) : 0n;
-    } catch {
-      return 0n;
-    }
-  }, [amount]);
-
-  const belowMin = minBet.data !== undefined && value > 0n && value < (minBet.data as bigint);
-  const aboveMax = maxBet.data !== undefined && (maxBet.data as bigint) > 0n && value > (maxBet.data as bigint);
+  const value = useMemo(() => { try { return amount ? parseEther(amount) : 0n; } catch { return 0n; } }, [amount]);
+  const min = minBet.data as bigint | undefined, max = maxBet.data as bigint | undefined;
+  const belowMin = min !== undefined && value > 0n && value < min;
+  const aboveMax = max !== undefined && max > 0n && value > max;
   const insufficient = balance.data ? value > balance.data.value : false;
   const isPaused = paused.data === true;
+  const disabled = !address || busy || value <= 0n || belowMin || aboveMax || insufficient || isPaused;
 
-  const disabled =
-    !address || isPending || rolling || !!hash || value <= 0n || belowMin || aboveMax || insufficient || isPaused;
-
-  const ensureChain = async () => {
-    if (chainId === litvm.id) return true;
-    try {
-      await switchChainAsync({ chainId: litvm.id });
-      return true;
-    } catch (e: any) {
-      toast.push({ title: "Switch network failed", description: e?.shortMessage || e?.message, type: "error" });
-      return false;
-    }
-  };
+  const vipIdx = VIP.reduce((acc, l, i) => (wagered >= l.min ? i : acc), 0);
+  const next = VIP[vipIdx + 1];
+  const vipPct = next ? Math.min(100, ((wagered - VIP[vipIdx].min) / (next.min - VIP[vipIdx].min)) * 100) : 100;
 
   const play = async () => {
     if (disabled) return;
-    if (!(await ensureChain())) return;
-    setResult(null);
-    setRolling(true);
-    try {
-      const h = await writeContractAsync({
-        address: ADDR.casino as `0x${string}`,
-        abi: casinoAbi,
-        functionName: game.fn,
-        args: [choice],
-        value,
-      });
-      setHash(h);
-      toast.push({ title: `${game.name} bet submitted`, hash: h });
-    } catch (e: any) {
-      setRolling(false);
-      toast.push({ title: "Bet failed", description: e?.shortMessage || e?.message, type: "error" });
+    if (chainId !== litvm.id) {
+      try { await switchChainAsync({ chainId: litvm.id }); } catch { toast.push({ title: "Please switch to LitVM", type: "error" }); return; }
+    }
+    setOutcome(null);
+    sfx("spin");
+    const h = await placeBet(game.fn, choice, value);
+    if (h) {
+      const w = wagered + Number(formatEther(value));
+      setWagered(w);
+      localStorage.setItem("orvex-casino-wagered", String(w));
     }
   };
 
   const claim = async () => {
-    if (!address) return;
-    if (!(await ensureChain())) return;
     try {
-      const h = await writeContractAsync({ address: ADDR.casino as `0x${string}`, abi: casinoAbi, functionName: "withdrawPending" });
+      const h = await writeContractAsync({ ...read, functionName: "withdrawPending" });
       toast.push({ title: "Withdraw submitted", hash: h });
     } catch (e: any) {
       toast.push({ title: "Withdraw failed", description: e?.shortMessage || e?.message, type: "error" });
@@ -249,256 +177,291 @@ function CasinoPage() {
   };
 
   const selectGame = (g: GameDef) => {
+    if (busy) return;
+    sfx("click");
     setGame(g);
     setChoice(g.choices[0].value);
-    setResult(null);
+    setOutcome(null);
+    reset();
+    document.getElementById("casino-table")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const setChip = (k: "half" | "double" | "max" | string) => {
+    sfx("click");
+    const cur = Number(amount) || 0;
+    if (k === "half") setAmount(String(+(cur / 2).toFixed(6)));
+    else if (k === "double") setAmount(String(+(cur * 2).toFixed(6)));
+    else if (k === "max") {
+      const bal = balance.data ? Number(formatEther(balance.data.value)) * 0.95 : 0;
+      const cap = max && max > 0n ? Number(formatEther(max)) : bal;
+      setAmount(String(+Math.min(bal, cap).toFixed(4)));
+    } else setAmount(k);
+  };
+
+  const tone = TONE[game.tone];
+  const shownFeed = feed.filter((f) => (tab === "mine" ? address && f.player.toLowerCase() === address.toLowerCase() : tab === "high" ? (f.amount ?? 0n) >= parseEther("0.05") || f.payout >= parseEther("0.1") : true));
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-10">
-      {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl glass-strong p-8 sm:p-12 noise-bg animated-border">
-        <div className="absolute -top-24 -left-16 h-72 w-72 rounded-full bg-gradient-brand blur-3xl opacity-30 animate-aurora" aria-hidden />
-        <div className="absolute -bottom-28 right-0 h-80 w-80 rounded-full bg-gradient-gold blur-3xl opacity-20 animate-aurora-2" aria-hidden />
-        <div className="relative flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-          <div className="space-y-4 max-w-2xl">
-            <span className="inline-flex items-center gap-2 text-xs px-3 py-1 rounded-full glass text-muted-foreground">
-              🎰 On-chain randomness · LitVM LiteForge
-            </span>
-            <h1 className="text-4xl sm:text-6xl font-black tracking-tight">
-              <span className="text-gradient-luxe-anim">ORVEX Casino</span>
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              Five games. One bankroll. Every roll settled by the chain — no croupier, no cards up the sleeve.
-            </p>
-            <div className="flex flex-wrap gap-2 pt-1">
-              {GAMES.map((g) => (
-                <button
-                  key={g.id}
-                  onClick={() => selectGame(g)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium press ${
-                    game.id === g.id ? "bg-gradient-brand text-primary-foreground shadow-neon" : "glass text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {g.emoji} {g.name}
-                </button>
-              ))}
+    <div className="relative">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[520px] bg-[radial-gradient(50%_60%_at_20%_0%,color-mix(in_oklab,var(--casino-violet)_28%,transparent),transparent),radial-gradient(40%_50%_at_90%_10%,color-mix(in_oklab,var(--casino-emerald)_18%,transparent),transparent)]" aria-hidden />
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+        {/* Casino bar */}
+        <section className="rounded-3xl glass-strong p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center gap-4 justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-2xl bg-casino-cta flex items-center justify-center text-2xl glow-volt">🎰</div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-none">ORVEX <span className="text-emerald">CASINO</span></h1>
+              <p className="text-xs text-muted-foreground mt-1">On-chain randomness · LitVM LiteForge testnet</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <div className="rounded-2xl glass px-4 py-2">
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Balance</div>
+              <div className="font-bold font-mono">{address ? `${fmtEth(balance.data?.value)} zkLTC` : "Not connected"}</div>
+            </div>
+            <div className="rounded-2xl glass px-4 py-2 min-w-48">
+              <div className="flex justify-between text-[10px] uppercase tracking-widest">
+                <span className="text-blaze font-bold">VIP {VIP[vipIdx].name}</span>
+                <span className="text-muted-foreground">{next ? `${next.name} at ${next.min}` : "Max"}</span>
+              </div>
+              <div className="mt-1.5 h-2 rounded-full bg-muted overflow-hidden">
+                <div className="h-full bg-casino-cta transition-all duration-700" style={{ width: `${vipPct}%` }} />
+              </div>
+            </div>
+            <button
+              onClick={() => setSound((s) => !s)}
+              aria-pressed={sound}
+              aria-label={sound ? "Mute sound effects" : "Enable sound effects"}
+              className={`h-12 w-12 rounded-2xl glass text-xl press transition ${sound ? "glow-emerald" : ""}`}
+            >
+              {sound ? "🔊" : "🔇"}
+            </button>
             {isOwner && (
               <Link to="/admin-casino">
-                <Button variant="outline" className="rounded-full border-gold text-gold">
-                  ⚙️ Casino Admin
-                </Button>
+                <Button variant="outline" className="h-12 rounded-2xl border-gold text-gold">⚙️ Casino Admin</Button>
               </Link>
             )}
-            <a href={explorerAddr(ADDR.casino)} target="_blank" rel="noreferrer">
-              <Button variant="ghost" className="rounded-full">View contract ↗</Button>
-            </a>
           </div>
+        </section>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Stat label="House bankroll" value={`${fmtEth(bank.data as bigint | undefined)} zkLTC`} tone="emerald" />
+          <Stat label="Min bet" value={`${fmtEth(min)} zkLTC`} tone="volt" />
+          <Stat label="Max bet" value={`${fmtEth(max)} zkLTC`} tone="volt" />
+          <Stat label="House edge" value={houseEdge.data !== undefined ? `${Number(houseEdge.data as bigint)}%` : "—"} tone="blaze" />
         </div>
+        {isPaused && <div className="rounded-2xl border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm">The tables are temporarily closed by the house. Betting is paused.</div>}
 
-        <div className="relative grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
-          <Stat label="House bankroll" value={`${fmtEth(bank.data as bigint | undefined)} zkLTC`} />
-          <Stat label="Min bet" value={`${fmtEth(minBet.data as bigint | undefined)} zkLTC`} />
-          <Stat label="Max bet" value={`${fmtEth(maxBet.data as bigint | undefined)} zkLTC`} />
-          <Stat label="House edge" value={houseEdge.data !== undefined ? `${Number(houseEdge.data as bigint)}%` : "—"} />
-        </div>
-        {isPaused && (
-          <div className="relative mt-4 rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm">
-            The tables are temporarily closed by the house. Betting is paused.
-          </div>
-        )}
-      </section>
+        <div className="grid lg:grid-cols-[220px_1fr] gap-6 items-start">
+          {/* Sidebar */}
+          <nav aria-label="Casino games" className="lg:sticky lg:top-24 flex lg:flex-col gap-2 overflow-x-auto pb-1 rounded-3xl glass p-2">
+            {GAMES.map((g) => {
+              const active = g.id === game.id;
+              const t = TONE[g.tone];
+              return (
+                <button
+                  key={g.id}
+                  onClick={() => selectGame(g)}
+                  aria-current={active ? "true" : undefined}
+                  className={`shrink-0 flex items-center gap-3 rounded-2xl px-3 py-3 text-left press transition ${active ? `bg-background/80 ${t.glow}` : "hover:bg-foreground/5"}`}
+                >
+                  <span className={`h-10 w-10 rounded-xl flex items-center justify-center text-xl bg-background/60 ${active ? t.glow : ""}`}>{g.emoji}</span>
+                  <span>
+                    <span className={`block text-sm font-bold ${active ? t.text : ""}`}>{g.name}</span>
+                    <span className="block text-[11px] text-muted-foreground">up to {g.mult}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
 
-      <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
-        {/* Table */}
-        <section className="rounded-3xl glass p-6 sm:p-8 space-y-6 card-hover">
-          <header className="space-y-1">
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              <span className="text-3xl">{game.emoji}</span> {game.name}
-            </h2>
-            <p className="text-sm text-muted-foreground">{game.tagline}</p>
-            <p className="text-xs text-gold italic">{game.meme}</p>
-          </header>
-
-          <GameStage game={game} choice={choice} rolling={rolling} result={result} />
-
-          <div className="space-y-3">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">Your pick</div>
-            <div className={game.id === "roulette" ? "grid grid-cols-7 sm:grid-cols-10 gap-1.5" : "flex flex-wrap gap-2"}>
-              {game.choices.map((c) => {
-                const active = choice === c.value;
+          <div className="space-y-6 min-w-0">
+            {/* Game cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
+              {GAMES.map((g) => {
+                const t = TONE[g.tone];
                 return (
-                  <button
-                    key={c.value}
-                    onClick={() => setChoice(c.value)}
-                    aria-pressed={active}
-                    className={`press rounded-xl text-sm font-semibold transition ${
-                      game.id === "roulette" ? "py-2" : "px-4 py-2.5"
-                    } ${active ? "bg-gradient-brand text-primary-foreground shadow-neon" : "glass text-muted-foreground hover:text-foreground"}`}
-                  >
-                    {c.emoji ? `${c.emoji} ` : ""}
-                    {c.label}
+                  <button key={g.id} onClick={() => selectGame(g)} className={`group relative overflow-hidden rounded-3xl glass p-4 text-left aspect-[4/5] flex flex-col justify-between transition hover:-translate-y-1 ${g.id === game.id ? t.glow : ""}`}>
+                    <span className="text-5xl transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6">{g.emoji}</span>
+                    <span>
+                      <span className="block font-black leading-tight">{g.name}</span>
+                      <span className={`text-xs font-bold ${t.text}`}>{g.mult} payout</span>
+                    </span>
+                    <span className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition">
+                      <span className="rounded-full bg-casino-cta px-4 py-2 text-sm font-black text-background">▶ PLAY NOW</span>
+                    </span>
                   </button>
                 );
               })}
             </div>
-          </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span className="uppercase tracking-widest">Bet amount (zkLTC)</span>
-              <span>Balance: {balance.data ? fmtEth(balance.data.value) : "—"}</span>
-            </div>
-            <div className="flex gap-2">
-              <input
-                inputMode="decimal"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
-                aria-label="Bet amount in zkLTC"
-                className="flex-1 rounded-xl bg-input/60 border border-border px-4 py-3 text-lg font-semibold outline-none focus:border-primary"
-              />
-              {["0.01", "0.05", "0.1"].map((p) => (
-                <button key={p} onClick={() => setAmount(p)} className="px-3 rounded-xl glass text-xs press hover:text-foreground text-muted-foreground">
-                  {p}
-                </button>
-              ))}
-            </div>
-            {belowMin && <p className="text-xs text-destructive">Below the minimum bet of {fmtEth(minBet.data as bigint)} zkLTC.</p>}
-            {aboveMax && <p className="text-xs text-destructive">Above the maximum bet of {fmtEth(maxBet.data as bigint)} zkLTC.</p>}
-            {insufficient && <p className="text-xs text-destructive">Not enough zkLTC in your wallet.</p>}
-          </div>
+            {/* Table */}
+            <section id="casino-table" className="scroll-mt-24 rounded-3xl glass-strong p-5 sm:p-7 space-y-6">
+              <header className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2 className="text-3xl font-black flex items-center gap-2"><span>{game.emoji}</span> {game.name}</h2>
+                  <p className="text-sm text-muted-foreground">{game.tagline}</p>
+                </div>
+                <PhaseBadge phase={phase} hash={hash} />
+              </header>
 
-          <Button onClick={play} disabled={disabled} className="w-full h-14 text-base rounded-2xl bg-gradient-brand shadow-neon press">
-            {!address
-              ? "Connect wallet to play"
-              : isPaused
-                ? "Tables closed"
-                : rolling || isPending || hash
-                  ? "Settling on-chain…"
-                  : `Bet ${amount || "0"} zkLTC · payout ${game.odds}`}
-          </Button>
+              <GameVisual game={game.id} choice={choice} busy={busy} outcome={phase === "settled" ? outcome : null} won={result?.won} settleKey={result?.requestId.toString()} />
 
-          {(pending.data as bigint | undefined) && (pending.data as bigint) > 0n ? (
-            <div className="rounded-2xl border border-gold/40 bg-gold/5 p-4 flex items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold text-gold">Unclaimed winnings</div>
-                <div className="text-xs text-muted-foreground">{fmtEth(pending.data as bigint)} zkLTC waiting for you</div>
+              {phase === "settled" && result && (
+                <div className={`rounded-2xl p-4 text-center ${result.won ? "glow-emerald" : "border border-destructive/50 bg-destructive/10"}`} style={{ animation: "bounce-in .5s ease-out" }}>
+                  <div className={`text-3xl font-black ${result.won ? "text-emerald" : "text-destructive"}`}>{result.won ? `+${fmtEth(result.payout)} zkLTC` : "HOUSE WINS 💀"}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{describeOutcome(game.id, outcome)} · request #{result.requestId.toString()}</div>
+                </div>
+              )}
+
+              {/* Big choice buttons */}
+              <div className="space-y-2">
+                <div className="text-xs uppercase tracking-widest text-muted-foreground">Your prediction</div>
+                {game.id === "roulette" ? (
+                  <div className="grid grid-cols-7 sm:grid-cols-[repeat(13,minmax(0,1fr))] gap-1.5">
+                    {game.choices.map((c) => {
+                      const col = pocketColor(c.value);
+                      const active = choice === c.value;
+                      return (
+                        <button key={c.value} disabled={busy} onClick={() => { sfx("click"); setChoice(c.value); }} aria-pressed={active}
+                          className={`h-11 rounded-xl text-sm font-black press transition ${col === "emerald" ? "bg-emerald text-background sm:col-span-1" : col === "red" ? "bg-destructive text-destructive-foreground" : "bg-background border border-border"} ${active ? "ring-2 ring-blaze scale-110 glow-blaze" : "opacity-80 hover:opacity-100"}`}>
+                          {c.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className={`grid gap-3 ${game.choices.length === 2 ? "grid-cols-2" : game.choices.length === 3 ? "grid-cols-3" : "grid-cols-3 sm:grid-cols-6"}`}>
+                    {game.choices.map((c) => {
+                      const active = choice === c.value;
+                      const odds = game.id === "highlow" ? "~50%" : game.id === "rps" ? "~33%" : game.id === "dice" ? "16.7%" : "50%";
+                      return (
+                        <button key={c.value} disabled={busy} onClick={() => { sfx("click"); setChoice(c.value); }} aria-pressed={active}
+                          className={`rounded-2xl py-5 flex flex-col items-center gap-1 press transition border ${active ? `bg-background/80 ${tone.glow} border-transparent` : "glass border-border hover:-translate-y-0.5"}`}>
+                          <span className="text-4xl">{c.emoji}</span>
+                          <span className={`text-sm font-black uppercase tracking-wider ${active ? tone.text : ""}`}>{c.label}</span>
+                          <span className="text-[10px] text-muted-foreground">win chance {odds}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-              <Button onClick={claim} variant="outline" className="rounded-full border-gold text-gold">Withdraw</Button>
-            </div>
-          ) : null}
-        </section>
 
-        {/* Side rail */}
-        <aside className="space-y-6">
-          <section className="rounded-3xl glass p-6 space-y-3">
-            <h3 className="font-bold flex items-center gap-2">🔴 Live table feed</h3>
-            {feed.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No bets settled yet in this session. Be the degen who starts it.</p>
-            ) : (
-              <ul className="space-y-2">
-                {feed.map((f) => (
-                  <li key={f.id} className="flex items-center justify-between text-sm animate-rise">
-                    <span className="font-mono text-xs text-muted-foreground">{f.player.slice(0, 6)}…{f.player.slice(-4)}</span>
-                    <span className={f.won ? "text-accent font-semibold" : "text-muted-foreground"}>
-                      {f.won ? `+${fmtEth(f.payout)}` : "rekt"}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+              {/* Amount */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span className="uppercase tracking-widest">Bet amount</span>
+                  <span>Potential payout: <span className={`font-bold ${tone.text}`}>{value > 0n ? `${(Number(formatEther(value)) * Number(game.mult.replace("x", "")) * (1 - Number(houseEdge.data ?? 0n) / 100)).toFixed(4)} zkLTC` : "—"}</span></span>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <input inputMode="decimal" value={amount} disabled={busy} onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))} aria-label="Bet amount in zkLTC"
+                      className="w-full h-14 rounded-2xl bg-input/60 border border-border pl-4 pr-20 text-2xl font-black font-mono outline-none focus:border-emerald" />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">zkLTC</span>
+                  </div>
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {[["0.01", "0.01"], ["0.05", "0.05"], ["0.1", "0.1"], ["half", "½"], ["double", "2×"], ["max", "MAX"]].map(([k, l]) => (
+                      <button key={k} disabled={busy} onClick={() => setChip(k)} className="h-14 min-w-12 rounded-2xl glass text-xs font-bold press hover:text-blaze">{l}</button>
+                    ))}
+                  </div>
+                </div>
+                {belowMin && <p className="text-xs text-destructive">Below the minimum bet of {fmtEth(min)} zkLTC.</p>}
+                {aboveMax && <p className="text-xs text-destructive">Above the maximum bet of {fmtEth(max)} zkLTC.</p>}
+                {insufficient && <p className="text-xs text-destructive">Not enough zkLTC in your wallet.</p>}
+              </div>
 
-          <section className="rounded-3xl glass p-6 space-y-3">
-            <h3 className="font-bold">How it works</h3>
-            <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-              <li>Pick a game and your outcome.</li>
-              <li>Send your bet — it locks into the casino contract.</li>
-              <li>The VRF coordinator returns randomness and settles the bet.</li>
-              <li>Wins land instantly, or wait in your pending balance to withdraw.</li>
-            </ol>
-            <p className="text-xs text-muted-foreground">
-              Testnet only. Play with LiteForge test funds — grab some from the{" "}
-              <Link to="/faucet" className="text-accent hover:underline">faucet</Link>.
-            </p>
-          </section>
+              <button onClick={play} disabled={disabled}
+                className="relative w-full h-20 rounded-3xl bg-casino-cta text-background text-xl sm:text-2xl font-black uppercase tracking-wider press transition shadow-[0_0_40px_color-mix(in_oklab,var(--casino-violet)_50%,transparent)] hover:shadow-[0_0_70px_color-mix(in_oklab,var(--casino-emerald)_55%,transparent)] disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden">
+                {!address ? "Connect wallet to play" : isPaused ? "Tables closed" : busy ? phaseLabel(phase) : `${ctaVerb(game.id)} · ${amount || "0"} zkLTC`}
+              </button>
 
-          <section className="rounded-3xl glass p-6 space-y-2">
-            <h3 className="font-bold">Contracts</h3>
-            <Row label="Casino" href={explorerAddr(ADDR.casino)} value={ADDR.casino} />
-            <Row label="VRF" href={explorerAddr(ADDR.mockVrf)} value={ADDR.mockVrf} />
-          </section>
-        </aside>
+              {(pending.data as bigint | undefined) && (pending.data as bigint) > 0n ? (
+                <div className="rounded-2xl border border-gold/40 bg-gold/5 p-4 flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-semibold text-gold">Unclaimed winnings</div>
+                    <div className="text-xs text-muted-foreground">{fmtEth(pending.data as bigint)} zkLTC waiting for you</div>
+                  </div>
+                  <Button onClick={claim} variant="outline" className="rounded-full border-gold text-gold">Withdraw</Button>
+                </div>
+              ) : null}
+            </section>
+
+            {/* Live bets */}
+            <section className="rounded-3xl glass p-5 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="font-black flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-destructive animate-pulse" /> Live Bets</h3>
+                <div className="flex gap-1 rounded-full glass p-1" role="tablist">
+                  {([["all", "Global"], ["mine", "My Bets"], ["high", "High Rollers"]] as const).map(([k, l]) => (
+                    <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`px-3 py-1.5 rounded-full text-xs font-bold transition ${tab === k ? "bg-casino-cta text-background" : "text-muted-foreground hover:text-foreground"}`}>{l}</button>
+                  ))}
+                </div>
+              </div>
+              {shownFeed.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-6 text-center">No settled bets yet in this session — be the degen who starts it.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                      <tr><th className="text-left py-2">Player</th><th className="text-right">Bet</th><th className="text-right">Result</th><th className="text-right">Payout</th></tr>
+                    </thead>
+                    <tbody>
+                      {shownFeed.map((f) => (
+                        <tr key={f.id} className="border-t border-border animate-rise">
+                          <td className="py-2 font-mono text-xs"><a href={explorerAddr(f.player)} target="_blank" rel="noreferrer" className="hover:text-emerald">{short(f.player)}</a></td>
+                          <td className="text-right font-mono">{f.amount !== undefined ? fmtEth(f.amount) : "—"}</td>
+                          <td className={`text-right font-bold ${f.won ? "text-emerald" : "text-destructive"}`}>{f.won ? "WIN" : "rekt"}</td>
+                          <td className="text-right font-mono">{f.won ? `+${fmtEth(f.payout)}` : "0"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <p className="text-[11px] text-muted-foreground">
+                Testnet only — grab test funds from the <Link to="/faucet" className="text-emerald hover:underline">faucet</Link>. Contracts: <a className="font-mono hover:text-emerald" href={explorerAddr(ADDR.casino)} target="_blank" rel="noreferrer">Casino {short(ADDR.casino)}</a> · <a className="font-mono hover:text-emerald" href={explorerAddr(ADDR.mockVrf)} target="_blank" rel="noreferrer">VRF {short(ADDR.mockVrf)}</a>
+              </p>
+            </section>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-function Row({ label, value, href }: { label: string; value: string; href: string }) {
+function ctaVerb(g: GameId) {
+  return { coinflip: "Flip Coin", dice: "Roll Dice", roulette: "Spin Wheel", rps: "Shoot!", highlow: "Deal Card" }[g];
+}
+function phaseLabel(p: CasinoPhase) {
+  return { idle: "", approve: "Confirm in wallet…", hashing: "Sending bet…", vrf: "Rolling randomness…", settled: "" }[p];
+}
+function describeOutcome(g: GameId, o: number | null) {
+  if (o === null) return "";
+  if (g === "coinflip") return `Landed on ${o === 0 ? "👑 Crown" : "💀 Skull"}`;
+  if (g === "dice") return `Rolled a ${o}`;
+  if (g === "roulette") return `Ball dropped on ${o}`;
+  if (g === "rps") return `House threw ${HANDS[o]}`;
+  return `Card drawn: ${["", "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"][o]}`;
+}
+
+function PhaseBadge({ phase, hash }: { phase: CasinoPhase; hash?: `0x${string}` }) {
+  const steps: [CasinoPhase, string][] = [["approve", "Wallet"], ["hashing", "Tx"], ["vrf", "VRF"], ["settled", "Settled"]];
+  const idx = steps.findIndex(([s]) => s === phase);
   return (
-    <div className="flex items-center justify-between gap-3 text-xs">
-      <span className="text-muted-foreground">{label}</span>
-      <a href={href} target="_blank" rel="noreferrer" className="font-mono text-accent hover:underline">
-        {value.slice(0, 8)}…{value.slice(-6)}
-      </a>
+    <div className="flex items-center gap-2" aria-live="polite">
+      {steps.map(([s, l], i) => (
+        <span key={s} className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${i < idx || phase === "settled" ? "bg-emerald text-background" : i === idx ? "bg-blaze text-background animate-pulse" : "glass text-muted-foreground"}`}>{l}</span>
+      ))}
+      {hash && <a href={explorerTx(hash)} target="_blank" rel="noreferrer" className="text-[10px] text-muted-foreground hover:text-emerald">tx ↗</a>}
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, tone }: { label: string; value: string; tone: Tone }) {
   return (
     <div className="rounded-2xl glass px-4 py-3">
-      <div className="text-[11px] uppercase tracking-widest text-muted-foreground">{label}</div>
-      <div className="text-lg font-bold">{value}</div>
-    </div>
-  );
-}
-
-const LazyCasinoStage3D = lazy(() =>
-  import("@/components/casino/CasinoStage3D").then((m) => ({ default: m.CasinoStage3D })),
-);
-
-function GameStage({ game, choice, rolling, result }: { game: GameDef; choice: number; rolling: boolean; result: Result }) {
-  const label = game.choices.find((c) => c.value === choice);
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-border bg-surface/50 h-56 flex items-center justify-center grid-bg">
-      <div className="absolute inset-0 bg-gradient-glow opacity-60 pointer-events-none" aria-hidden />
-      {mounted && (
-        <div className="absolute inset-0 motion-reduce:hidden" aria-hidden>
-          <Suspense fallback={null}>
-            <LazyCasinoStage3D game={game.id} rolling={rolling} won={result?.won} />
-          </Suspense>
-        </div>
-      )}
-      {result ? (
-        <div className="relative text-center animate-rise space-y-2">
-          <div className="text-6xl">{result.won ? "🎉" : "💀"}</div>
-          <div className={`text-2xl font-black ${result.won ? "text-accent" : "text-destructive"}`}>
-            {result.won ? `WON ${fmtEth(result.payout)} zkLTC` : "HOUSE WINS"}
-          </div>
-          <div className="text-xs text-muted-foreground font-mono">
-            random #{(result.randomResult % 1000n).toString()} · request {result.requestId.toString()}
-          </div>
-          <div className="text-xs text-gold italic">{result.won ? "Cash out or run it back? 😈" : "It's testnet. Emotional damage only."}</div>
-        </div>
-      ) : rolling ? (
-        <div className="relative text-center space-y-3">
-          <div className={`text-7xl ${game.id === "coinflip" ? "animate-spin-slow" : "animate-float"}`}>{game.emoji}</div>
-          <div className="text-sm text-muted-foreground animate-pulse">Waiting for on-chain randomness…</div>
-        </div>
-      ) : (
-        <div className="relative text-center space-y-2">
-          <div className="text-7xl animate-float">{label?.emoji ?? game.emoji}</div>
-          <div className="text-sm text-muted-foreground">
-            Betting on <span className="text-foreground font-semibold">{label?.label ?? "—"}</span> · payout {game.odds}
-          </div>
-        </div>
-      )}
+      <div className={`text-[10px] uppercase tracking-widest ${TONE[tone].text}`}>{label}</div>
+      <div className="text-lg font-black font-mono">{value}</div>
     </div>
   );
 }
