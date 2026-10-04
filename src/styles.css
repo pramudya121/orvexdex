@@ -33,6 +33,9 @@
   --color-neon-violet: var(--neon-violet);
   --color-neon-cyan: var(--neon-cyan);
   --color-surface: var(--surface);
+  --color-emerald: var(--casino-emerald);
+  --color-volt: var(--casino-violet);
+  --color-blaze: var(--casino-blaze);
   --color-surface-2: var(--surface-2);
 }
 
@@ -63,6 +66,9 @@
   --neon-cyan: oklch(0.82 0.17 215);
   --gold: oklch(0.84 0.16 85);
   --gold-deep: oklch(0.72 0.15 75);
+  --casino-emerald: oklch(0.8 0.2 158);
+  --casino-violet: oklch(0.62 0.29 300);
+  --casino-blaze: oklch(0.74 0.2 50);
 
   --gradient-brand: linear-gradient(135deg, oklch(0.65 0.27 295), oklch(0.78 0.18 220));
   --gradient-gold: linear-gradient(135deg, oklch(0.92 0.13 95), oklch(0.72 0.15 75));
@@ -361,3 +367,20 @@
     transition: none !important;
   }
 }
+
+/* ---------- Casino ---------- */
+@utility glow-emerald { box-shadow: 0 0 24px color-mix(in oklab, var(--casino-emerald) 55%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--casino-emerald) 60%, transparent); }
+@utility glow-volt { box-shadow: 0 0 24px color-mix(in oklab, var(--casino-violet) 55%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--casino-violet) 60%, transparent); }
+@utility glow-blaze { box-shadow: 0 0 24px color-mix(in oklab, var(--casino-blaze) 55%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--casino-blaze) 60%, transparent); }
+@utility bg-casino-cta { background-image: linear-gradient(135deg, var(--casino-emerald), var(--casino-violet) 55%, var(--casino-blaze)); }
+@utility preserve-3d { transform-style: preserve-3d; }
+@utility backface-hidden { backface-visibility: hidden; }
+@keyframes coin-spin { from { transform: rotateY(0); } to { transform: rotateY(1800deg); } }
+@keyframes dice-tumble { 0% { transform: rotate(0) translateY(0); } 25% { transform: rotate(90deg) translateY(-18px); } 50% { transform: rotate(200deg) translateY(0); } 75% { transform: rotate(290deg) translateY(-10px); } 100% { transform: rotate(360deg) translateY(0); } }
+@keyframes wheel-spin { to { transform: rotate(360deg); } }
+@keyframes wheel-spin-rev { to { transform: rotate(-360deg); } }
+@keyframes fist-pump { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-22px) rotate(-8deg); } }
+@keyframes card-in { from { transform: translateX(80px) rotateY(180deg); opacity: 0; } to { transform: translateX(0) rotateY(0); opacity: 1; } }
+@keyframes particle { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; } }
+@keyframes bounce-in { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .casino-anim { animation: none !important; transition: none !important; } }
