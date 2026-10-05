@@ -18,6 +18,7 @@ import { useToast } from "@/components/ui/toaster";
 import { notifyDomainUpdated } from "@/lib/primaryDomain";
 
 import { ConnectButton } from "@/components/wallet/ConnectButton";
+import { Button } from "@/components/ui/button";
 import {
   Search,
   Sparkles,
@@ -32,6 +33,9 @@ import {
   Clock,
   Shield,
   Crown,
+  ArrowRight,
+  Gem,
+  Fingerprint,
 } from "lucide-react";
 
 const getErr = (e: unknown) => {
@@ -412,121 +416,100 @@ function DomainsPage() {
   const yearsClamped = Math.min(5, Math.max(1, years));
   const isPriceLoading = !!checkedName && priceWei === undefined && availability.isLoading;
 
+  const suggestions = ["alpha", "vault", "liquid", "oracle", "genesis", "capital"];
+  const selectSuggestion = (suggestion: string) => {
+    setRawQuery(suggestion);
+    setCheckedName(suggestion);
+  };
+
   return (
-    <div className="relative max-w-6xl mx-auto px-4 py-10">
-      {/* Aurora backdrop */}
-      <div className="pointer-events-none absolute inset-x-0 -top-10 h-[520px] overflow-hidden -z-10">
-        <div
-          className="absolute -top-32 left-1/4 h-80 w-80 rounded-full blur-3xl animate-aurora"
-          style={{ background: "var(--gradient-luxe)" }}
-        />
-        <div
-          className="absolute top-10 right-10 h-96 w-96 rounded-full blur-3xl animate-aurora-2"
-          style={{ background: "var(--gradient-brand)" }}
-        />
-        <div className="absolute inset-0 grid-bg opacity-30" />
-      </div>
+    <div className="domain-stage relative min-h-screen overflow-hidden pb-16">
+      <div aria-hidden className="domain-grid pointer-events-none absolute inset-0" />
+      <div aria-hidden className="domain-light pointer-events-none absolute inset-x-0 top-0 h-[620px]" />
 
-      {/* Internal page header */}
-      <div className="flex items-center justify-between mb-6 animate-rise">
-        <div className="flex items-center gap-3">
-          <div className="relative h-12 w-12 rounded-2xl bg-gradient-luxe grid place-items-center shadow-neon">
-            <Globe className="h-6 w-6 text-primary-foreground" />
-          </div>
-          <div>
-            <div className="text-[11px] uppercase tracking-[0.25em] text-accent font-semibold">
-              ORVEX Name Service
+      <div className="relative mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12">
+        <header className="mb-8 flex items-center justify-between gap-4 animate-rise">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="domain-seal grid h-12 w-12 shrink-0 place-items-center rounded-lg">
+              <Fingerprint className="h-6 w-6 text-domain-gold" />
             </div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight">
-              Claim your <span className="text-gradient-luxe">.{DOMAIN_TLD}</span> identity
-            </h1>
-          </div>
-        </div>
-        <div className="hidden sm:flex items-center gap-2 glass rounded-full px-3 py-1.5 text-xs">
-          {isConnected ? (
-            <>
-              <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-              <Wallet className="h-3.5 w-3.5" />
-              <span className="font-mono">
-                {address!.slice(0, 6)}…{address!.slice(-4)}
-              </span>
-            </>
-          ) : (
-            <ConnectButton />
-          )}
-        </div>
-      </div>
-
-      {/* HERO + SEARCH */}
-      <div className="relative glass-strong rounded-[2rem] p-6 md:p-10 mb-8 overflow-hidden animated-border animate-rise">
-        <div className="absolute inset-0 -z-0 opacity-40 grid-bg" />
-        <div className="relative text-center max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent text-xs font-semibold tracking-[0.25em] uppercase mb-4">
-            <Sparkles className="h-3 w-3" />
-            One name. Every chain.
-          </div>
-          <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05] mb-3">
-            Find your perfect <span className="text-gradient-luxe">Web3 name</span>
-          </h2>
-          <p className="text-muted-foreground mb-6">
-            Replace long wallet addresses with a memorable on-chain identity. NFT-backed, owned by you forever.
-          </p>
-
-          <div className="relative">
-            <div className="flex items-stretch gap-2 bg-surface-2 border border-border rounded-2xl p-2 focus-within:border-primary transition">
-              <div className="flex items-center pl-3 text-muted-foreground">
-                <Search className="h-5 w-5" />
-              </div>
-              <input
-                value={rawQuery}
-                onChange={(e) => setRawQuery(sanitize(e.target.value))}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="vitalik"
-                className="flex-1 bg-transparent outline-none text-lg md:text-xl font-semibold tracking-tight px-2"
-                aria-label="Domain name"
-                spellCheck={false}
-                autoCapitalize="off"
-                autoComplete="off"
-              />
-              <div className="hidden sm:flex items-center px-3 text-lg font-bold text-gradient-luxe">
-                .{DOMAIN_TLD}
-              </div>
-              <button
-                onClick={handleSearch}
-                disabled={!valid}
-                className="px-5 md:px-7 rounded-xl bg-gradient-luxe text-primary-foreground font-bold shadow-neon hover:shadow-gold transition disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Check
-              </button>
+            <div className="min-w-0">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.32em] text-domain-gold">ORVEX Name Service</div>
+              <h1 className="truncate text-xl font-semibold md:text-2xl">The sovereign identity market</h1>
             </div>
-            <div className="mt-2 flex items-center justify-between gap-2 px-2 text-[11px]">
-              <span className="text-muted-foreground">
-                Lowercase letters, digits, and hyphens — min 3 characters.
-              </span>
+          </div>
+          <div className="hidden sm:block">
+            {isConnected && address ? (
+              <div className="flex items-center gap-2 border border-domain-gold/20 bg-domain-panel/70 px-3 py-2 text-xs text-muted-foreground backdrop-blur-xl">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+                <Wallet className="h-3.5 w-3.5 text-domain-gold" />
+                <span className="font-mono">{address.slice(0, 6)}…{address.slice(-4)}</span>
+              </div>
+            ) : <ConnectButton />}
+          </div>
+        </header>
+
+        <section className="relative mb-8 overflow-hidden border-y border-domain-gold/15 py-10 text-center md:py-14">
+          <div aria-hidden className="absolute left-1/2 top-0 h-px w-2/3 -translate-x-1/2 bg-gradient-to-r from-transparent via-domain-gold to-transparent opacity-70" />
+          <div className="mx-auto max-w-4xl animate-rise">
+            <div className="mb-4 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.34em] text-domain-gold">
+              <Gem className="h-3.5 w-3.5" /> Permanent Web3 identity
+            </div>
+            <h2 className="text-4xl font-semibold leading-[1.03] md:text-6xl lg:text-7xl">
+              Own the name that<br />defines your <span className="domain-gold-text">digital legacy.</span>
+            </h2>
+            <p className="mx-auto mt-5 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
+              Replace complex wallet addresses with one rare, transferable identity secured on-chain.
+            </p>
+
+            <div className="liquid-gold-border mx-auto mt-8 max-w-4xl p-px">
+              <div className="flex min-h-16 items-stretch bg-domain-panel/90 p-1.5 backdrop-blur-2xl md:min-h-20 md:p-2">
+                <div className="flex items-center pl-3 text-domain-gold md:pl-5"><Search className="h-5 w-5" /></div>
+                <input
+                  value={rawQuery}
+                  onChange={(e) => setRawQuery(sanitize(e.target.value))}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  placeholder="search your name"
+                  className="min-w-0 flex-1 bg-transparent px-3 text-base font-medium outline-none placeholder:text-muted-foreground/50 md:px-5 md:text-xl"
+                  aria-label="Domain name"
+                  spellCheck={false}
+                  autoCapitalize="off"
+                  autoComplete="off"
+                />
+                <div className="hidden items-center border-l border-domain-gold/15 px-4 font-mono text-sm text-domain-gold sm:flex">.{DOMAIN_TLD}</div>
+                <Button onClick={handleSearch} disabled={!valid} className="h-auto rounded-sm bg-domain-gold px-5 font-semibold text-domain-ink shadow-gold hover:bg-domain-gold-bright md:px-8">
+                  Check <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="mx-auto mt-3 flex max-w-4xl flex-wrap items-center justify-between gap-2 px-1 text-[11px] text-muted-foreground">
+              <span>Lowercase letters, digits and hyphens · 3–32 characters</span>
               {valid && checkedName === name && (
                 <span className="inline-flex items-center gap-1.5 font-semibold">
-                  {availability.isFetching ? (
-                    <>
-                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                      <span className="text-muted-foreground">Checking…</span>
-                    </>
-                  ) : isAvailable === true ? (
-                    <>
-                      <CheckCircle2 className="h-3 w-3 text-accent" />
-                      <span className="text-accent">Available</span>
-                    </>
-                  ) : isAvailable === false ? (
-                    <>
-                      <XCircle className="h-3 w-3 text-destructive" />
-                      <span className="text-destructive">Taken</span>
-                    </>
-                  ) : null}
+                  {availability.isFetching ? <><Loader2 className="h-3 w-3 animate-spin" /> Checking on-chain</> : isAvailable === true ? <><CheckCircle2 className="h-3 w-3 text-accent" /><span className="text-accent">Available</span></> : isAvailable === false ? <><XCircle className="h-3 w-3 text-destructive" /><span className="text-destructive">Already owned</span></> : null}
                 </span>
               )}
             </div>
           </div>
-        </div>
-      </div>
+        </section>
+
+        {!checkedName && (
+          <section className="mb-10 animate-rise" aria-labelledby="premium-domains">
+            <div className="mb-4 flex items-end justify-between gap-4">
+              <div><div className="text-[10px] uppercase tracking-[0.28em] text-domain-gold">Curated names</div><h2 id="premium-domains" className="mt-1 text-2xl font-semibold">Premium .{DOMAIN_TLD} collection</h2></div>
+              <span className="hidden text-xs text-muted-foreground sm:block">Select a name to verify live availability</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+              {suggestions.map((suggestion, index) => (
+                <button key={suggestion} onClick={() => selectSuggestion(suggestion)} className="domain-card group min-h-36 p-4 text-left">
+                  <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-muted-foreground"><span>0{index + 1}</span><ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" /></div>
+                  <div className="mt-10 break-all text-lg font-semibold">{suggestion}<span className="text-domain-gold">.{DOMAIN_TLD}</span></div>
+                  <div className="mt-2 text-[10px] uppercase tracking-[0.16em] text-domain-gold/70">Verify on-chain</div>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
       {/* RESULT PANEL */}
       {checkedName && (
