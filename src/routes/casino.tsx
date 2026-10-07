@@ -3,7 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, useBalance, useChainId, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { formatEther, parseEther } from "viem";
 import { ADDR, explorerAddr, explorerTx, litvm } from "@/lib/chain";
-import { casinoAbi } from "@/lib/abis/casino";
+import { casinoAbi, mockVrfAbi } from "@/lib/abis/casino";
+import { BetLookup } from "@/components/casino/BetLookup";
 import { useToast } from "@/components/ui/toaster";
 import { Button } from "@/components/ui/button";
 import { useCasino, type CasinoFn, type CasinoPhase, type CasinoResult } from "@/lib/useCasino";
@@ -126,6 +127,7 @@ function CasinoPage() {
   const bank = useReadContract({ ...read, functionName: "getContractBalance", query: { refetchInterval: 12_000 } });
   const owner = useReadContract({ ...read, functionName: "owner" });
   const pending = useReadContract({ ...read, functionName: "pendingWithdrawals", args: address ? [address] : undefined, query: { enabled: !!address, refetchInterval: 12_000 } });
+  const vrfCasino = useReadContract({ address: ADDR.mockVrf as `0x${string}`, abi: mockVrfAbi, functionName: "casino", query: { refetchInterval: 20_000 } });
   const isOwner = !!address && !!owner.data && (owner.data as string).toLowerCase() === address.toLowerCase();
   const { writeContractAsync } = useWriteContract();
 
@@ -146,7 +148,8 @@ function CasinoPage() {
   const aboveMax = max !== undefined && max > 0n && value > max;
   const insufficient = balance.data ? value > balance.data.value : false;
   const isPaused = paused.data === true;
-  const disabled = !address || busy || value <= 0n || belowMin || aboveMax || insufficient || isPaused;
+  const vrfNotLinked = !!vrfCasino.data && (vrfCasino.data as string).toLowerCase() !== ADDR.casino.toLowerCase();
+  const disabled = !address || busy || value <= 0n || belowMin || aboveMax || insufficient || isPaused || vrfNotLinked;
 
   const vipIdx = VIP.reduce((acc, l, i) => (wagered >= l.min ? i : acc), 0);
   const next = VIP[vipIdx + 1];
@@ -251,6 +254,7 @@ function CasinoPage() {
           <Stat label="House edge" value={houseEdge.data !== undefined ? `${Number(houseEdge.data as bigint)}%` : "—"} tone="blaze" />
         </div>
         {isPaused && <div className="rounded-2xl border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm">The tables are temporarily closed by the house. Betting is paused.</div>}
+        {vrfNotLinked && <div className="rounded-2xl border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm">The randomness engine isn't linked to the casino yet, so bets can't be placed. {isOwner ? <Link to="/admin-casino" className="font-semibold underline">Fix it in Casino Admin →</Link> : "The house is setting it up — check back soon."}</div>}
 
         <div className="grid lg:grid-cols-[220px_1fr] gap-6 items-start">
           {/* Sidebar */}
@@ -385,6 +389,12 @@ function CasinoPage() {
                   <Button onClick={claim} variant="outline" className="rounded-full border-gold text-gold">Withdraw</Button>
                 </div>
               ) : null}
+            </section>
+
+            <section className="rounded-3xl glass p-5 space-y-3">
+              <h3 className="font-bold">Bet receipt lookup</h3>
+              <p className="text-xs text-muted-foreground">Check any bet's result straight from the contract.</p>
+              <BetLookup />
             </section>
 
             {/* Live bets */}

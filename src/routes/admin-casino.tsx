@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { formatEther, isAddress, parseEther } from "viem";
 import { useAccount, useChainId, useReadContract, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { ArrowLeft, CircleDollarSign, ExternalLink, Pause, Play, Settings2, ShieldCheck, WalletCards } from "lucide-react";
-import { casinoAbi } from "@/lib/abis/casino";
+import { casinoAbi, mockVrfAbi } from "@/lib/abis/casino";
+import { BetLookup } from "@/components/casino/BetLookup";
 import { ADDR, explorerAddr, litvm } from "@/lib/chain";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toaster";
@@ -71,6 +72,8 @@ function AdminCasinoPage() {
           <VrfCard disabled={!isOwner} current={vrf.data} onDone={refresh} />
           <EmergencyCard disabled={!isOwner} paused={paused.data ?? false} onDone={refresh} />
           <OwnershipCard disabled={!isOwner} current={owner.data} onDone={refresh} />
+          <MockVrfCard />
+          <Panel title="Bet lookup" note="Read any bet's details on-chain by its ID."><BetLookup /></Panel>
         </div>
       </div>
     </main>
@@ -140,4 +143,32 @@ function EmergencyCard({ disabled, paused, onDone }: { disabled: boolean; paused
 function OwnershipCard({ disabled, current, onDone }: { disabled: boolean; current?: string; onDone: () => void }) {
   const [value, setValue] = useState(""); const tx = useCasinoTx("Ownership transfer", onDone);
   return <Panel title="Transfer ownership" note={`Current owner ${short(current)} · irreversible`}><Field value={value} onChange={(e) => setValue(e.target.value)} placeholder="New owner address" /><Button variant="destructive" disabled={disabled || tx.busy || !isAddress(value)} onClick={() => tx.run({ ...contract, functionName: "transferOwnership", args: [value as `0x${string}`] })}><WalletCards /> Transfer ownership</Button></Panel>;
+}
+
+const vrfContract = { address: ADDR.mockVrf as `0x${string}`, abi: mockVrfAbi } as const;
+function MockVrfCard() {
+  const { address } = useAccount();
+  const vOwner = useReadContract({ ...vrfContract, functionName: "owner" });
+  const linked = useReadContract({ ...vrfContract, functionName: "casino", query: { refetchInterval: 15_000 } });
+  const counter = useReadContract({ ...vrfContract, functionName: "requestIdCounter", query: { refetchInterval: 15_000 } });
+  const refresh = () => { vOwner.refetch(); linked.refetch(); counter.refetch(); };
+  const link = useCasinoTx("Link randomness to casino", refresh);
+  const xfer = useCasinoTx("Randomness ownership transfer", refresh);
+  const [newOwner, setNewOwner] = useState("");
+  const isVrfOwner = !!address && !!vOwner.data && address.toLowerCase() === (vOwner.data as string).toLowerCase();
+  const ok = !!linked.data && (linked.data as string).toLowerCase() === ADDR.casino.toLowerCase();
+  return (
+    <Panel title="Randomness engine (MockVRF)" note={`Owner ${short(vOwner.data as string)} · ${counter.data?.toString() ?? "—"} requests served`}>
+      <div className={`rounded-lg border px-3 py-2 text-sm ${ok ? "border-accent/40 text-accent" : "border-destructive/50 bg-destructive/10 text-destructive"}`}>
+        {linked.data === undefined ? "Checking link…" : ok ? "Linked to the casino — bets can be settled." : `Not linked (points to ${short(linked.data as string)}). Every bet will be rejected until you link it.`}
+      </div>
+      <Button disabled={!isVrfOwner || link.busy || ok} onClick={() => link.run({ ...vrfContract, functionName: "setCasino", args: [ADDR.casino as `0x${string}`] })}>
+        {link.busy ? "Confirming…" : ok ? "Already linked" : "Link to casino"}
+      </Button>
+      <div className="flex gap-2">
+        <Field value={newOwner} onChange={(e) => setNewOwner(e.target.value)} placeholder="New VRF owner address" />
+        <Button variant="destructive" disabled={!isVrfOwner || xfer.busy || !isAddress(newOwner)} onClick={() => xfer.run({ ...vrfContract, functionName: "transferOwnership", args: [newOwner as `0x${string}`] })}>Transfer</Button>
+      </div>
+    </Panel>
+  );
 }
