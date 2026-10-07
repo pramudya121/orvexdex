@@ -820,6 +820,7 @@ function DomainsPage() {
         <ContractChip label="Resolver" addr={ADDR.domainResolver} />
         <ContractChip label="Registry" addr={ADDR.domainRegistry} />
       </div>
+      </div>
     </div>
   );
 }
