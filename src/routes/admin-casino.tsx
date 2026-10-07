@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { formatEther, isAddress, parseEther } from "viem";
 import { useAccount, useChainId, useReadContract, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { ArrowLeft, CircleDollarSign, ExternalLink, Pause, Play, Settings2, ShieldCheck, WalletCards } from "lucide-react";
-import { casinoAbi } from "@/lib/abis/casino";
+import { casinoAbi, mockVrfAbi } from "@/lib/abis/casino";
+import { BetLookup } from "@/components/casino/BetLookup";
 import { ADDR, explorerAddr, litvm } from "@/lib/chain";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toaster";
@@ -71,6 +72,8 @@ function AdminCasinoPage() {
           <VrfCard disabled={!isOwner} current={vrf.data} onDone={refresh} />
           <EmergencyCard disabled={!isOwner} paused={paused.data ?? false} onDone={refresh} />
           <OwnershipCard disabled={!isOwner} current={owner.data} onDone={refresh} />
+          <MockVrfCard />
+          <Panel title="Bet lookup" note="Read any bet's details on-chain by its ID."><BetLookup /></Panel>
         </div>
       </div>
     </main>
