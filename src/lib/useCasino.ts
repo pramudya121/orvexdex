@@ -86,7 +86,8 @@ export function useCasino(opts: { onSettled?: (r: CasinoResult) => void; onError
         return h;
       } catch (e: any) {
         setPhase("idle");
-        const msg = /reject|denied/i.test(e?.message ?? "") ? "You rejected the transaction." : e?.shortMessage || e?.message || "Bet failed";
+        const raw = String(e?.shortMessage || e?.message || "");
+        const msg = /reject|denied/i.test(raw) ? "You rejected the transaction." : /Invalid bet/.test(raw) ? "The randomness engine settles bets before they are saved, so the contract rejects every bet. The house must deploy the fixed randomness contract." : /Only casino can request/.test(raw) ? "The randomness engine is not linked to the casino yet." : raw || "Bet failed";
         cbs.current.onError?.(msg);
       }
     },

@@ -5,6 +5,7 @@ import { useAccount, useChainId, useReadContract, useSwitchChain, useWaitForTran
 import { ArrowLeft, CircleDollarSign, ExternalLink, Pause, Play, Settings2, ShieldCheck, WalletCards } from "lucide-react";
 import { casinoAbi, mockVrfAbi } from "@/lib/abis/casino";
 import { BetLookup } from "@/components/casino/BetLookup";
+import { ContractEvents } from "@/components/casino/ContractEvents";
 import { ADDR, explorerAddr, litvm } from "@/lib/chain";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toaster";
@@ -74,6 +75,7 @@ function AdminCasinoPage() {
           <OwnershipCard disabled={!isOwner} current={owner.data} onDone={refresh} />
           <MockVrfCard />
           <Panel title="Bet lookup" note="Read any bet's details on-chain by its ID."><BetLookup /></Panel>
+          <div className="lg:col-span-2"><Panel title="On-chain activity log" note="Every casino and randomness event: bets, payouts, limits, edge, liquidity, pause, ownership."><ContractEvents /></Panel></div>
         </div>
       </div>
     </main>
