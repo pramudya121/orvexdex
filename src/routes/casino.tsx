@@ -131,7 +131,7 @@ function CasinoPage() {
   const isOwner = !!address && !!owner.data && (owner.data as string).toLowerCase() === address.toLowerCase();
   const { writeContractAsync } = useWriteContract();
 
-  const { phase, hash, result, feed, placeBet, reset, busy } = useCasino({
+  const { phase, hash, result, feed, placeBet, reset, busy, settle, canSettle, settling } = useCasino({
     onSettled: (r) => {
       const { game: g, choice: c } = gameRef.current;
       setOutcome(outcomeFor(g.id, c, r));
@@ -307,6 +307,11 @@ function CasinoPage() {
                   <p className="text-sm text-muted-foreground">{game.tagline}</p>
                 </div>
                 <PhaseBadge phase={phase} hash={hash} />
+                {phase === "vrf" && canSettle && (
+                  <Button size="sm" onClick={() => void settle()} disabled={settling} className="bg-casino-cta glow-emerald font-bold">
+                    {settling ? "Revealing…" : "🎲 Reveal result"}
+                  </Button>
+                )}
               </header>
 
               <GameVisual game={game.id} choice={choice} busy={busy} outcome={phase === "settled" ? outcome : null} won={result?.won} settleKey={result?.requestId.toString()} />

@@ -2,6 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount, usePublicClient, useWatchContractEvent, useWriteContract } from "wagmi";
 import { ADDR } from "@/lib/chain";
 import { casinoAbi } from "@/lib/abis/casino";
+import { decodeEventLog, parseAbi } from "viem";
+
+/** `fulfill` exists only on the fixed (two-step) randomness contract. */
+const fulfillAbi = parseAbi(["function fulfill(uint256 requestId)", "function fulfilled(uint256) view returns (bool)"]);
 
 export type CasinoFn = "playCoinFlip" | "playDice" | "playRoulette" | "playRPS" | "playHighLow";
 /** idle → approve (wallet) → hashing (tx mining) → vrf (waiting randomness) → settled */
@@ -20,6 +24,9 @@ export function useCasino(opts: { onSettled?: (r: CasinoResult) => void; onError
   const [hash, setHash] = useState<`0x${string}`>();
   const [result, setResult] = useState<CasinoResult | null>(null);
   const [feed, setFeed] = useState<FeedItem[]>([]);
+  const [pendingId, setPendingId] = useState<bigint>();
+  const [canSettle, setCanSettle] = useState(false);
+  const [settling, setSettling] = useState(false);
   const amounts = useRef(new Map<string, bigint>());
   const cbs = useRef(opts);
   cbs.current = opts;
@@ -54,6 +61,8 @@ export function useCasino(opts: { onSettled?: (r: CasinoResult) => void; onError
           const r = { won: !!a.won, payout: a.payout ?? 0n, randomResult: a.randomResult ?? 0n, requestId: a.requestId ?? 0n };
           setResult(r);
           setPhase("settled");
+          setPendingId(undefined);
+          setCanSettle(false);
           cbs.current.onSettled?.(r);
         }
       }
@@ -79,6 +88,19 @@ export function useCasino(opts: { onSettled?: (r: CasinoResult) => void; onError
         const rc = await publicClient.waitForTransactionReceipt({ hash: h });
         if (rc.status !== "success") throw new Error("Transaction reverted.");
         setPhase((p) => (p === "settled" ? p : "vrf"));
+        // Two-step randomness: detect the request id and whether the coordinator supports `fulfill`.
+        for (const log of rc.logs) {
+          try {
+            const ev = decodeEventLog({ abi: casinoAbi, data: log.data, topics: log.topics });
+            if (ev.eventName === "BetPlaced") {
+              const rid = (ev.args as { requestId: bigint }).requestId;
+              setPendingId(rid);
+              const vrf = (await publicClient.readContract({ ...casino, functionName: "vrfCoordinator" })) as `0x${string}`;
+              const done = await publicClient.readContract({ address: vrf, abi: fulfillAbi, functionName: "fulfilled", args: [rid] }).catch(() => null);
+              setCanSettle(done === false);
+            }
+          } catch { /* not a casino event */ }
+        }
         timer.current = setTimeout(() => {
           setPhase((p) => (p === "vrf" ? "idle" : p));
           cbs.current.onError?.("Randomness is taking longer than usual — your result will appear in the feed once settled.");
@@ -94,10 +116,26 @@ export function useCasino(opts: { onSettled?: (r: CasinoResult) => void; onError
     [address, publicClient, writeContractAsync],
   );
 
+  /** Second transaction for the fixed randomness contract: reveals the result. */
+  const settle = useCallback(async () => {
+    if (pendingId === undefined || !publicClient) return;
+    setSettling(true);
+    try {
+      const vrf = (await publicClient.readContract({ ...casino, functionName: "vrfCoordinator" })) as `0x${string}`;
+      const h = await writeContractAsync({ address: vrf, abi: fulfillAbi, functionName: "fulfill", args: [pendingId] });
+      await publicClient.waitForTransactionReceipt({ hash: h });
+    } catch (e: any) {
+      const raw = String(e?.shortMessage || e?.message || "");
+      cbs.current.onError?.(/reject|denied/i.test(raw) ? "You rejected the transaction." : raw || "Could not reveal the result");
+    } finally {
+      setSettling(false);
+    }
+  }, [pendingId, publicClient, writeContractAsync]);
+
   const reset = useCallback(() => {
     setPhase("idle");
     setResult(null);
   }, []);
 
-  return { phase, hash, result, feed, placeBet, reset, busy: phase === "approve" || phase === "hashing" || phase === "vrf" };
+  return { phase, hash, result, feed, placeBet, reset, settle, canSettle, settling, busy: phase === "approve" || phase === "hashing" || phase === "vrf" };
 }
