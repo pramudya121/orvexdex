@@ -73,7 +73,7 @@ function AdminCasinoPage() {
           <VrfCard disabled={!isOwner} current={vrf.data} onDone={refresh} />
           <EmergencyCard disabled={!isOwner} paused={paused.data ?? false} onDone={refresh} />
           <OwnershipCard disabled={!isOwner} current={owner.data} onDone={refresh} />
-          <MockVrfCard />
+          <MockVrfCard vrfAddress={(vrf.data as `0x${string}` | undefined) ?? (ADDR.mockVrf as `0x${string}`)} />
           <Panel title="Bet lookup" note="Read any bet's details on-chain by its ID."><BetLookup /></Panel>
           <div className="lg:col-span-2"><Panel title="On-chain activity log" note="Every casino and randomness event: bets, payouts, limits, edge, liquidity, pause, ownership."><ContractEvents /></Panel></div>
         </div>
@@ -147,8 +147,8 @@ function OwnershipCard({ disabled, current, onDone }: { disabled: boolean; curre
   return <Panel title="Transfer ownership" note={`Current owner ${short(current)} · irreversible`}><Field value={value} onChange={(e) => setValue(e.target.value)} placeholder="New owner address" /><Button variant="destructive" disabled={disabled || tx.busy || !isAddress(value)} onClick={() => tx.run({ ...contract, functionName: "transferOwnership", args: [value as `0x${string}`] })}><WalletCards /> Transfer ownership</Button></Panel>;
 }
 
-const vrfContract = { address: ADDR.mockVrf as `0x${string}`, abi: mockVrfAbi } as const;
-function MockVrfCard() {
+function MockVrfCard({ vrfAddress }: { vrfAddress: `0x${string}` }) {
+  const vrfContract = { address: vrfAddress, abi: mockVrfAbi } as const;
   const { address } = useAccount();
   const vOwner = useReadContract({ ...vrfContract, functionName: "owner" });
   const linked = useReadContract({ ...vrfContract, functionName: "casino", query: { refetchInterval: 15_000 } });
@@ -160,7 +160,7 @@ function MockVrfCard() {
   const isVrfOwner = !!address && !!vOwner.data && address.toLowerCase() === (vOwner.data as string).toLowerCase();
   const ok = !!linked.data && (linked.data as string).toLowerCase() === ADDR.casino.toLowerCase();
   return (
-    <Panel title="Randomness engine (MockVRF)" note={`Owner ${short(vOwner.data as string)} · ${counter.data?.toString() ?? "—"} requests served`}>
+    <Panel title="Randomness engine (MockVRF)" note={`${short(vrfAddress)} · Owner ${short(vOwner.data as string)} · ${counter.data?.toString() ?? "—"} requests served`}>
       <div className={`rounded-lg border px-3 py-2 text-sm ${ok ? "border-accent/40 text-accent" : "border-destructive/50 bg-destructive/10 text-destructive"}`}>
         {linked.data === undefined ? "Checking link…" : ok ? "Linked to the casino — bets can be settled." : `Not linked (points to ${short(linked.data as string)}). Every bet will be rejected until you link it.`}
       </div>
