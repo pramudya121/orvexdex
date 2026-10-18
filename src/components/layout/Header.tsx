@@ -27,7 +27,7 @@ export function Header() {
   const { address } = useAccount();
   const owner = useReadContract({ address: ADDR.faucet, abi: faucetAbi, functionName: "owner" });
   const isOwner = !!address && !!owner.data && (owner.data as string).toLowerCase() === address.toLowerCase();
-  const nav = isOwner ? [...NAV, { to: "/admin", label: "Admin" }] : NAV;
+  const nav = isOwner ? [...NAV, { to: "/admin", label: "Admin" }, { to: "/docs", label: "Docs" }] : NAV;
   return (
     <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/60 border-b border-border">
       <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-luxe opacity-50" />
