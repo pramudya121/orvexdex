@@ -12,6 +12,7 @@ import { domainResolverAbi } from "@/lib/abis/domainResolver";
 import { factoryAbi } from "@/lib/abis/factory";
 import { farmAbi } from "@/lib/abis/farm";
 import { faucetAbi } from "@/lib/abis/faucet";
+import { multicallAbi } from "@/lib/abis/multicall";
 import { multiTokenVaultAbi } from "@/lib/abis/multiTokenVault";
 import { pairAbi } from "@/lib/abis/pair";
 import { routerAbi } from "@/lib/abis/router";
@@ -25,6 +26,7 @@ const DOCS: Doc[] = [
   { group: "DEX", name: "Pair (template)", abi: pairAbi },
   { group: "DEX", name: "wzkLTC", address: ADDR.wzkLTC, abi: wzkltcAbi },
   { group: "DEX", name: "AggregatorRouter (not deployed)", abi: aggregatorRouterAbi },
+  { group: "Infrastructure", name: "Multicall", address: ADDR.multicall, abi: multicallAbi },
   { group: "Tokens", name: "TRX", address: ADDR.TRX, abi: erc20Abi },
   { group: "Tokens", name: "XRP", address: ADDR.XRP, abi: erc20Abi },
   { group: "Tokens", name: "ADA", address: ADDR.ADA, abi: erc20Abi },
