@@ -219,6 +219,16 @@ function Landing() {
                 <Link to="/pools" className="px-6 py-3 rounded-xl glass border-gold font-semibold hover:bg-surface-2 transition press">
                   Explore Pools
                 </Link>
+                <a
+                  href="https://orvexpad.lovable.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Open ORVEX Launchpad"
+                  className="group relative overflow-hidden px-6 py-3 rounded-xl bg-gradient-brand text-primary-foreground font-bold shadow-neon hover:-translate-y-0.5 transition-all press"
+                >
+                  <span className="relative z-10">LAUNCHPAD →</span>
+                  <span aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-[1100ms] ease-out bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                </a>
                 <Link to="/faucet" className="px-6 py-3 rounded-xl text-sm text-muted-foreground hover:text-foreground transition">
                   Test tokens →
                 </Link>
