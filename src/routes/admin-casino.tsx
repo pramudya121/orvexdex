@@ -46,7 +46,7 @@ function AdminCasinoPage() {
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-5 border-b border-border/70 pb-7">
           <div className="space-y-3">
-            <Link to="/casino" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /> Back to casino floor</Link>
+            <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /> Back to home</Link>
             <div><p className="casino-kicker">The house office</p><h1 className="text-3xl font-black sm:text-5xl">Casino Control Room</h1></div>
             <p className="max-w-2xl text-sm text-muted-foreground">Manage bankroll, limits, house edge, VRF coordinator, emergency pause, and ownership directly on-chain.</p>
           </div>
