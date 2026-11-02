@@ -27,6 +27,7 @@ import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SwapRouteImport } from './routes/swap'
 import { Route as DNameRouteImport } from './routes/d.$name'
+import { Route as AuthXCallbackRouteImport } from './routes/auth.x.callback'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -118,6 +119,11 @@ const DNameRoute = DNameRouteImport.update({
   path: '/d/$name',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthXCallbackRoute = AuthXCallbackRouteImport.update({
+  id: '/auth/x/callback',
+  path: '/auth/x/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/swap': typeof SwapRoute
   '/d/$name': typeof DNameRoute
+  '/auth/x/callback': typeof AuthXCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -158,6 +165,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/swap': typeof SwapRoute
   '/d/$name': typeof DNameRoute
+  '/auth/x/callback': typeof AuthXCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -179,6 +187,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/swap': typeof SwapRoute
   '/d/$name': typeof DNameRoute
+  '/auth/x/callback': typeof AuthXCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -201,6 +210,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/swap'
     | '/d/$name'
+    | '/auth/x/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -221,6 +231,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/swap'
     | '/d/$name'
+    | '/auth/x/callback'
   id:
     | '__root__'
     | '/'
@@ -241,6 +252,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/swap'
     | '/d/$name'
+    | '/auth/x/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -262,6 +274,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SwapRoute: typeof SwapRoute
   DNameRoute: typeof DNameRoute
+  AuthXCallbackRoute: typeof AuthXCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -392,6 +405,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DNameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/x/callback': {
+      id: '/auth/x/callback'
+      path: '/auth/x/callback'
+      fullPath: '/auth/x/callback'
+      preLoaderRoute: typeof AuthXCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -414,6 +434,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SwapRoute: SwapRoute,
   DNameRoute: DNameRoute,
+  AuthXCallbackRoute: AuthXCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
