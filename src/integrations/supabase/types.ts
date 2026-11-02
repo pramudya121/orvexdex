@@ -14,7 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      x_verifications: {
+        Row: {
+          followed: boolean
+          token_expires_at: string | null
+          updated_at: string
+          verified_at: string | null
+          wallet_address: string
+          x_access_token: string | null
+          x_name: string | null
+          x_refresh_token: string | null
+          x_user_id: string | null
+          x_username: string | null
+        }
+        Insert: {
+          followed?: boolean
+          token_expires_at?: string | null
+          updated_at?: string
+          verified_at?: string | null
+          wallet_address: string
+          x_access_token?: string | null
+          x_name?: string | null
+          x_refresh_token?: string | null
+          x_user_id?: string | null
+          x_username?: string | null
+        }
+        Update: {
+          followed?: boolean
+          token_expires_at?: string | null
+          updated_at?: string
+          verified_at?: string | null
+          wallet_address?: string
+          x_access_token?: string | null
+          x_name?: string | null
+          x_refresh_token?: string | null
+          x_user_id?: string | null
+          x_username?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
