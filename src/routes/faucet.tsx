@@ -18,6 +18,8 @@ import { erc20Abi } from "@/lib/abis/wzkltc";
 import { Tilt, HeroParallax } from "@/components/landing/HeroFx";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Droplets, LoaderCircle, ShieldCheck } from "lucide-react";
+import { useXVerification, startXConnect } from "@/lib/xAuth.client";
+import { recheckXFollow, ORVEX_X_URL } from "@/lib/xAuth.functions";
 import type { Token } from "@/lib/tokens";
 
 type FaucetReadCall = {
@@ -127,6 +129,8 @@ function FaucetPage() {
   const [hash, setHash] = useState<`0x${string}` | undefined>();
   const [claimLabel, setClaimLabel] = useState<string>("");
   const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
+  const [recheckBusy, setRecheckBusy] = useState(false);
+  const x = useXVerification(address);
 
   // 1s ticker so cooldown countdowns update live (client-only)
   const [nowSec, setNowSec] = useState<number | null>(null);
@@ -161,6 +165,14 @@ function FaucetPage() {
   }
 
   const claimAll = async () => {
+    if (!x.followed) {
+      toast.push({
+        title: "Connect X & follow @ORVEX_LitVM first",
+        description: "X verification unlocks faucet claims.",
+        type: "error",
+      });
+      return;
+    }
     if (!captchaOk) {
       toast.push({ title: "Please verify the captcha first", type: "error" });
       return;
@@ -428,9 +440,102 @@ function FaucetPage() {
             </div>
           </div>
 
+          {/* X verification quest */}
+          <div className="rounded-2xl bg-surface-2 border border-border p-4 mb-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                X verification
+              </div>
+              {x.loading ? (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface border border-border text-muted-foreground">
+                  Checking…
+                </span>
+              ) : x.followed ? (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30">
+                  ✓ Verified
+                </span>
+              ) : null}
+            </div>
+            {x.username && (
+              <div className="text-sm mb-3">
+                Connected as{" "}
+                <a
+                  href={`https://x.com/${x.username}`}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="font-semibold text-primary hover:underline"
+                >
+                  @{x.username}
+                </a>
+              </div>
+            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {!x.connected ? (
+                <Button
+                  size="sm"
+                  className="font-bold"
+                  disabled={x.loading || !address}
+                  onClick={async () => {
+                    if (!address) return;
+                    const r = await startXConnect(address);
+                    if (!r.ok && r.error) toast.push({ title: r.error, type: "error" });
+                  }}
+                >
+                  𝕏 Connect X
+                </Button>
+              ) : (
+                <>
+                  <a
+                    href={ORVEX_X_URL}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-brand text-primary-foreground text-sm font-bold hover:-translate-y-0.5 transition-transform"
+                  >
+                    𝕏 Follow @ORVEX_LitVM
+                  </a>
+                  <button
+                    onClick={async () => {
+                      if (!address) return;
+                      setRecheckBusy(true);
+                      try {
+                        const res = await recheckXFollow({ data: { wallet: address } });
+                        if (!res.ok) {
+                          toast.push({ title: res.error ?? "Check failed", type: "error" });
+                        } else {
+                          toast.push({
+                            title: res.followed ? "Follow confirmed ✓" : "Not following yet",
+                            description: res.followed
+                              ? "Faucet claims are unlocked."
+                              : "Follow @ORVEX_LitVM on X, then check again.",
+                            type: res.followed ? "success" : "info",
+                          });
+                        }
+                        await x.refresh();
+                      } finally {
+                        setRecheckBusy(false);
+                      }
+                    }}
+                    disabled={recheckBusy}
+                    className="px-4 py-2 rounded-xl bg-surface border border-border hover:border-primary/60 text-sm font-semibold transition disabled:opacity-40"
+                  >
+                    {recheckBusy ? "Checking…" : "Check follow"}
+                  </button>
+                </>
+              )}
+            </div>
+            {x.error && <div className="text-xs text-destructive mt-2">{x.error}</div>}
+            {!x.followed && !x.loading && (
+              <div className="text-[10px] text-muted-foreground mt-2">
+                Claims stay locked until your X account is connected and follows @ORVEX_LitVM.
+              </div>
+            )}
+          </div>
+
           <Button
             onClick={claimAll}
-            disabled={!address || isPending || !!batch || !captchaOk || claimableCount === 0}
+            disabled={
+              !address || isPending || !!batch || !captchaOk || !x.followed || claimableCount === 0
+            }
             className="w-full h-14 rounded-xl bg-gradient-luxe text-primary-foreground font-bold text-base shadow-neon hover:shadow-gold hover:-translate-y-0.5 transition-all disabled:translate-y-0"
           >
             {!address
