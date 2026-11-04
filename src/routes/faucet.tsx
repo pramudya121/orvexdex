@@ -18,7 +18,7 @@ import { erc20Abi } from "@/lib/abis/wzkltc";
 import { Tilt, HeroParallax } from "@/components/landing/HeroFx";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Droplets, LoaderCircle, ShieldCheck } from "lucide-react";
-import { useXVerification, startXConnect } from "@/lib/xAuth.client";
+import { useXVerification, startXConnect } from "@/lib/xAuthFlow";
 import { recheckXFollow, ORVEX_X_URL } from "@/lib/xAuth.functions";
 import type { Token } from "@/lib/tokens";
 

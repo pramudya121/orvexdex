@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { exchangeXCode } from "@/lib/xAuth.functions";
-import { readPendingOAuth, readPendingWallet } from "@/lib/xAuth.client";
+import { readPendingOAuth, readPendingWallet } from "@/lib/xAuthFlow";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, LoaderCircle, TriangleAlert } from "lucide-react";
 

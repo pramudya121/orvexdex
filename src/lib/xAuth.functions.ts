@@ -73,7 +73,7 @@ export const getXClientId = createServerFn({ method: "GET" }).handler(async () =
 });
 
 export const exchangeXCode = createServerFn({ method: "POST" })
-  .inputValidator((input) =>
+  .validator((input) =>
     z
       .object({
         code: z.string().min(1).max(512),
@@ -159,7 +159,7 @@ export const exchangeXCode = createServerFn({ method: "POST" })
   });
 
 export const recheckXFollow = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ wallet: walletSchema }).parse(input))
+  .validator((input) => z.object({ wallet: walletSchema }).parse(input))
   .handler(async ({ data }) => {
     const { row, supabaseAdmin } = await getVerifiedRow(data.wallet);
     if (!row?.x_access_token)
@@ -240,7 +240,7 @@ export const recheckXFollow = createServerFn({ method: "POST" })
 
 /** Verification status for a wallet — never returns tokens. */
 export const getXVerification = createServerFn({ method: "GET" })
-  .inputValidator((input) => z.object({ wallet: walletSchema }).parse(input))
+  .validator((input) => z.object({ wallet: walletSchema }).parse(input))
   .handler(async ({ data }) => {
     const { row } = await getVerifiedRow(data.wallet);
     if (!row) return { connected: false, username: null, name: null, followed: false, verifiedAt: null };
