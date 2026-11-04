@@ -30,7 +30,7 @@ export type AnalyzerResult = {
 };
 
 export const analyzePortfolio = createServerFn({ method: "POST" })
-  .inputValidator((data) => InputSchema.parse(data))
+  .validator((data) => InputSchema.parse(data))
   .handler(async ({ data }): Promise<AnalyzerResult> => {
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
