@@ -14,6 +14,189 @@ export type Database = {
   }
   public: {
     Tables: {
+      indexer_state: {
+        Row: {
+          id: string
+          last_block: number
+          lease_until: string | null
+          updated_at: string
+          zklbtc_usd: number | null
+        }
+        Insert: {
+          id?: string
+          last_block?: number
+          lease_until?: string | null
+          updated_at?: string
+          zklbtc_usd?: number | null
+        }
+        Update: {
+          id?: string
+          last_block?: number
+          lease_until?: string | null
+          updated_at?: string
+          zklbtc_usd?: number | null
+        }
+        Relationships: []
+      }
+      pools: {
+        Row: {
+          address: string
+          created_at: string
+          factory: string | null
+          reserve0: number
+          reserve1: number
+          token0: string
+          token1: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          factory?: string | null
+          reserve0?: number
+          reserve1?: number
+          token0: string
+          token1: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          factory?: string | null
+          reserve0?: number
+          reserve1?: number
+          token0?: string
+          token1?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      swaps_history: {
+        Row: {
+          amount0: number
+          amount1: number
+          block_number: number
+          block_time: string
+          id: number
+          log_index: number
+          pool: string
+          recipient: string | null
+          sender: string | null
+          tx_hash: string
+        }
+        Insert: {
+          amount0: number
+          amount1: number
+          block_number: number
+          block_time: string
+          id?: never
+          log_index: number
+          pool: string
+          recipient?: string | null
+          sender?: string | null
+          tx_hash: string
+        }
+        Update: {
+          amount0?: number
+          amount1?: number
+          block_number?: number
+          block_time?: string
+          id?: never
+          log_index?: number
+          pool?: string
+          recipient?: string | null
+          sender?: string | null
+          tx_hash?: string
+        }
+        Relationships: []
+      }
+      token_stats: {
+        Row: {
+          canonical_pool: string | null
+          high_24h: number | null
+          liquidity: number | null
+          low_24h: number | null
+          open_24h: number | null
+          pool_count: number | null
+          price: number | null
+          price_change_24h: number | null
+          sparkline: Json | null
+          token: string
+          trades_24h: number | null
+          updated_at: string
+          volume_24h: number | null
+          zklbtc_usd: number | null
+        }
+        Insert: {
+          canonical_pool?: string | null
+          high_24h?: number | null
+          liquidity?: number | null
+          low_24h?: number | null
+          open_24h?: number | null
+          pool_count?: number | null
+          price?: number | null
+          price_change_24h?: number | null
+          sparkline?: Json | null
+          token: string
+          trades_24h?: number | null
+          updated_at?: string
+          volume_24h?: number | null
+          zklbtc_usd?: number | null
+        }
+        Update: {
+          canonical_pool?: string | null
+          high_24h?: number | null
+          liquidity?: number | null
+          low_24h?: number | null
+          open_24h?: number | null
+          pool_count?: number | null
+          price?: number | null
+          price_change_24h?: number | null
+          sparkline?: Json | null
+          token?: string
+          trades_24h?: number | null
+          updated_at?: string
+          volume_24h?: number | null
+          zklbtc_usd?: number | null
+        }
+        Relationships: []
+      }
+      tokens: {
+        Row: {
+          address: string
+          category: string
+          created_at: string
+          decimals: number
+          first_seen_block: number | null
+          logo_url: string | null
+          name: string
+          symbol: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          category?: string
+          created_at?: string
+          decimals?: number
+          first_seen_block?: number | null
+          logo_url?: string | null
+          name?: string
+          symbol?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          category?: string
+          created_at?: string
+          decimals?: number
+          first_seen_block?: number | null
+          logo_url?: string | null
+          name?: string
+          symbol?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       x_verifications: {
         Row: {
           followed: boolean
@@ -58,7 +241,34 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      refresh_token_stats: {
+        Args: { p_zklbtc_usd?: number }
+        Returns: undefined
+      }
+      token_candles: {
+        Args: { p_interval: string; p_token: string }
+        Returns: {
+          candle_time: string
+          close: number
+          high: number
+          low: number
+          open: number
+          trades: number
+          volume: number
+        }[]
+      }
+      token_trades: {
+        Args: { p_limit?: number; p_token: string }
+        Returns: {
+          amount: number
+          maker: string
+          price: number
+          side: string
+          total: number
+          trade_time: string
+          tx_hash: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
