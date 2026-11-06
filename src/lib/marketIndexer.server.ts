@@ -187,7 +187,7 @@ export async function runIndexerOnce(): Promise<IndexerResult> {
 
       for (const log of logs) {
         try {
-          const decoded = decodeEventLog({ abi: swapEventAbi, data: log.data, topics: log.topics });
+          const decoded = decodeEventLog({ abi: swapEventAbi, data: log.data, topics: log.topics as [`0x${string}`, ...`0x${string}`[]] });
           const pool = log.address.toLowerCase();
           touchedPools.add(pool);
           swapRows.push({
@@ -295,7 +295,7 @@ export async function runIndexerOnce(): Promise<IndexerResult> {
     ) => {
       for (let i = 0; i < rows.length; i += size) {
         const slice = rows.slice(i, i + size);
-        const q = supabaseAdmin.from(table).upsert(slice, opts);
+        const q = (supabaseAdmin as any).from(table).upsert(slice, opts);
         const { error } = await q;
         if (error) console.error(`[indexer] ${table} write error`, error.message);
       }
@@ -318,7 +318,7 @@ export async function runIndexerOnce(): Promise<IndexerResult> {
 
     let swapsIndexed = 0;
     for (let i = 0; i < swapRows.length; i += 400) {
-      const slice = swapRows.slice(i, i + 400).map((r) => ({ ...r, amount0: r.amount0.toString(), amount1: r.amount1.toString() }));
+      const slice = swapRows.slice(i, i + 400).map((r) => ({ ...r, amount0: String(r.amount0), amount1: String(r.amount1) })) as any;
       const { error } = await supabaseAdmin
         .from("swaps_history")
         .upsert(slice, { onConflict: "tx_hash,log_index", ignoreDuplicates: true });
@@ -338,7 +338,7 @@ export async function runIndexerOnce(): Promise<IndexerResult> {
     await supabaseAdmin
       .from("indexer_state")
       .update({
-        last_block: scannedUpTo.toString(),
+        last_block: Number(scannedUpTo),
         lease_until: null,
         updated_at: new Date().toISOString(),
         ...(effectiveUsd !== null ? { zklbtc_usd: effectiveUsd } : {}),
@@ -346,7 +346,7 @@ export async function runIndexerOnce(): Promise<IndexerResult> {
       .eq("id", "default");
 
     const { error: rpcErr } = await supabaseAdmin.rpc("refresh_token_stats", {
-      p_zklbtc_usd: effectiveUsd,
+      p_zklbtc_usd: effectiveUsd ?? undefined,
     });
     if (rpcErr) console.error("[indexer] refresh_token_stats error", rpcErr.message);
 
