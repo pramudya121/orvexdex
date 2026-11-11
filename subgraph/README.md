@@ -1,7 +1,7 @@
 # ORVEX Subgraph (LitVM LiteForge)
 
 Indexes ORVEX Factory + Pair contracts on **LitVM LiteForge Testnet** (chainId `4441`,
-RPC `https://liteforge.rpc.caldera.xyz/http`) and exposes per-pool **TVL** and
+RPC `https://rpc.testnet.liteforge.zeeve.net`) and exposes per-pool **TVL** and
 **24h volume** via GraphQL.
 
 ## Why self-hosted?
@@ -27,7 +27,7 @@ services:
       postgres_pass: graph
       postgres_db: graph
       ipfs: "ipfs:5001"
-      ethereum: "litvm-liteforge:https://liteforge.rpc.caldera.xyz/http"
+      ethereum: "litvm-liteforge:https://rpc.testnet.liteforge.zeeve.net"
       GRAPH_LOG: info
   ipfs:
     image: ipfs/kubo:latest

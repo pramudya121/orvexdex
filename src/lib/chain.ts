@@ -5,11 +5,11 @@ export const litvm = {
   name: "LitVM LiteForge",
   nativeCurrency: { name: "zkLTC", symbol: "zkLTC", decimals: 18 },
   rpcUrls: {
-    default: { http: ["https://liteforge.rpc.caldera.xyz/http"] },
-    public: { http: ["https://liteforge.rpc.caldera.xyz/http"] },
+    default: { http: ["https://rpc.testnet.liteforge.zeeve.net"] },
+    public: { http: ["https://rpc.testnet.liteforge.zeeve.net"] },
   },
   blockExplorers: {
-    default: { name: "LitVM Explorer", url: "https://liteforge.explorer.caldera.xyz" },
+    default: { name: "LitVM Explorer", url: "https://explorer.testnet.liteforge.zeeve.net" },
   },
   testnet: true,
 } as const satisfies Chain;
