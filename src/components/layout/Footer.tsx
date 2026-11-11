@@ -29,8 +29,8 @@ export function Footer() {
           <ul className="space-y-2 text-sm">
             <li><Link to="/faucet" className="hover:text-foreground transition">Faucet</Link></li>
             <li><Link to="/brand" className="hover:text-foreground transition">Brand & Style Guide</Link></li>
-            <li><a href="https://liteforge.explorer.caldera.xyz" target="_blank" rel="noreferrer" className="hover:text-foreground transition">Explorer ↗</a></li>
-            <li><a href="https://liteforge.rpc.caldera.xyz/http" target="_blank" rel="noreferrer" className="hover:text-foreground transition">RPC ↗</a></li>
+            <li><a href="https://explorer.testnet.liteforge.zeeve.net" target="_blank" rel="noreferrer" className="hover:text-foreground transition">Explorer ↗</a></li>
+            <li><a href="https://rpc.testnet.liteforge.zeeve.net" target="_blank" rel="noreferrer" className="hover:text-foreground transition">RPC ↗</a></li>
             <li><Link to="/admin" className="hover:text-foreground transition">Admin</Link></li>
           </ul>
           <div className="mt-5 flex items-center gap-2">

@@ -19,7 +19,7 @@ getcontext().prec = 40  # presisi tinggi untuk hitung harga
 # ---------------------------------------------------------------------------
 # 1) KONFIGURASI JARINGAN
 # ---------------------------------------------------------------------------
-RPC_URL = "https://liteforge.rpc.caldera.xyz/http"  # ganti sesuai chain kamu
+RPC_URL = "https://rpc.testnet.liteforge.zeeve.net"  # ganti sesuai chain kamu
 
 # ---------------------------------------------------------------------------
 # 2) DAFTAR DEX (Nama -> Alamat Factory)
