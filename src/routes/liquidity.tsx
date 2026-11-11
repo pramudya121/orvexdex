@@ -7,7 +7,7 @@ import { ADDR } from "@/lib/chain";
 import { erc20Abi } from "@/lib/abis/wzkltc";
 import { routerAbi } from "@/lib/abis/router";
 import { pairAbi } from "@/lib/abis/pair";
-import { useAllowance, useGetPair, usePairReserves, useTokenBalance, MAX_UINT256 } from "@/lib/hooks";
+import { useAllowance, useGetPair, usePairReserves, useTokenBalance } from "@/lib/hooks";
 import { deadline, fmt, safeParse, slippageMin } from "@/lib/format";
 import { formatUnits } from "viem";
 import { useToast } from "@/components/ui/toaster";
@@ -305,12 +305,12 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
     }
     try {
       if (needA) {
-        const h = await writeContractAsync({ address: tokenA.address as `0x${string}`, abi: erc20Abi, functionName: "approve", args: [ADDR.router, MAX_UINT256] });
+        const h = await writeContractAsync({ address: tokenA.address as `0x${string}`, abi: erc20Abi, functionName: "approve", args: [ADDR.router, amtAWei] });
         setHash(h); setPendingKind("approveA"); toast.push({ title: `Approving ${tokenA.symbol}…`, hash: h });
         return;
       }
       if (needB) {
-        const h = await writeContractAsync({ address: tokenB.address as `0x${string}`, abi: erc20Abi, functionName: "approve", args: [ADDR.router, MAX_UINT256] });
+        const h = await writeContractAsync({ address: tokenB.address as `0x${string}`, abi: erc20Abi, functionName: "approve", args: [ADDR.router, amtBWei] });
         setHash(h); setPendingKind("approveB"); toast.push({ title: `Approving ${tokenB.symbol}…`, hash: h });
         return;
       }
@@ -539,7 +539,7 @@ function RemoveLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?:
     if (!address || liquidity <= 0n || !pairAddr) return;
     try {
       if (needsApprove) {
-        const h = await writeContractAsync({ address: pairAddr, abi: pairAbi, functionName: "approve", args: [ADDR.router, MAX_UINT256] });
+        const h = await writeContractAsync({ address: pairAddr, abi: pairAbi, functionName: "approve", args: [ADDR.router, liquidity] });
         setHash(h); toast.push({ title: "Approving LP…", hash: h });
         return;
       }

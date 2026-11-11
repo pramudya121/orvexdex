@@ -6,7 +6,7 @@ import { NATIVE, TOKENS, WZKLTC, type Token } from "@/lib/tokens";
 import { ADDR } from "@/lib/chain";
 import { erc20Abi, wzkltcAbi } from "@/lib/abis/wzkltc";
 import { routerAbi } from "@/lib/abis/router";
-import { useAllowance, useBestRoute, useBestRouteExactOut, useGetPair, usePairReserves, useTokenBalance, MAX_UINT256 } from "@/lib/hooks";
+import { useAllowance, useBestRoute, useBestRouteExactOut, useGetPair, usePairReserves, useTokenBalance } from "@/lib/hooks";
 import { deadline, fmt, safeParse, slippageMin, slippageMax } from "@/lib/format";
 import { useToast } from "@/components/ui/toaster";
 import { explorerAddr } from "@/lib/chain";
@@ -138,12 +138,15 @@ function SwapPage() {
 
 
   // Allowance for ERC20 -> router
+  const approvalAmount = tradeMode === "exactOut"
+    ? slippageMax(effInWei, slippageBps)
+    : effInWei;
   const allowance = useAllowance(
     !tokenIn.isNative && mode === "swap" ? (tokenIn.address as `0x${string}`) : undefined,
     address,
     ADDR.router,
   );
-  const needsApproval = mode === "swap" && !tokenIn.isNative && (allowance.data as bigint | undefined ?? 0n) < effInWei;
+  const needsApproval = mode === "swap" && !tokenIn.isNative && (allowance.data as bigint | undefined ?? 0n) < approvalAmount;
 
   const insufficient = balanceIn !== undefined && effInWei > 0n && effInWei > balanceIn;
 
@@ -159,7 +162,7 @@ function SwapPage() {
     if (mode === "unwrap" && amountInWei > 0n)
       return { address: ADDR.wzkLTC, abi: wzkltcAbi, functionName: "withdraw", args: [amountInWei] as unknown[] };
     if (mode === "swap" && needsApproval)
-      return { address: tokenIn.address as `0x${string}`, abi: erc20Abi, functionName: "approve", args: [ADDR.router, MAX_UINT256] as unknown[] };
+      return { address: tokenIn.address as `0x${string}`, abi: erc20Abi, functionName: "approve", args: [ADDR.router, approvalAmount] as unknown[] };
     if (mode === "swap" && path && effInWei > 0n && effOutWei > 0n) {
       const dl = deadline(deadlineMin);
       if (tradeMode === "exactIn") {
@@ -249,7 +252,7 @@ function SwapPage() {
       if (needsApproval) {
         const hash = await writeContractAsync({
           address: tokenIn.address as `0x${string}`, abi: erc20Abi, functionName: "approve",
-          args: [ADDR.router, MAX_UINT256],
+          args: [ADDR.router, approvalAmount],
         });
         setPendingHash(hash);
         toast.push({ title: `Approving ${tokenIn.symbol}…`, hash });
