@@ -3,7 +3,7 @@ import { useConnect, useAccount, useDisconnect, useChainId, useSwitchChain } fro
 import { litvm } from "@/lib/chain";
 import { useEip6963Providers, type Eip6963Detail } from "@/lib/eip6963";
 import { usePrimaryDomain } from "@/lib/primaryDomain";
-import logo from "@/assets/orvex-logo.png";
+import logo from "@/assets/orvex-logo.webp";
 
 
 const ACTIVE_RDNS_KEY = "orvex.activeWalletRdns";

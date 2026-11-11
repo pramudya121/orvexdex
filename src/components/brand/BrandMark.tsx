@@ -1,4 +1,4 @@
-import logo from "@/assets/orvex-logo.png";
+import logo from "@/assets/orvex-logo.webp";
 
 type Size = "sm" | "md" | "lg" | "xl";
 

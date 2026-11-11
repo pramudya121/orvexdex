@@ -6,6 +6,7 @@ import {
   useReadContracts,
   useWriteContract,
   usePublicClient,
+  useSignMessage,
 } from "wagmi";
 import { ADDR } from "@/lib/chain";
 import { faucetAbi } from "@/lib/abis/faucet";
@@ -18,7 +19,7 @@ import { erc20Abi } from "@/lib/abis/wzkltc";
 import { Tilt, HeroParallax } from "@/components/landing/HeroFx";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Droplets, LoaderCircle, ShieldCheck } from "lucide-react";
-import { useXVerification, startXConnect } from "@/lib/xAuthFlow";
+import { createWalletProofMessage, useXVerification, startXConnect } from "@/lib/xAuthFlow";
 import { recheckXFollow, ORVEX_X_URL } from "@/lib/xAuth.functions";
 import type { Token } from "@/lib/tokens";
 
@@ -61,6 +62,7 @@ export const Route = createFileRoute("/faucet")({
 
 function FaucetPage() {
   const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
   const toast = useToast();
   const cooldown = useReadContract({
     address: ADDR.faucet,
@@ -477,8 +479,14 @@ function FaucetPage() {
                   disabled={x.loading || !address}
                   onClick={async () => {
                     if (!address) return;
-                    const r = await startXConnect(address);
-                    if (!r.ok && r.error) toast.push({ title: r.error, type: "error" });
+                    try {
+                      const message = createWalletProofMessage(address, "connect-x");
+                      const signature = await signMessageAsync({ message });
+                      const r = await startXConnect(address, { message, signature });
+                      if (!r.ok && r.error) toast.push({ title: r.error, type: "error" });
+                    } catch {
+                      toast.push({ title: "Wallet signature was cancelled or failed", type: "error" });
+                    }
                   }}
                 >
                   𝕏 Connect X
@@ -498,7 +506,11 @@ function FaucetPage() {
                       if (!address) return;
                       setRecheckBusy(true);
                       try {
-                        const res = await recheckXFollow({ data: { wallet: address } });
+                        const proofMessage = createWalletProofMessage(address, "check-x-follow");
+                        const proofSignature = await signMessageAsync({ message: proofMessage });
+                        const res = await recheckXFollow({
+                          data: { wallet: address, proofMessage, proofSignature },
+                        });
                         if (!res.ok) {
                           toast.push({ title: res.error ?? "Check failed", type: "error" });
                         } else {
@@ -511,6 +523,8 @@ function FaucetPage() {
                           });
                         }
                         await x.refresh();
+                      } catch {
+                        toast.push({ title: "Could not verify your X follow status", type: "error" });
                       } finally {
                         setRecheckBusy(false);
                       }

@@ -20,11 +20,23 @@ function base64url(input: ArrayBuffer | Uint8Array): string {
   return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
+export type WalletProof = { message: string; signature: string };
+
+export function createWalletProofMessage(wallet: string, action: "connect-x" | "check-x-follow") {
+  return [
+    "ORVEX DEX wallet authorization",
+    `Action: ${action}`,
+    `Wallet: ${wallet.toLowerCase()}`,
+    `Issued At: ${Date.now()}`,
+    `Nonce: ${crypto.randomUUID()}`,
+  ].join("\n");
+}
+
 /**
  * Kick off the X OAuth 2.0 (PKCE) authorize redirect for `wallet`.
- * Stores the PKCE verifier + state in sessionStorage for the callback page.
+ * Stores the PKCE verifier, state, and wallet signature for the callback page.
  */
-export async function startXConnect(wallet: string): Promise<{ ok: boolean; error?: string }> {
+export async function startXConnect(wallet: string, proof: WalletProof): Promise<{ ok: boolean; error?: string }> {
   const { clientId } = await getXClientId();
   if (!clientId)
     return { ok: false, error: "X verification is not configured yet. The owner must add the X Client ID and Client Secret in project settings." };
@@ -37,7 +49,7 @@ export async function startXConnect(wallet: string): Promise<{ ok: boolean; erro
   const state = base64url(crypto.getRandomValues(new Uint8Array(16)));
   const redirectUri = `${window.location.origin}/auth/x/callback`;
 
-  sessionStorage.setItem(OAUTH_KEY, JSON.stringify({ state, verifier, redirectUri }));
+  sessionStorage.setItem(OAUTH_KEY, JSON.stringify({ state, verifier, redirectUri, proof }));
   localStorage.setItem(WALLET_KEY, wallet);
 
   const params = new URLSearchParams({
@@ -53,11 +65,23 @@ export async function startXConnect(wallet: string): Promise<{ ok: boolean; erro
   return { ok: true };
 }
 
-export function readPendingOAuth(): { state: string; verifier: string; redirectUri: string } | null {
+export function readPendingOAuth(): {
+  state: string;
+  verifier: string;
+  redirectUri: string;
+  proof: WalletProof;
+} | null {
   try {
     const raw = sessionStorage.getItem(OAUTH_KEY);
     sessionStorage.removeItem(OAUTH_KEY);
-    return raw ? (JSON.parse(raw) as { state: string; verifier: string; redirectUri: string }) : null;
+    return raw
+      ? (JSON.parse(raw) as {
+          state: string;
+          verifier: string;
+          redirectUri: string;
+          proof: WalletProof;
+        })
+      : null;
   } catch {
     return null;
   }

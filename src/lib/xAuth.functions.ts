@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { verifyMessage } from "viem";
 import { z } from "zod";
 
 export const ORVEX_X_HANDLE = "ORVEX_LitVM";
@@ -7,6 +8,34 @@ export const ORVEX_X_URL = "https://x.com/ORVEX_LitVM";
 const X_API = "https://api.x.com/2";
 
 const walletSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid wallet address");
+const walletProofSchema = z.object({
+  proofMessage: z.string().min(1).max(256),
+  proofSignature: z.string().regex(/^0x[a-fA-F0-9]{130}$/),
+});
+
+async function verifyWalletAuthorization(
+  wallet: string,
+  action: "connect-x" | "check-x-follow",
+  message: string,
+  signature: string,
+): Promise<boolean> {
+  const match = message.match(
+    /^ORVEX DEX wallet authorization\nAction: (connect-x|check-x-follow)\nWallet: (0x[a-f0-9]{40})\nIssued At: (\d{13})\nNonce: ([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/,
+  );
+  if (!match || match[1] !== action || match[2] !== wallet.toLowerCase()) return false;
+  const issuedAt = Number(match[3]);
+  if (issuedAt > Date.now() + 60_000 || Date.now() - issuedAt > 15 * 60_000) return false;
+
+  try {
+    return await verifyMessage({
+      address: wallet as `0x${string}`,
+      message,
+      signature: signature as `0x${string}`,
+    });
+  } catch {
+    return false;
+  }
+}
 
 type XUser = { id: string; username?: string; name?: string };
 
@@ -15,7 +44,8 @@ function redirectAllowed(uri: string): boolean {
     const u = new URL(uri);
     if (u.pathname !== "/auth/x/callback") return false;
     const host = u.hostname;
-    if (u.protocol === "https:" && host.endsWith(".lovable.app")) return true;
+    const trustedSuffixes = [".lovable.app", ".v0.build", ".vercel.app", ".pages.dev"];
+    if (u.protocol === "https:" && trustedSuffixes.some((suffix) => host.endsWith(suffix))) return true;
     if (u.protocol === "http:" && (host === "localhost" || host === "127.0.0.1")) return true;
     return false;
   } catch {
@@ -26,6 +56,7 @@ function redirectAllowed(uri: string): boolean {
 async function xGet(token: string, path: string): Promise<{ ok: boolean; status: number; body: Record<string, unknown> }> {
   const res = await fetch(`${X_API}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(12_000),
   });
   const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   return { ok: res.ok, status: res.status, body };
@@ -80,10 +111,15 @@ export const exchangeXCode = createServerFn({ method: "POST" })
         verifier: z.string().min(16).max(256),
         redirectUri: z.string().url(),
         wallet: walletSchema,
+        ...walletProofSchema.shape,
       })
       .parse(input)
   )
   .handler(async ({ data }) => {
+    if (!(await verifyWalletAuthorization(data.wallet, "connect-x", data.proofMessage, data.proofSignature))) {
+      return { ok: false, error: "Wallet signature is invalid or expired. Please reconnect and sign again." };
+    }
+
     const clientId = process.env["X_CLIENT_ID"];
     const clientSecret = process.env["X_CLIENT_SECRET"];
     if (!clientId || !clientSecret)
@@ -99,6 +135,7 @@ export const exchangeXCode = createServerFn({ method: "POST" })
         "Content-Type": "application/x-www-form-urlencoded",
         Authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
       },
+      signal: AbortSignal.timeout(12_000),
       body: new URLSearchParams({
         grant_type: "authorization_code",
         code: data.code,
@@ -159,8 +196,12 @@ export const exchangeXCode = createServerFn({ method: "POST" })
   });
 
 export const recheckXFollow = createServerFn({ method: "POST" })
-  .validator((input) => z.object({ wallet: walletSchema }).parse(input))
+  .validator((input) => z.object({ wallet: walletSchema, ...walletProofSchema.shape }).parse(input))
   .handler(async ({ data }) => {
+    if (!(await verifyWalletAuthorization(data.wallet, "check-x-follow", data.proofMessage, data.proofSignature))) {
+      return { ok: false, error: "Wallet signature is invalid or expired. Please sign and try again.", followed: false };
+    }
+
     const { row, supabaseAdmin } = await getVerifiedRow(data.wallet);
     if (!row?.x_access_token)
       return { ok: false, error: "Connect your X account first", followed: false };
@@ -181,6 +222,7 @@ export const recheckXFollow = createServerFn({ method: "POST" })
           "Content-Type": "application/x-www-form-urlencoded",
           Authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
         },
+        signal: AbortSignal.timeout(12_000),
         body: new URLSearchParams({
           grant_type: "refresh_token",
           refresh_token: row.x_refresh_token,

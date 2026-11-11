@@ -1,21 +1,23 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+const AmountSchema = z.string().max(80).regex(/^\d+(?:\.\d{1,36})?$/);
+
 const HoldingSchema = z.object({
-  symbol: z.string(),
-  amount: z.string(),
-  valueWzk: z.string().optional(),
-  share: z.number().optional(),
-});
+  symbol: z.string().min(1).max(24).regex(/^[A-Za-z0-9._-]+$/),
+  amount: AmountSchema,
+  valueWzk: AmountSchema.optional(),
+  share: z.number().min(0).max(1).optional(),
+}).strict();
 
 const InputSchema = z.object({
-  address: z.string(),
-  totalValueWzk: z.string(),
-  holdings: z.array(HoldingSchema),
-  lpCount: z.number(),
-  farmingCount: z.number(),
-  pnl: z.string().optional(),
-});
+  address: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
+  totalValueWzk: AmountSchema,
+  holdings: z.array(HoldingSchema).max(100),
+  lpCount: z.number().int().min(0).max(100_000),
+  farmingCount: z.number().int().min(0).max(100_000),
+  pnl: z.string().max(2_000).optional(),
+}).strict();
 
 
 export type AnalyzerInput = z.infer<typeof InputSchema>;
@@ -64,6 +66,7 @@ Be concise, specific, and reference actual holdings. No preamble.`;
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
+      signal: AbortSignal.timeout(20_000),
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
@@ -75,27 +78,43 @@ Be concise, specific, and reference actual holdings. No preamble.`;
     });
 
     if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`AI gateway ${res.status}: ${text.slice(0, 200)}`);
+      throw new Error(`AI analysis unavailable (${res.status})`);
     }
 
-    const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-    const content = json.choices?.[0]?.message?.content ?? "{}";
+    const responseBody: unknown = await res.json();
+    if (!responseBody || typeof responseBody !== "object" || Array.isArray(responseBody)) {
+      throw new Error("AI returned an invalid response");
+    }
+    const choices = (responseBody as { choices?: unknown }).choices;
+    const firstChoice = Array.isArray(choices) ? choices[0] : undefined;
+    const message = firstChoice && typeof firstChoice === "object" && !Array.isArray(firstChoice)
+      ? (firstChoice as { message?: unknown }).message
+      : undefined;
+    const content = message && typeof message === "object" && !Array.isArray(message)
+      ? (message as { content?: unknown }).content
+      : undefined;
+    if (typeof content !== "string" || content.length > 20_000) {
+      throw new Error("AI response is missing or exceeds the allowed size");
+    }
     const cleaned = content.replace(/^```json\s*|\s*```$/g, "").trim();
 
-    let parsed: AnalyzerResult;
+    let parsedValue: unknown;
     try {
-      parsed = JSON.parse(cleaned);
+      parsedValue = JSON.parse(cleaned);
     } catch {
       throw new Error("AI returned invalid JSON");
     }
+    if (!parsedValue || typeof parsedValue !== "object" || Array.isArray(parsedValue)) {
+      throw new Error("AI returned an invalid analysis");
+    }
+    const parsed = parsedValue as Partial<AnalyzerResult>;
 
     return {
       riskScore: Math.max(0, Math.min(100, Number(parsed.riskScore) || 0)),
       diversification: Math.max(0, Math.min(100, Number(parsed.diversification) || 0)),
-      summary: String(parsed.summary ?? ""),
-      strengths: Array.isArray(parsed.strengths) ? parsed.strengths.slice(0, 5).map(String) : [],
-      concerns: Array.isArray(parsed.concerns) ? parsed.concerns.slice(0, 5).map(String) : [],
-      recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations.slice(0, 6).map(String) : [],
+      summary: String(parsed.summary ?? "").slice(0, 1_000),
+      strengths: Array.isArray(parsed.strengths) ? parsed.strengths.slice(0, 5).map((item) => String(item).slice(0, 300)) : [],
+      concerns: Array.isArray(parsed.concerns) ? parsed.concerns.slice(0, 5).map((item) => String(item).slice(0, 300)) : [],
+      recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations.slice(0, 6).map((item) => String(item).slice(0, 300)) : [],
     };
   });

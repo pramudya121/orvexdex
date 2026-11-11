@@ -2,6 +2,13 @@
   "name": "tanstack_start_ts",
   "private": true,
   "sideEffects": false,
+  "overrides": {
+    "decode-uri-component": "0.5.1",
+    "sharp": "0.35.5",
+    "undici": "7.30.2",
+    "ws": "8.22.2",
+    "zod": "4.6.7"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite dev",
@@ -77,7 +84,7 @@
     "viem": "^2",
     "vite-tsconfig-paths": "^6.0.2",
     "wagmi": "^2",
-    "zod": "^3.24.2"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
