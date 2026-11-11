@@ -64,11 +64,14 @@ function toWzk(amount: bigint, decimals: number, priceWzk?: bigint): bigint {
   return (norm * priceWzk) / ONE;
 }
 
-export function usePoolStats(metas: PoolMeta[]) {
+export function usePoolStats(
+  metas: PoolMeta[],
+  { includeVolume = true }: { includeVolume?: boolean } = {},
+) {
   const client = usePublicClient();
   const key = metas.map((m) => `${m.pair}:${m.reserve0}:${m.reserve1}`).join("|");
   return useQuery({
-    queryKey: ["pool-stats", key, client?.chain?.id],
+    queryKey: ["pool-stats", key, client?.chain?.id, includeVolume],
     enabled: !!client && metas.length > 0,
     refetchInterval: 60_000,
     staleTime: 30_000,
@@ -86,7 +89,7 @@ export function usePoolStats(metas: PoolMeta[]) {
       }
 
       // Volume — single getLogs over all pairs in the 24h window
-      if (client && metas.length > 0) {
+      if (includeVolume && client && metas.length > 0) {
         try {
           const head = await client.getBlockNumber();
           const lookback = LOOKBACK_24H > MAX_LOOKBACK ? MAX_LOOKBACK : LOOKBACK_24H;

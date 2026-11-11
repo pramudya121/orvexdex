@@ -51,7 +51,14 @@ function XCallbackPage() {
       }
 
       const res = await exchangeXCode({
-        data: { code, verifier: pending.verifier, redirectUri: pending.redirectUri, wallet },
+        data: {
+          code,
+          verifier: pending.verifier,
+          redirectUri: pending.redirectUri,
+          wallet,
+          proofMessage: pending.proof.message,
+          proofSignature: pending.proof.signature,
+        },
       });
       if (cancelled) return;
       if (!res.ok) {

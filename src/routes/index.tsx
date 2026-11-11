@@ -81,7 +81,7 @@ function Landing() {
       decimals1: findToken(t1)?.decimals ?? 18,
     }];
   }), [pairAddrs, metaQ.data]);
-  const stats = usePoolStats(poolMetas);
+  const stats = usePoolStats(poolMetas, { includeVolume: false });
   const prices = stats.data?.prices;
   const dex = useDexStats(poolMetas);
   const dexLoading = dex.isLoading || metaQ.isLoading || pairsQ.isLoading;

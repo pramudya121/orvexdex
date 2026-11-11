@@ -74,6 +74,7 @@ function DomainProfilePage() {
   const avatar = text(0);
   const description = text(1);
   const url = text(2);
+  const safeUrl = safeExternalUrl(url);
   const twitter = text(3);
   const github = text(4);
   const discord = text(5);
@@ -144,7 +145,7 @@ function DomainProfilePage() {
 
         {registered && (url || twitter || github || discord || email) && (
           <div className="flex flex-wrap gap-2 mt-5">
-            {url && <SocialChip icon={<Globe className="h-3.5 w-3.5" />} label={url.replace(/^https?:\/\//, "")} href={url} />}
+            {url && <SocialChip icon={<Globe className="h-3.5 w-3.5" />} label={url.replace(/^https?:\/\//, "").slice(0, 120)} href={safeUrl} />}
             {twitter && <SocialChip icon={<Twitter className="h-3.5 w-3.5" />} label={`@${twitter.replace(/^@/, "")}`} href={`https://twitter.com/${twitter.replace(/^@/, "")}`} />}
             {github && <SocialChip icon={<Github className="h-3.5 w-3.5" />} label={github} href={`https://github.com/${github}`} />}
             {discord && <SocialChip icon={<MessageCircle className="h-3.5 w-3.5" />} label={discord} />}
@@ -170,6 +171,21 @@ function DomainProfilePage() {
       </div>
     </div>
   );
+}
+
+function safeExternalUrl(value?: string): string | undefined {
+  const candidate = value?.trim();
+  if (!candidate || candidate.length > 2_048) return undefined;
+
+  const normalized = /^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`;
+  try {
+    const parsed = new URL(normalized);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return undefined;
+    if (parsed.username || parsed.password) return undefined;
+    return parsed.href;
+  } catch {
+    return undefined;
+  }
 }
 
 function InfoRow({ icon, label, value, onCopy, link, mono }: {
