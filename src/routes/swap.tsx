@@ -15,6 +15,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { SwapConfirmModal } from "@/components/SwapConfirmModal";
 import { useGasEstimate } from "@/lib/useGasEstimate";
 import { txErrorMessage } from "@/lib/txError";
+import { useEnsureLitVmNetwork } from "@/hooks/useEnsureLitVmNetwork";
 
 type SwapSearch = { from?: string; to?: string };
 
@@ -56,6 +57,7 @@ type Mode = "wrap" | "unwrap" | "swap";
 function SwapPage() {
   const { address } = useAccount();
   const toast = useToast();
+  const ensureLitVmNetwork = useEnsureLitVmNetwork();
   const sp = Route.useSearch();
   const [tokenIn, setTokenIn] = useState<Token>(() => findTokenByAddr(sp.from) ?? NATIVE);
   const [tokenOut, setTokenOut] = useState<Token>(() => findTokenByAddr(sp.to) ?? WZKLTC);
@@ -230,6 +232,7 @@ function SwapPage() {
 
   const handleAction = async () => {
     if (!address) return;
+    if (!(await ensureLitVmNetwork())) return;
     if (mode === "swap" && tradeMode === "exactOut" ? amountOutWei <= 0n : amountInWei <= 0n) return;
     try {
       if (mode === "wrap") {
@@ -268,6 +271,7 @@ function SwapPage() {
 
   const executeSwap = async () => {
     if (!address || !path) return;
+    if (!(await ensureLitVmNetwork())) return;
     try {
       const dl = deadline(deadlineMin);
       let hash: `0x${string}`;

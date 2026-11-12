@@ -11,6 +11,8 @@ import { useAllowance, useGetPair, usePairReserves, useTokenBalance } from "@/li
 import { deadline, fmt, safeParse, slippageMin } from "@/lib/format";
 import { formatUnits } from "viem";
 import { useToast } from "@/components/ui/toaster";
+import { useEnsureLitVmNetwork } from "@/hooks/useEnsureLitVmNetwork";
+import { txErrorMessage } from "@/lib/txError";
 import { LiquidityCardSkeleton } from "@/components/skeletons";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 
@@ -124,6 +126,7 @@ function LiquidityPage() {
 function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: string }) {
   const { address } = useAccount();
   const toast = useToast();
+  const ensureLitVmNetwork = useEnsureLitVmNetwork();
   const [tokenA, setTokenA] = useState<Token>(() => findTokenByAddr(prefillA) ?? NATIVE);
   const [tokenB, setTokenB] = useState<Token>(() => findTokenByAddr(prefillB) ?? TOKENS.find((t) => t.symbol === "ORVX")!);
   const [amountA, setAmountA] = useState("");
@@ -300,7 +303,11 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
     }
     // Guard: allowance still loading — avoid sending an addLiquidity that would revert on transferFrom
     if (allowanceLoading) {
-      toast.push({ title: "Mengecek allowance…", description: "Coba lagi sebentar.", type: "info" as any });
+      toast.push({ title: "Mengecek allowance…", description: "Coba lagi sebentar.", type: "info" });
+      return;
+    }
+    if (!(await ensureLitVmNetwork())) {
+      setAutoContinue(false);
       return;
     }
     try {
@@ -332,9 +339,13 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
         });
       }
       setHash(h); setPendingKind("add"); toast.push({ title: "Adding liquidity…", hash: h });
-    } catch (e: any) {
-      const msg = e?.shortMessage || e?.cause?.shortMessage || e?.message || "Transaction reverted";
-      toast.push({ title: "Failed", description: msg, type: "error" });
+    } catch (error: unknown) {
+      const result = txErrorMessage(error);
+      toast.push({
+        title: result.rejected ? "Transaction cancelled" : result.title,
+        description: result.description,
+        type: result.rejected ? "info" : "error",
+      });
       setPendingKind(undefined);
       setAutoContinue(false);
     }
@@ -426,7 +437,15 @@ function AddLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: st
   );
 }
 
-function Field({ label, token, onChange, amount, setAmount, balance, exclude }: any) {
+function Field({ label, token, onChange, amount, setAmount, balance, exclude }: {
+  label: string;
+  token: Token;
+  onChange: (token: Token) => void;
+  amount: string;
+  setAmount: (amount: string) => void;
+  balance: bigint | undefined;
+  exclude?: Token;
+}) {
   return (
     <div className="bg-surface-2/50 rounded-2xl p-4 border border-border overflow-hidden">
       <div className="flex justify-between text-xs text-muted-foreground mb-2 gap-2">
@@ -464,6 +483,7 @@ function Field({ label, token, onChange, amount, setAmount, balance, exclude }: 
 function RemoveLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?: string }) {
   const { address } = useAccount();
   const toast = useToast();
+  const ensureLitVmNetwork = useEnsureLitVmNetwork();
   const [tokenA, setTokenA] = useState<Token>(() => findTokenByAddr(prefillA) ?? WZKLTC);
   const [tokenB, setTokenB] = useState<Token>(() => findTokenByAddr(prefillB) ?? TOKENS.find((t) => t.symbol === "ORVX")!);
   const [pct, setPct] = useState(50);
@@ -537,6 +557,7 @@ function RemoveLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?:
 
   const submit = async () => {
     if (!address || liquidity <= 0n || !pairAddr) return;
+    if (!(await ensureLitVmNetwork())) return;
     try {
       if (needsApprove) {
         const h = await writeContractAsync({ address: pairAddr, abi: pairAbi, functionName: "approve", args: [ADDR.router, liquidity] });
@@ -560,8 +581,13 @@ function RemoveLiquidity({ prefillA, prefillB }: { prefillA?: string; prefillB?:
         });
       }
       setHash(h); toast.push({ title: "Removing liquidity…", hash: h });
-    } catch (e: any) {
-      toast.push({ title: "Failed", description: e?.shortMessage || e?.message, type: "error" });
+    } catch (error: unknown) {
+      const result = txErrorMessage(error);
+      toast.push({
+        title: result.rejected ? "Transaction cancelled" : result.title,
+        description: result.description,
+        type: result.rejected ? "info" : "error",
+      });
     }
   };
 
