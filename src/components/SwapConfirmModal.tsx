@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Token } from "@/lib/tokens";
 import { fmt, slippageMax, slippageMin } from "@/lib/format";
 
@@ -24,21 +24,32 @@ export function SwapConfirmModal({
   tokenIn, tokenOut, amountInWei, amountOutWei,
   slippageBps, tradeMode, priceImpact, hops, deadlineMin, gasCostText,
 }: Props) {
+  const [acknowledgedRiskKey, setAcknowledgedRiskKey] = useState<string | null>(null);
+  const closeModal = useCallback(() => {
+    setAcknowledgedRiskKey(null);
+    onClose();
+  }, [onClose]);
+
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !pending) onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !pending) closeModal(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, pending, onClose]);
+  }, [open, pending, closeModal]);
+
+  const high = priceImpact !== null && priceImpact >= 5;
+  const warn = priceImpact !== null && priceImpact >= 1 && priceImpact < 5;
+  const requiresRiskAcknowledgement = slippageBps > 300 || high;
+  const riskKey = requiresRiskAcknowledgement
+    ? [tokenIn.address, tokenOut.address, amountInWei, amountOutWei, slippageBps, tradeMode, priceImpact?.toFixed(2)].join(":")
+    : null;
+  const riskAcknowledged = riskKey !== null && acknowledgedRiskKey === riskKey;
 
   if (!open) return null;
 
   const rate = amountInWei > 0n
     ? fmt((amountOutWei * 10n ** BigInt(tokenIn.decimals)) / amountInWei, tokenOut.decimals, 6)
     : "0";
-
-  const high = priceImpact !== null && priceImpact >= 5;
-  const warn = priceImpact !== null && priceImpact >= 1 && priceImpact < 5;
 
   return (
     <div
@@ -50,7 +61,7 @@ export function SwapConfirmModal({
       <button
         type="button"
         aria-label="Close confirmation"
-        onClick={() => { if (!pending) onClose(); }}
+        onClick={() => { if (!pending) closeModal(); }}
         className="absolute inset-0 bg-background/70 backdrop-blur-md"
       />
       <div className="relative w-full max-w-md rounded-3xl glass-strong border-gold shadow-elegant p-6 animate-scale-in">
@@ -60,7 +71,7 @@ export function SwapConfirmModal({
             <h2 className="text-xl font-bold mt-1">Confirm Swap</h2>
           </div>
           <button
-            onClick={onClose}
+            onClick={closeModal}
             disabled={pending}
             aria-label="Close"
             className="h-8 w-8 rounded-lg bg-surface-2 border border-border hover:border-primary/60 transition disabled:opacity-40"
@@ -118,9 +129,16 @@ export function SwapConfirmModal({
           <Row label="Deadline" value={`${deadlineMin} min`} />
         </div>
 
-        {high && (
-          <div className="mt-3 p-3 rounded-xl bg-destructive/10 border border-destructive/40 text-xs text-destructive">
-            ⚠ High price impact ({priceImpact!.toFixed(2)}%). You will lose a significant amount to slippage. Consider a smaller trade.
+        {requiresRiskAcknowledgement && (
+          <div
+            id="swap-risk-acknowledgement-description"
+            role="alert"
+            className="mt-3 p-3 rounded-xl bg-destructive/10 border border-destructive/40 text-xs text-destructive"
+          >
+            {high
+              ? `High price impact (${priceImpact?.toFixed(2)}%). Consider reducing the trade size.`
+              : `High slippage tolerance (${(slippageBps / 100).toFixed(2)}%).`}
+            <div className="mt-1">Review the worst-case amount shown above before continuing.</div>
           </div>
         )}
         {warn && !high && (
@@ -128,21 +146,38 @@ export function SwapConfirmModal({
             Price impact is elevated ({priceImpact!.toFixed(2)}%). Review before confirming.
           </div>
         )}
+        {requiresRiskAcknowledgement && (
+          <label htmlFor="swap-risk-acknowledgement" className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs leading-relaxed">
+            <input
+              id="swap-risk-acknowledgement"
+              type="checkbox"
+              checked={riskAcknowledged}
+              onChange={(event) => setAcknowledgedRiskKey(event.target.checked && riskKey ? riskKey : null)}
+              className="mt-0.5 size-4 shrink-0 accent-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+            <span>
+              {tradeMode === "exactIn"
+                ? `I understand this swap may return less than quoted, down to the displayed minimum received.`
+                : `I understand this swap may spend more than quoted, up to the displayed maximum sold.`}
+            </span>
+          </label>
+        )}
 
         <div className="mt-5 flex gap-3">
           <button
-            onClick={onClose}
+            onClick={closeModal}
             disabled={pending}
             className="flex-1 py-3 rounded-xl glass border-gold font-semibold hover:bg-surface-2 transition press disabled:opacity-40"
           >Cancel</button>
           <button
             onClick={onConfirm}
-            disabled={pending}
-            className={`press relative flex-1 py-3 rounded-xl font-bold shadow-neon overflow-hidden text-primary-foreground transition disabled:opacity-50 disabled:cursor-not-allowed ${high ? "bg-destructive" : "bg-gradient-brand"}`}
+            disabled={pending || (requiresRiskAcknowledgement && !riskAcknowledged)}
+            aria-describedby={requiresRiskAcknowledgement ? "swap-risk-acknowledgement-description" : undefined}
+            className={`press relative flex-1 py-3 rounded-xl font-bold shadow-neon overflow-hidden text-primary-foreground transition disabled:opacity-50 disabled:cursor-not-allowed ${requiresRiskAcknowledgement ? "bg-destructive" : "bg-gradient-brand"}`}
           >
             <span className="relative z-10 inline-flex items-center justify-center gap-2">
               {pending && <span className="h-4 w-4 rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin" />}
-              {pending ? "Confirming…" : high ? "Swap Anyway" : "Confirm Swap"}
+              {pending ? "Confirming…" : requiresRiskAcknowledgement ? "Confirm High-Risk Swap" : "Confirm Swap"}
             </span>
             {!pending && (
               <span aria-hidden className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-12 animate-[shimmer-sweep_2.6s_ease-in-out_infinite]" />
