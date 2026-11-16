@@ -480,9 +480,7 @@ function FaucetPage() {
                   onClick={async () => {
                     if (!address) return;
                     try {
-                      const message = createWalletProofMessage(address, "connect-x");
-                      const signature = await signMessageAsync({ message });
-                      const r = await startXConnect(address, { message, signature });
+                      const r = await startXConnect(address, (message) => signMessageAsync({ message }));
                       if (!r.ok && r.error) toast.push({ title: r.error, type: "error" });
                     } catch {
                       toast.push({ title: "Wallet signature was cancelled or failed", type: "error" });

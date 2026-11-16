@@ -9,7 +9,7 @@ const X_API = "https://api.x.com/2";
 
 const walletSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid wallet address");
 const walletProofSchema = z.object({
-  proofMessage: z.string().min(1).max(256),
+  proofMessage: z.string().min(1).max(512),
   proofSignature: z.string().regex(/^0x[a-fA-F0-9]{130}$/),
 });
 
@@ -18,12 +18,16 @@ async function verifyWalletAuthorization(
   action: "connect-x" | "check-x-follow",
   message: string,
   signature: string,
+  context?: { redirectUri: string; state: string },
 ): Promise<boolean> {
   const match = message.match(
-    /^ORVEX DEX wallet authorization\nAction: (connect-x|check-x-follow)\nWallet: (0x[a-f0-9]{40})\nIssued At: (\d{13})\nNonce: ([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/,
+    /^ORVEX DEX wallet authorization\nAction: (connect-x|check-x-follow)\nWallet: (0x[a-f0-9]{40})\n(?:Redirect URI: ([^\n]+)\nOAuth State: ([A-Za-z0-9_-]{22})\n)?Issued At: (\d{13})\nNonce: ([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/,
   );
   if (!match || match[1] !== action || match[2] !== wallet.toLowerCase()) return false;
-  const issuedAt = Number(match[3]);
+  const hasOAuthContext = Boolean(match[3] && match[4]);
+  if (action === "connect-x" && (!context || match[3] !== context.redirectUri || match[4] !== context.state)) return false;
+  if (action === "check-x-follow" && hasOAuthContext) return false;
+  const issuedAt = Number(match[5]);
   if (issuedAt > Date.now() + 60_000 || Date.now() - issuedAt > 15 * 60_000) return false;
 
   try {
@@ -39,15 +43,49 @@ async function verifyWalletAuthorization(
 
 type XUser = { id: string; username?: string; name?: string };
 
+const APP_CALLBACK_HOSTS = [
+  "orvexdex.xyz",
+  "www.orvexdex.xyz",
+  "orvexdex.vercel.app",
+  "update-rpc-and-explorer.v0.build",
+];
+
+function configuredHostname(value?: string): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value.includes("://") ? value : `https://${value}`);
+    if (url.pathname !== "/" || url.search || url.hash || url.username || url.password || url.port) return null;
+    return url.hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
 function redirectAllowed(uri: string): boolean {
   try {
-    const u = new URL(uri);
-    if (u.pathname !== "/auth/x/callback") return false;
-    const host = u.hostname;
-    const trustedSuffixes = [".lovable.app", ".v0.build", ".vercel.app", ".pages.dev"];
-    if (u.protocol === "https:" && trustedSuffixes.some((suffix) => host.endsWith(suffix))) return true;
-    if (u.protocol === "http:" && (host === "localhost" || host === "127.0.0.1")) return true;
-    return false;
+    const url = new URL(uri);
+    if (
+      url.pathname !== "/auth/x/callback" || url.search || url.hash ||
+      url.username || url.password
+    ) return false;
+
+    const host = url.hostname.toLowerCase();
+    if (url.protocol === "http:") {
+      return host === "localhost" || host === "127.0.0.1";
+    }
+    if (url.protocol !== "https:" || url.port) return false;
+
+    const trustedHosts = new Set(
+      [
+        ...APP_CALLBACK_HOSTS,
+        process.env["VERCEL_URL"],
+        process.env["VERCEL_BRANCH_URL"],
+        process.env["VERCEL_PROJECT_PRODUCTION_URL"],
+      ]
+        .map(configuredHostname)
+        .filter((hostname): hostname is string => hostname !== null),
+    );
+    return trustedHosts.has(host);
   } catch {
     return false;
   }
@@ -88,11 +126,12 @@ async function userFollows(token: string, meId: string, targetId: string): Promi
 
 async function getVerifiedRow(wallet: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("x_verifications")
     .select("wallet_address, x_user_id, x_username, x_name, followed, verified_at, x_access_token, x_refresh_token, token_expires_at")
     .eq("wallet_address", wallet.toLowerCase())
     .maybeSingle();
+  if (error) throw new Error("Could not load X verification data");
   return { row: data, supabaseAdmin };
 }
 
@@ -108,15 +147,16 @@ export const exchangeXCode = createServerFn({ method: "POST" })
     z
       .object({
         code: z.string().min(1).max(512),
-        verifier: z.string().min(16).max(256),
-        redirectUri: z.string().url(),
+        state: z.string().regex(/^[A-Za-z0-9_-]{22}$/),
+        verifier: z.string().regex(/^[A-Za-z0-9._~-]{43,128}$/),
+        redirectUri: z.string().url().max(320),
         wallet: walletSchema,
         ...walletProofSchema.shape,
       })
       .parse(input)
   )
   .handler(async ({ data }) => {
-    if (!(await verifyWalletAuthorization(data.wallet, "connect-x", data.proofMessage, data.proofSignature))) {
+    if (!(await verifyWalletAuthorization(data.wallet, "connect-x", data.proofMessage, data.proofSignature, { redirectUri: data.redirectUri, state: data.state }))) {
       return { ok: false, error: "Wallet signature is invalid or expired. Please reconnect and sign again." };
     }
 
@@ -176,7 +216,7 @@ export const exchangeXCode = createServerFn({ method: "POST" })
     const expiresAt = tokenBody.expires_in
       ? new Date(Date.now() + (tokenBody.expires_in - 60) * 1000).toISOString()
       : null;
-    await supabaseAdmin.from("x_verifications").upsert(
+    const { error: saveError } = await supabaseAdmin.from("x_verifications").upsert(
       {
         wallet_address: data.wallet.toLowerCase(),
         x_user_id: meUser.id,
@@ -191,6 +231,7 @@ export const exchangeXCode = createServerFn({ method: "POST" })
       },
       { onConflict: "wallet_address" }
     );
+    if (saveError) return { ok: false, error: "Could not save X verification. Please try again." };
 
     return { ok: true, username: meUser.username ?? null, name: meUser.name ?? null, followed };
   });
@@ -237,7 +278,7 @@ export const recheckXFollow = createServerFn({ method: "POST" })
       if (!res.ok || !body.access_token)
         return { ok: false, error: "X session expired — reconnect your account", followed: false };
       token = body.access_token;
-      await supabaseAdmin
+      const { error: refreshError } = await supabaseAdmin
         .from("x_verifications")
         .update({
           x_access_token: token,
@@ -248,6 +289,9 @@ export const recheckXFollow = createServerFn({ method: "POST" })
           updated_at: new Date().toISOString(),
         })
         .eq("wallet_address", data.wallet.toLowerCase());
+      if (refreshError) {
+        return { ok: false, error: "Could not refresh X verification. Please reconnect and try again.", followed: false };
+      }
     }
 
     const me = await xGet(token, `/users/${row.x_user_id}`);
@@ -267,7 +311,7 @@ export const recheckXFollow = createServerFn({ method: "POST" })
       }
     }
 
-    await supabaseAdmin
+    const { error: updateError } = await supabaseAdmin
       .from("x_verifications")
       .update({
         followed,
@@ -276,6 +320,9 @@ export const recheckXFollow = createServerFn({ method: "POST" })
         updated_at: new Date().toISOString(),
       })
       .eq("wallet_address", data.wallet.toLowerCase());
+    if (updateError) {
+      return { ok: false, error: "Could not save X follow status. Please try again.", followed: false };
+    }
 
     return { ok: true, username: meUser?.username ?? row.x_username, followed };
   });
