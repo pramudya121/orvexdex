@@ -8,7 +8,7 @@ import {
   useWaitForTransactionReceipt,
   usePublicClient,
 } from "wagmi";
-import { keccak256, toBytes, formatEther, namehash } from "viem";
+import { isAddress, keccak256, toBytes, formatEther, namehash } from "viem";
 import { ADDR, DOMAIN_TLD, explorerTx } from "@/lib/chain";
 import { domainControllerAbi } from "@/lib/abis/domainController";
 import { domainRegistrarAbi } from "@/lib/abis/domainRegistrar";
@@ -51,6 +51,9 @@ const ZERO = "0x0000000000000000000000000000000000000000";
 const SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
 const COMMIT_KEY_PREFIX = "orvex.domain.commit.v1.";
 const PRIMARY_KEY = "orvex.domain.primary.v1";
+const OWNED_KEY_PREFIX = "orvex.domain.owned.";
+const MAX_CACHED_OWNED_NAMES = 100;
+const DOMAIN_NAME_PATTERN = /^(?=.{3,32}$)[a-z0-9](?:[a-z0-9-]*[a-z0-9])$/;
 
 type StoredCommit = {
   name: string;
@@ -61,25 +64,105 @@ type StoredCommit = {
   txHash: `0x${string}`;
 };
 
-function loadCommit(name: string, addr?: string): StoredCommit | null {
-  if (typeof window === "undefined" || !addr) return null;
+function isDomainName(value: unknown): value is string {
+  return typeof value === "string" && DOMAIN_NAME_PATTERN.test(value);
+}
+
+function safeStorageGet(key: string): string | null {
+  if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem(COMMIT_KEY_PREFIX + addr.toLowerCase() + "." + name.toLowerCase());
-    return raw ? (JSON.parse(raw) as StoredCommit) : null;
+    return window.localStorage.getItem(key);
   } catch {
     return null;
   }
 }
-function saveCommit(c: StoredCommit) {
+
+function safeStorageSet(key: string, value: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    window.localStorage.setItem(key, value);
+    return true;
+  } catch {
+    // Storage may be disabled or full; on-chain actions must remain successful.
+    return false;
+  }
+}
+
+function safeStorageRemove(key: string) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Storage may be disabled or full; on-chain actions must remain successful.
+  }
+}
+
+function readOwnedNames(address: string): string[] {
+  const raw = safeStorageGet(OWNED_KEY_PREFIX + address.toLowerCase());
+  if (!raw || raw.length > 16_000) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return [...new Set(parsed.filter(isDomainName))].slice(0, MAX_CACHED_OWNED_NAMES);
+  } catch {
+    return [];
+  }
+}
+
+function cacheOwnedName(address: string, name: string) {
+  if (!isDomainName(name)) return;
+  const names = readOwnedNames(address);
+  if (!names.includes(name)) names.push(name);
+  safeStorageSet(
+    OWNED_KEY_PREFIX + address.toLowerCase(),
+    JSON.stringify(names.slice(-MAX_CACHED_OWNED_NAMES)),
+  );
+}
+
+function isStoredCommit(value: unknown): value is StoredCommit {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    isDomainName(record.name) &&
+    typeof record.secret === "string" &&
+    /^0x[a-f\d]{64}$/i.test(record.secret) &&
+    typeof record.registrant === "string" &&
+    isAddress(record.registrant) &&
+    typeof record.duration === "number" &&
+    Number.isSafeInteger(record.duration) &&
+    record.duration > 0 &&
+    typeof record.committedAt === "number" &&
+    Number.isFinite(record.committedAt) &&
+    record.committedAt > 0 &&
+    typeof record.txHash === "string" &&
+    /^0x[a-f\d]{64}$/i.test(record.txHash)
+  );
+}
+
+function loadCommit(name: string, addr?: string): StoredCommit | null {
+  if (!addr) return null;
+  const raw = safeStorageGet(COMMIT_KEY_PREFIX + addr.toLowerCase() + "." + name.toLowerCase());
+  if (!raw || raw.length > 4096) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      !isStoredCommit(parsed) ||
+      parsed.name.toLowerCase() !== name.toLowerCase() ||
+      parsed.registrant.toLowerCase() !== addr.toLowerCase()
+    ) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+function saveCommit(c: StoredCommit): boolean {
+  return safeStorageSet(
     COMMIT_KEY_PREFIX + c.registrant.toLowerCase() + "." + c.name.toLowerCase(),
     JSON.stringify(c),
   );
 }
 function clearCommit(name: string, addr: string) {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(COMMIT_KEY_PREFIX + addr.toLowerCase() + "." + name.toLowerCase());
+  safeStorageRemove(COMMIT_KEY_PREFIX + addr.toLowerCase() + "." + name.toLowerCase());
 }
 
 function randomSecret(): `0x${string}` {
@@ -242,17 +325,26 @@ function DomainsPage() {
         functionName: "commit",
         args: [commitment, checkedName],
       });
-      saveCommit({
-        name: checkedName,
-        secret,
-        registrant: address,
-        duration: years * SECONDS_PER_YEAR,
-        committedAt: Math.floor(Date.now() / 1000),
-        txHash: h,
-      });
-      setPendingHash(h);
-      setPendingLabel("Commit");
-      toast.push({ title: "Commit sent — wait a moment then Mint", hash: h });
+  const commitSaved = saveCommit({
+    name: checkedName,
+    secret,
+    registrant: address,
+    duration: years * SECONDS_PER_YEAR,
+    committedAt: Math.floor(Date.now() / 1000),
+    txHash: h,
+  });
+  setPendingHash(h);
+  setPendingLabel("Commit");
+  if (commitSaved) {
+    toast.push({ title: "Commit sent — wait a moment then Mint", hash: h });
+  } else {
+    toast.push({
+      title: "Commit sent, but reveal data could not be saved",
+      description: "Local storage is unavailable. Do not mint with this commit; wait for it to expire, then commit again.",
+      type: "error",
+      hash: h,
+    });
+  }
     } catch (e) {
       toast.push({ title: "Commit failed", description: getErr(e), type: "error" });
     }
@@ -320,7 +412,7 @@ function DomainsPage() {
         functionName: "setReverse",
         args: [address, `${domainName}.${DOMAIN_TLD}`],
       });
-      localStorage.setItem(PRIMARY_KEY + ":" + address.toLowerCase(), domainName);
+      safeStorageSet(PRIMARY_KEY + ":" + address.toLowerCase(), domainName);
       setPrimaryLocal(domainName);
       notifyDomainUpdated();
       setPendingHash(h);
@@ -344,11 +436,11 @@ function DomainsPage() {
     try {
       const seen = new Map<string, number>();
       // Sumber utama: cache lokal nama yang sukses di-mint dari device ini.
-      const cached = JSON.parse(
-        localStorage.getItem("orvex.domain.owned." + address.toLowerCase()) || "[]",
-      ) as string[];
+      const cached = readOwnedNames(address);
       // Tambahkan nama yang sedang dicek bila terbukti milik user.
-      if (checkedName && !cached.includes(checkedName)) cached.push(checkedName);
+      if (checkedName && isDomainName(checkedName) && !cached.includes(checkedName)) {
+        cached.push(checkedName);
+      }
 
       for (const n of cached) {
         try {
@@ -377,17 +469,12 @@ function DomainsPage() {
   // Cache nama saat mint sukses
   useEffect(() => {
     if (receipt.isSuccess && pendingLabel === "Mint" && checkedName && address) {
-      const key = "orvex.domain.owned." + address.toLowerCase();
-      const cur = JSON.parse(localStorage.getItem(key) || "[]") as string[];
-      if (!cur.includes(checkedName)) {
-        cur.push(checkedName);
-        localStorage.setItem(key, JSON.stringify(cur));
-      }
+      cacheOwnedName(address, checkedName);
       // If user has no primary yet, auto-set this domain as primary locally
       // so the header instantly shows their new identity.
       const pKey = PRIMARY_KEY + ":" + address.toLowerCase();
-      if (!localStorage.getItem(pKey)) {
-        localStorage.setItem(pKey, checkedName);
+      if (!safeStorageGet(pKey)) {
+        safeStorageSet(pKey, checkedName);
         setPrimaryLocal(checkedName);
       }
       notifyDomainUpdated();
@@ -402,7 +489,7 @@ function DomainsPage() {
 
   useEffect(() => {
     if (!address) return setPrimaryLocal(null);
-    setPrimaryLocal(localStorage.getItem(PRIMARY_KEY + ":" + address.toLowerCase()));
+    setPrimaryLocal(safeStorageGet(PRIMARY_KEY + ":" + address.toLowerCase()));
   }, [address]);
 
   // ─────────────────────── UI ───────────────────────

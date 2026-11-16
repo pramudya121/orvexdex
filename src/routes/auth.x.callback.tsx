@@ -31,6 +31,7 @@ function XCallbackPage() {
     let cancelled = false;
     const run = async () => {
       const params = new URLSearchParams(window.location.search);
+      window.history.replaceState(null, "", window.location.pathname);
       const code = params.get("code");
       const urlState = params.get("state");
       const oauthError = params.get("error");
@@ -50,16 +51,23 @@ function XCallbackPage() {
         return;
       }
 
-      const res = await exchangeXCode({
-        data: {
-          code,
-          verifier: pending.verifier,
-          redirectUri: pending.redirectUri,
-          wallet,
-          proofMessage: pending.proof.message,
-          proofSignature: pending.proof.signature,
-        },
-      });
+      let res: Awaited<ReturnType<typeof exchangeXCode>>;
+      try {
+        res = await exchangeXCode({
+          data: {
+            code,
+            state: pending.state,
+            verifier: pending.verifier,
+            redirectUri: pending.redirectUri,
+            wallet,
+            proofMessage: pending.proof.message,
+            proofSignature: pending.proof.signature,
+          },
+        });
+      } catch {
+        if (!cancelled) setState({ kind: "error", message: "Unable to complete X connection. Please try again." });
+        return;
+      }
       if (cancelled) return;
       if (!res.ok) {
         setState({ kind: "error", message: res.error ?? "X sign-in failed" });
